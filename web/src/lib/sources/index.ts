@@ -7,14 +7,21 @@ import { FALLBACK_BORROW_PARAMS, fetchMezo } from "./mezo";
 import { fetchSmusdMainnet } from "./smusd";
 import { fixtureSources } from "./fixture";
 
-const settle = <T,>(p: Promise<T>) => p.then((value) => ({ ok: true as const, value }), (error: unknown) => ({ ok: false as const, error }));
+const settle = <T,>(p: Promise<T>, name: string) =>
+  p.then(
+    (value) => ({ ok: true as const, value }),
+    (error: unknown) => {
+      console.error(`[sources] ${name} failed:`, error); // visible in Vercel function logs
+      return { ok: false as const, error };
+    },
+  );
 
 /** Loads every source; a failed source becomes an "unavailable" venue instead of an error page. */
 export async function loadSources(): Promise<Sources> {
   if (process.env.COMPASS_FIXTURES === "1") return fixtureSources();
-  const [merkl, smusd, eth] = await Promise.all([settle(fetchMerkl()), settle(fetchSmusdMainnet()), settle(fetchEthereum())]);
+  const [merkl, smusd, eth] = await Promise.all([settle(fetchMerkl(), "merkl"), settle(fetchSmusdMainnet(), "smusd"), settle(fetchEthereum(), "ethereum")]);
   const mezoPrice = merkl.ok ? merkl.value.mezoPriceUsd : null;
-  const mezo = await settle(fetchMezo(mezoPrice ?? 0));
+  const mezo = await settle(fetchMezo(mezoPrice ?? 0), "mezo");
 
   const venues: Venue[] = [
     smusd.ok

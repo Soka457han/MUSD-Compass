@@ -48,7 +48,7 @@ export function buildYields(s: Sources, q: Query) {
   const venues: VenueOut[] = s.venues.map(withCost).map((v) => ({
     ...v,
     carry: venueCarry(v.rates, input),
-    breakEven: v.chain === "Ethereum" && bench && v.status === "ok" ? breakEven(v.rates, bench.rates, input) : null,
+    breakEven: v.chain === "Ethereum" && bench && v.status === "ok" && (v.rates.liquidApr !== null || v.rates.lockedApr !== null) ? breakEven(v.rates, bench.rates, input) : null,
   }));
 
   venues.sort((a, b) => {

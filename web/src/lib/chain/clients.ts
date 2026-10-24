@@ -11,12 +11,16 @@ const env = {
 
 export const rpcUrls = env;
 
+// Boar allows 10 HTTP requests/s per IP but accepts JSON-RPC batches (40 calls in one request checked 24 Oct),
+// so calls made within 16 ms go out as one request. Source: https://viem.sh/docs/clients/transports/http
+const mezoHttp = (url: string) => http(url, { batch: { wait: 16 }, retryCount: 5, retryDelay: 400 });
+
 // Source: https://viem.sh/docs/clients/transports/fallback
 export const mezoClient = createPublicClient({
   chain: mezo,
-  transport: fallback([http(env.mezo), http(env.mezoFallback)]),
+  transport: fallback([mezoHttp(env.mezo), mezoHttp(env.mezoFallback)]),
 });
 
-export const mezoTestnetClient = createPublicClient({ chain: mezoTestnet, transport: http(env.mezoTestnet) });
+export const mezoTestnetClient = createPublicClient({ chain: mezoTestnet, transport: mezoHttp(env.mezoTestnet) });
 
 export const ethereumClient = createPublicClient({ chain: mainnet, transport: http(env.ethereum) });

@@ -72,6 +72,12 @@ describe("buildYields", () => {
     expect(r.venues.find((v) => v.id === "mezo-smusd")!.breakEven).toBeNull();
   });
 
+  it("an Ethereum venue with no APR at all gets no break-even", () => {
+    const morpho: Venue = { ...pool, id: "eth-morpho", chain: "Ethereum" };
+    const r = buildYields({ ...sources, venues: [smusd, morpho] }, q(""));
+    expect(r.venues.find((v) => v.id === "eth-morpho")!.breakEven).toBeNull();
+  });
+
   it("a new-trove amount under the minimum returns a notice, not an error", () => {
     const r = buildYields(sources, q("mode=borrower&amount=1000"));
     expect(r.notice).toMatch(/at least 1,800 MUSD/);
