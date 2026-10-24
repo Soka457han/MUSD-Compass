@@ -108,7 +108,7 @@ Every task also meets the Definition of Done: acceptance criteria met, verified 
   - Files: `bot/api/telegram.py` (webhook: checks `X-Telegram-Bot-Api-Secret-Token`, handles one update per request), `bot/{bot,api_client,fmt}.py` (`--poll` mode for local runs), `bot/tests/test_bot.py`, `bot/requirements.txt`, `bot/vercel.json`
   - Deps: T7 (`/yield`, `/carry`), T10 (`/vault`)
 
-- [ ] **T13: `/embed` widget** (S)
+- [x] **T13: `/embed` widget** (S)
   - Acceptance: compact top-3 venues by cash carry, with "Mainnet data · assumes 90-day hold" and a link to the full page; `public/embed.js` injects an iframe from one `<script>` tag (documented on `/developers` in T14).
   - Verify: e2e loads a static HTML page with the tag; iframe shows rows.
   - Files: `src/app/embed/page.tsx`, `public/embed.js`, `e2e/embed.spec.ts`
