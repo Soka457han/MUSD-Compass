@@ -20,7 +20,7 @@ OWN-WORLD: Label-yellow shell band (header and the lead label's price field) wit
 
 STORY: The visitor sees the best cash venue as the largest label, reads the unit-price box ("after costs · assumes 90-day hold"), notices the sticker is locked value, changes amount/mode/days and watches labels re-rank, then taps Deposit or the venue link.
 
-FIRST VIEWPORT: Yellow header band (wordmark left, nav: Yields · Vault · Bot · API). Below, a compact calculator bar (amount input, Hold/Borrow segmented control, 30/90/365 segmented control; rate and trove appear in Borrow). Then the lead label at full width: venue + chain, giant cash % at ~56 px condensed, unit-price box, locked sticker if any, primary action button. Next labels begin above the fold edge. Recorded deviation: the Bot nav item appears only when NEXT_PUBLIC_BOT_URL is set, because the Telegram bot's public username does not exist until the user creates it; no dead link ships.
+FIRST VIEWPORT: Yellow header band (wordmark left, nav: Yields · Vault · Bot · API). Below, a compact calculator bar (amount input, Hold/Borrow segmented control, 30/90/365 segmented control; rate and trove appear in Borrow). Then the lead label at full width: venue + chain, giant cash % at ~56 px condensed, unit-price box, locked sticker if any, primary action button. Next labels begin above the fold edge.
 
 FORM: Shelf-edge price label (unit-price comparison), position 1 on my ordered list (chosen by the user as the pick over the assigned market-rates page). seed:731dd28cc8169f7d. Signature move: the unit-price box — every cash figure has its own boxed assumption line, and locked value lives only on the sticker.
 

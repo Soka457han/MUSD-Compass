@@ -19,7 +19,8 @@ export const smusdAbi = parseAbi([
   "event StrategyYieldReceived(uint256 amount)",
 ]);
 
-export const priceFeedAbi = parseAbi(["function lastGoodPrice() view returns (uint256)"]);
+// Mezo PriceFeed exposes fetchPrice() (0x0fdb11cf); lastGoodPrice() reverts (checked 24 Oct).
+export const priceFeedAbi = parseAbi(["function fetchPrice() view returns (uint256)"]);
 
 export const poolAbi = parseAbi([
   "function getReserves() view returns (uint256 reserve0, uint256 reserve1, uint256 blockTimestampLast)",

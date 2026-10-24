@@ -62,7 +62,7 @@ export async function fetchMezo(mezoPriceUsd: number): Promise<MezoData> {
   "use cache: remote";
   cacheLife({ revalidate: 300, expire: 3600 });
   const now = new Date().toISOString();
-  const btcPrice = Number(formatUnits(await mezoClient.readContract({ address: MAINNET.priceFeed, abi: priceFeedAbi, functionName: "lastGoodPrice" }), 18));
+  const btcPrice = Number(formatUnits(await mezoClient.readContract({ address: MAINNET.priceFeed, abi: priceFeedAbi, functionName: "fetchPrice" }), 18));
 
   let borrow = FALLBACK_BORROW_PARAMS;
   let paramsLive = true;

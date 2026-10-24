@@ -144,9 +144,9 @@ Component library and styling; cache interval (≈5 min); risk-tag wording; repo
 | 22 | Sample trove for the planner is readable live | VERIFIED | `SortedTroves.getFirst()` = `0x593c…5bb5` |
 | 23 | Borrow debt = amount + fee + 200; interest on the whole principal; min net debt counts amount + fee | VERIFIED | `BorrowerOperations.sol` (`netDebt += fee`, `increaseTroveDebt(compositeDebt)`) |
 | 24 | Testnet sMUSD receives yield: weekly Thu ~00:20 UTC (8, 15, 22 Oct) + 3 extra on 24 Oct; supply 888k; `claimYield` with 0 pending returns 0 (no revert); testnet ≈ 4.5 s/block | VERIFIED | testnet logs + block timestamps, simulation |
-| 25 | Mainnet Mezo pools readable; BTC price from PriceFeed ($80,478) | VERIFIED | `getReserves`, `token0/1`, `stable`, `lastGoodPrice` |
+| 25 | Mainnet Mezo pools readable; BTC price from PriceFeed ($80,478) | VERIFIED | `token0/1` + `balanceOf`, PriceFeed `fetchPrice()` (`lastGoodPrice()` reverts — fixed 25 Oct after the live deploy showed Mezo pools unavailable) |
 | 26 | Curve Merkl listings are nested (Stake DAO + Convex TVL ≈ gauge TVL) | VERIFIED | Merkl API |
-| 27 | Vercel deploy can reach Mezo RPC + Merkl | PENDING (first deploy) | browser fetches to both work |
+| 27 | Vercel deploy can reach Mezo RPC + Merkl | VERIFIED | musd-compass.vercel.app/api/health, 24 Oct 19:38 UTC: mainnet, fallback, testnet, Ethereum, Merkl all OK in 99–213 ms |
 | 30 | The Mezo app lists 6 MUSD pools; TVL from token balances matches the app (mUSDC/MUSD-10 $5.34M vs app $5.29M; BTC/MUSD-200 $45.8k vs $45.78k) | VERIFIED | Mezo app Pools page at desktop width + `CLFactory.getPool` + `balanceOf`, 24 Oct |
 | 29 | Mainnet RPC fallbacks: Validation Cloud and `rpc-internal.mezo.org` answer chainId 31612 + `eth_getLogs`; viem's default `rpc.mezo.org` failed | VERIFIED | browser checks 24 Oct |
 | 28 | x402 client pays MUSD via Permit2 with an EIP-2612 permit for the exact amount; its ERC-20-approval fallback signs `maxUint256` (so the server must not offer it) | VERIFIED | `@x402/evm` 2.28 source; `DEFAULT_ASSETS` lists MUSD for 31611/31612 |

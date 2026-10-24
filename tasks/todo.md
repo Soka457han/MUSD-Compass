@@ -48,7 +48,7 @@ Every task also meets the Definition of Done: acceptance criteria met, verified 
   - Deps: T2
 
 - [x] **T6a: Mezo adapters** (M)
-  - Acceptance: Stability Pool total deposits; 3 Mezo pools' TVL (`getReserves`, token decimals, BTC price from `lastGoodPrice`); live borrow params (fee, min net debt, gas compensation) with constant fallback.
+  - Acceptance: Stability Pool total deposits; 3 Mezo pools' TVL (`getReserves`, token decimals, BTC price from PriceFeed `fetchPrice()`); live borrow params (fee, min net debt, gas compensation) with constant fallback.
   - Verify: unit tests with mocked clients; pool TVLs match the Mezo app (≈ $5.34M mUSDC/MUSD-10 … $6k MEZO/MUSD-200 on 24 Oct).
   - Files: `src/lib/sources/{stabilityPool,mezoPools,borrowParams}.ts`, `tests/unit/mezoSources.test.ts`
   - Deps: T2

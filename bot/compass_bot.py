@@ -5,9 +5,12 @@ Source: https://core.telegram.org/bots/api#making-requests-when-getting-updates
 
 from __future__ import annotations
 
+import os
+
+WEB_URL = os.environ.get("COMPASS_WEB_URL", "https://musd-compass.vercel.app")
 HELP = (
     "<b>MUSD Compass</b> — where Mezo MUSD earns the most after costs.\n"
-    "Bot commands are being built; the web app is at the link below."
+    f"Bot commands are being built; meanwhile open {WEB_URL}"
 )
 
 

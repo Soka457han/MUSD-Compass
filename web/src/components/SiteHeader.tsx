@@ -1,12 +1,11 @@
 import Link from "next/link";
 import { CompassMark } from "./Icons";
 
-// The bot link appears once its public t.me URL is configured (NEXT_PUBLIC_BOT_URL).
-const BOT = process.env.NEXT_PUBLIC_BOT_URL;
+const BOT = process.env.NEXT_PUBLIC_BOT_URL ?? "https://t.me/musd_compass_bot";
 const NAV = [
   { href: "/", label: "Yields" },
   { href: "/vault", label: "Vault" },
-  ...(BOT ? [{ href: BOT, label: "Bot" }] : []),
+  { href: BOT, label: "Bot" },
   { href: "/api/yields", label: "API" },
 ];
 
