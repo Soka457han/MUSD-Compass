@@ -1,0 +1,14 @@
+# secrets — never commit
+.env
+.env.*
+!.env.example
+# python
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+# os
+.DS_Store
+Thumbs.db
+# design-hook cache
+.impeccable/
