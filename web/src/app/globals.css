@@ -1,26 +1,109 @@
 @import "tailwindcss";
+@import "@fontsource-variable/archivo/wdth.css";
 
+/* Shelf-edge label world: steel shelf, white label stock, label-yellow price field, red offer sticker. */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --shelf: #e6e9ed;
+  --label: #ffffff;
+  --ink: #111214;
+  --ink-muted: #474c54;
+  --line: #c3c9d0;
+  --yellow: #ffd200;
+  --on-yellow: #111214;
+  --sticker: #c8202a;
+  --on-sticker: #ffffff;
+  --danger-text: #b3141c;
+  --focus: #111214;
+  color-scheme: light;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --shelf: #15171a;
+    --label: #22252a;
+    --ink: #f1f2f0;
+    --ink-muted: #b2b8bf;
+    --line: #3b4048;
+    --yellow: #ffd200;
+    --on-yellow: #111214;
+    --sticker: #c8202a;
+    --on-sticker: #ffffff;
+    --danger-text: #ff8a8f;
+    --focus: #ffd200;
+    color-scheme: dark;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: system-ui, sans-serif;
+@theme inline {
+  --color-shelf: var(--shelf);
+  --color-label: var(--label);
+  --color-ink: var(--ink);
+  --color-ink-muted: var(--ink-muted);
+  --color-line: var(--line);
+  --color-yellow: var(--yellow);
+  --color-on-yellow: var(--on-yellow);
+  --color-sticker: var(--sticker);
+  --color-on-sticker: var(--on-sticker);
+  --color-danger-text: var(--danger-text);
+  --font-sans: "Archivo Variable", system-ui, sans-serif;
+}
+
+html {
+  background: var(--shelf);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  font-variant-numeric: tabular-nums;
+  -webkit-text-size-adjust: 100%;
+  accent-color: var(--ink);
+  caret-color: var(--ink);
+}
+
+::selection {
+  background: var(--yellow);
+  color: var(--on-yellow);
+}
+
+:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+/* On the yellow band a yellow ring would vanish (dark mode): ring in its ink instead. */
+.bg-yellow :focus-visible {
+  outline-color: var(--on-yellow);
+}
+
+a {
+  text-underline-offset: 0.18em;
+  text-decoration-thickness: 1px;
+}
+
+/* Price numerals: the label's condensed, heavy figures. */
+.price {
+  font-stretch: 68%;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  line-height: 0.9;
+}
+
+@media (prefers-color-scheme: dark) {
+  .price-shelf {
+    color: var(--yellow);
+  }
+}
+
+/* The one motion moment: labels slide to their new rank when the calculator changes. */
+::view-transition-group(*) {
+  animation-duration: 260ms;
+  animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
 }

@@ -27,3 +27,15 @@ export const poolAbi = parseAbi([
   "function token1() view returns (address)",
   "function stable() view returns (bool)",
 ]);
+
+export const borrowerOperationsAbi = parseAbi([
+  "function minNetDebt() view returns (uint256)",
+  "function borrowingRate() view returns (uint256)",
+  "function MUSD_GAS_COMPENSATION() view returns (uint256)",
+]);
+
+export const interestRateManagerAbi = parseAbi(["function interestRate() view returns (uint16)"]);
+
+export const stabilityPoolAbi = parseAbi(["function getTotalMUSDDeposits() view returns (uint256)"]);
+
+export const erc4626Abi = parseAbi(["function totalAssets() view returns (uint256)"]);

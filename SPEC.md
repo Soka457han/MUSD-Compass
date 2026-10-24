@@ -112,7 +112,7 @@ export function borrowCostPct(i: CarryInput): number {
 Naming: `camelCase` functions, `PascalCase` components and types, files `camelCase.ts`. Python: PEP 8, type hints, `ruff format`. Comments only for the *why*.
 
 ## Testing Strategy
-- **Unit (Vitest), `web/tests/unit`**: every `lib/carry` function, with the design's worked numbers as fixed cases: 2.72% borrower carry, debt 2,202, 1.10% interest, fee 0.41 / 1.22 / 0.10 %/yr, dilution 47.26%, Uniswap cap ≈383k, minimum 1,798.21, identity guard rejecting mUSD / smUSD / Pharos look-alikes. Adapters are tested against recorded fixtures (Merkl JSON, sMUSD logs → 4.23%).
+- **Unit (Vitest), `web/tests/unit`**: every `lib/carry` function, with the design's worked numbers as fixed cases: 2.72% borrower carry, debt 2,202, 1.10% interest, fee 0.41 / 1.22 / 0.10 %/yr, dilution 47.26%, Uniswap cap ≈383k, minimum 1,798.21, identity guard rejecting mUSD / smUSD / Pharos look-alikes. Adapters are tested against recorded fixtures (Merkl JSON, sMUSD logs → 4.01% over 14 days, 4.23% over 7).
 - **Route contract tests**: `/api/yields` with mocked adapters: shape, sorting (cash desc, "—" rows last), query validation (bad amount → 400), unavailable source → venue still listed.
 - **E2E (Playwright, 360×740)**: home renders a sorted table with no wallet; calculator changes numbers; `/vault` shows the testnet banner; `/embed` renders; axe reports **0 serious/critical** on `/`, `/vault`, `/embed`, `/get-test-musd`.
 - **Bot (pytest)**: command parsing and message formatting with a mocked API; error text when the API is down.
@@ -131,7 +131,7 @@ bot: no bot token at runtime (replies go back inside the webhook response; the t
 
 ## Success Criteria (Wave 1 is done when all MUST lines are true)
 MUST
-1. `GET /api/yields` returns 8 venues (sMUSD, Stability Pool, 3 Mezo pools, Uniswap V4, Curve, Morpho) with the §7 fields; p95 < 1.5 s when cached; every venue has `source` and `updatedAt`.
+1. `GET /api/yields` returns 11 venues (sMUSD, Stability Pool, 6 Mezo MUSD pools, Uniswap V4, Curve, Morpho) with the §7 fields; p95 < 1.5 s when cached; every venue has `source` and `updatedAt`.
 2. The sMUSD realised APR from live logs is within ±0.3 pt of an independent recomputation run on the same day.
 3. The default view (holder, 2,000 MUSD, 90 days) is sorted by cash carry. Rows without an APR show "—" and sort last. Every carry figure shows its holding period.
 4. On a 360 px phone with no wallet, the home page loads and shows numbers in < 3 s on 4G (Lighthouse mobile), with no horizontal scroll.

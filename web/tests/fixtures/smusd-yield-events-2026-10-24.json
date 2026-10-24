@@ -1,0 +1,17 @@
+{
+  "note": "Mainnet sMUSD 0xb4D4…51CC yield events, blocks 12393774–12733773, recorded 24 Oct 2026 via Boar + Validation Cloud RPC.",
+  "head": 12733773,
+  "headTimestamp": 1792856378,
+  "totalSupply": "7382555220886352475979905",
+  "events": [
+    {"kind":"ProtocolYieldReceived","blockNumber":12685456,"timestamp":1792675011,"amount":"18750626374977889"},
+    {"kind":"ProtocolYieldReceived","blockNumber":12674397,"timestamp":1792632050,"amount":"2403730768849520359015"},
+    {"kind":"ProtocolYieldReceived","blockNumber":12673468,"timestamp":1792628450,"amount":"3553930653856734970207"},
+    {"kind":"ProtocolYieldReceived","blockNumber":12637748,"timestamp":1792489872,"amount":"234790611901096870"},
+    {"kind":"ProtocolYieldReceived","blockNumber":12621047,"timestamp":1792425437,"amount":"33483840694710231759"},
+    {"kind":"ProtocolYieldReceived","blockNumber":12560345,"timestamp":1792189892,"amount":"9529457013423532060"},
+    {"kind":"ProtocolYieldReceived","blockNumber":12550177,"timestamp":1792150554,"amount":"23166929415689956553"},
+    {"kind":"ProtocolYieldReceived","blockNumber":12517689,"timestamp":1792023622,"amount":"1924144059497675882745"},
+    {"kind":"ProtocolYieldReceived","blockNumber":12517691,"timestamp":1792023630,"amount":"3400816163756489069103"}
+  ]
+}

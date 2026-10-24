@@ -10,10 +10,15 @@ export const MAINNET = {
   borrowerOperations: "0x44b1bac67dDA612a41a58AAf779143B181dEe031",
   interestRateManager: "0x4a453700d157717fe02fb62e7700ed7845048285",
   btc: "0x7b7C000000000000000000000000000000000000",
+  mezo: "0x7B7c000000000000000000000000000000000001",
   merklVeMezo: "0x089A6af90041c3ac734cbdeFa84832Aa7fBF67C8",
+  // MUSD pools listed in the Mezo app (24 Oct). CL addresses from CLFactory.getPool, basic from PoolFactory.getPool.
   pools: {
-    musdBtc: "0x52e604c44417233b6CcEDDDc0d640A405Caacefb",
-    musdMusdc: "0xEd812AEc0Fecc8fD882Ac3eccC43f3aA80A6c356",
+    musdcMusdCl10: "0xcc372b7e15535ab225fe17c1075831d38ef7ac1a",
+    btcMusdCl200: "0x9cbc1537d255768b431488305b1c7efc2ac95022",
+    mezoMusdCl200: "0x1d6e8d24c133535f2d00676f66a0e824f84765ff",
+    btcMusd: "0x52e604c44417233b6CcEDDDc0d640A405Caacefb",
+    musdcMusd: "0xEd812AEc0Fecc8fD882Ac3eccC43f3aA80A6c356",
     musdMusdt: "0x10906a9E9215939561597b4C8e4b98F93c02031A",
   },
 } as const;

@@ -4,19 +4,19 @@ Every task also meets the Definition of Done: acceptance criteria met, verified 
 
 ## Phase 1: Foundation
 
-- [ ] **T1: Scaffold repo + CI** (M)
+- [x] **T1: Scaffold repo + CI** (M)
   - Acceptance: `web/` Next.js 16 TS app with Vitest, Playwright 1.56.0 (with one placeholder e2e test so CI has something to run; CI runs `npx playwright install --with-deps chromium`), ESLint, `typecheck` script; `bot/` skeleton; MIT LICENSE, `.env.example`, `.gitignore` (blocks `.env*`); CI workflow runs lint → typecheck → test → build → e2e and pytest.
   - Verify: `npm run lint && npm run typecheck && npm test && npm run build` pass; `pytest -q` passes (1 placeholder test).
   - Files: `web/package.json`, `web/vitest.config.ts`, `web/playwright.config.ts`, `.github/workflows/ci.yml`, `.env.example`, `README.md`
   - Deps: none
 
-- [ ] **T2: `chain` module + `/api/health`** (S)
+- [x] **T2: `chain` module + `/api/health`** (S)
   - Acceptance (also: a 10-line hello webhook in `bot/api/telegram.py` so Checkpoint 0 proves Python functions run on Vercel): chains from viem (`mezo`, `mezoTestnet`, `mainnet`), all design §14 addresses checksummed in one file, minimal ABIs, clients with fallback RPC; `/api/health` returns mainnet + testnet block numbers, Merkl status, Ethereum gas price.
   - Verify: unit test checksums every address; `curl localhost:3000/api/health` shows 5 OK sources (mainnet primary + fallback, testnet, Merkl, Ethereum).
   - Files: `src/lib/chain/{chains,addresses,abis,clients}.ts`, `src/app/api/health/route.ts`, `tests/unit/addresses.test.ts`
   - Deps: T1
 
-- [ ] **T3: `carry` math (pure)** (S)
+- [x] **T3: `carry` math (pure)** (S)
   - Acceptance: `borrowCostPct`, `cashCarry`, `totalCarry`, `dilutedApr`, `breakEven` (scan from 100 or the new-trove minimum = 1800/1.001 rounded up to cents = 1,798.21, to 1M; returns from / range / never, for cash and total), `isMezoMusd(chainId, address)`.
   - Verify: tests assert 2.72%, 2,202, 1.10%, 0.41/1.22/0.10, 47.26%, cap ≈383k, 1,798.21, and look-alike rejection.
   - Files: `src/lib/carry/{carry,breakEven,identity}.ts`, `tests/unit/carry.test.ts`, `tests/unit/identity.test.ts`
@@ -35,37 +35,37 @@ Every task also meets the Definition of Done: acceptance criteria met, verified 
 
 ## Phase 2: Live read path
 
-- [ ] **T4: Merkl adapter** (M)
+- [x] **T4: Merkl adapter** (M)
   - Acceptance: fetch opportunities; keep only veMEZO-reward listings whose pool holds Mezo MUSD by address; Curve outer listing = one venue with nested routes as chips (never summed); fields `apr`, `nativeApr`, `tvl`, `dailyRewards`, `latestCampaignEnd`; MEZO price from the tokens endpoint; keeps the raw listings (incl. nested routes) for the premium bundle.
   - Verify: fixture recorded today (8 listings incl. 3 look-alikes) → exactly 2 venues; Curve TVL 244,750, apr 4.82.
   - Files: `src/lib/sources/merkl.ts`, `tests/fixtures/merkl-*.json`, `tests/unit/merkl.test.ts`
   - Deps: T2, T3
 
-- [ ] **T5: sMUSD adapter (realised 7-day APR)** (M)
-  - Acceptance: 7 days of `ProtocolYieldReceived` + `StrategyYieldReceived` read in sequential ≤10k-block windows with retry; APR = Σ ÷ supply × 365/7; returns last distribution time and the raw yield events (for the premium bundle); same code works on testnet (for the "last distribution" label).
-  - Verify: fixture logs → 4.23% (±0.01); live run matches an independent recomputation within ±0.3 pt.
+- [x] **T5: sMUSD adapter (realised 14-day APR)** (M)
+  - Acceptance: 14 days of `ProtocolYieldReceived` + `StrategyYieldReceived` read in ≤10k-block windows (4 concurrent) with retry; APR = Σ ÷ supply × 365/14; returns last distribution time and the raw yield events (for the premium bundle); same code works on testnet (for the "last distribution" label).
+  - Verify: fixture logs → 4.01% (14 d) and 4.23% (7 d); live run matches an independent recomputation within ±0.3 pt.
   - Files: `src/lib/sources/smusd.ts`, `tests/fixtures/smusd-logs.json`, `tests/unit/smusd.test.ts`
   - Deps: T2
 
-- [ ] **T6a: Mezo adapters** (M)
+- [x] **T6a: Mezo adapters** (M)
   - Acceptance: Stability Pool total deposits; 3 Mezo pools' TVL (`getReserves`, token decimals, BTC price from `lastGoodPrice`); live borrow params (fee, min net debt, gas compensation) with constant fallback.
-  - Verify: unit tests with mocked clients; live smoke prints sane values (pools ≈ $77k / $12k / $13k on 24 Oct).
+  - Verify: unit tests with mocked clients; pool TVLs match the Mezo app (≈ $5.34M mUSDC/MUSD-10 … $6k MEZO/MUSD-200 on 24 Oct).
   - Files: `src/lib/sources/{stabilityPool,mezoPools,borrowParams}.ts`, `tests/unit/mezoSources.test.ts`
   - Deps: T2
 
-- [ ] **T6b: Ethereum adapters** (S)
+- [x] **T6b: Ethereum adapters** (S)
   - Acceptance: Morpho Alpha MUSD Core `totalAssets` + "inactive" tag under $1k; round-trip cost = bridge fee both ways (from a bridge quote if one is reachable, else a stated fixed estimate labelled "est.") + live Ethereum gasPrice × fixed gas units (stated) × ETH price from Merkl tokens endpoint (chainId 1, WETH) + Mezo-side gas; basis returned in the response.
   - Verify: unit tests with mocked clients; live smoke prints the cost in USD.
   - Files: `src/lib/sources/{morpho,ethCosts}.ts`, `tests/unit/ethSources.test.ts`
   - Deps: T2
 
-- [ ] **T7: `GET /api/yields`** (M)
+- [x] **T7: `GET /api/yields`** (M)
   - Acceptance: query `amount, mode, trove, days, rate` validated (400 with a plain-English message on bad input; a new-trove amount under 1,798.21 returns 200 with a `notice` "New troves need at least 1,800 MUSD of debt — try 1,800 or use holder mode"); response per design §7 incl. `breakEvenCash/Total` and `assumptions`; sorted by cash carry, "—" rows last; dead source → venue with `status: "unavailable"`; source data cached via `unstable_cache` (revalidate 300, shared across instances), carry computed per request; CORS open; per-IP rate limiter in `src/lib/rateLimit.ts`, reused by every API route, skipped when the `x-compass-bot` header matches `BOT_API_KEY`.
   - Verify: contract tests with mocked adapters; `curl '/api/yields?amount=2000&mode=borrower&days=90&rate=1'` shows sMUSD cash ≈ 2.72% at today's APR.
   - Files: `src/app/api/yields/route.ts`, `src/lib/cache.ts`, `src/lib/yields.ts`, `tests/unit/yields.test.ts`
   - Deps: T3, T4, T5, T6a, T6b
 
-- [ ] **T8: Home page: venue table + calculator** (M)
+- [x] **T8: Home page: venue table + calculator** (M)
   - Acceptance: phone-first (360 px, no horizontal scroll); inputs amount / mode / trove / days (30·90·365) / rate; columns venue, chain, liquid APR, locked APR 🔒, TVL, cash carry, total carry 🔒, risk tags, ends, source, updated-at; Curve "also via" route chips; "Assumes N-day hold" on every figure; risk tags; break-even (cash, and total 🔒) on Ethereum rows; venue notes from design §5.1 (sMUSD gauge note "emissions instead of fees", Stability Pool note, "fees not reported", "est."); "Mainnet data" label; links to Mezo app, Merkl, Portal; works with JS-light first paint (server-rendered table); installable PWA via `app/manifest.ts` + one icon.
   - Verify: e2e at 360×740 (all columns present, table sorted by cash carry, "—" rows last, input change updates numbers, holding-period label shown); axe 0 serious/critical.
   - Files: `src/app/page.tsx`, `src/components/{VenueTable,Calculator,RiskTags}.tsx`, `e2e/home.spec.ts`

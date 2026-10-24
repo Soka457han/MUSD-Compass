@@ -10,5 +10,10 @@ __pycache__/
 # os
 .DS_Store
 Thumbs.db
-# design-hook cache
-.impeccable/
+# impeccable: keep design.json and surface briefs; local caches, seeds and captures stay out
+.impeccable/*
+!.impeccable/design.json
+!.impeccable/surfaces/
+
+# impeccable review captures (local only)
+web/.impeccable/review/

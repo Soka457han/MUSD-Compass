@@ -1,0 +1,319 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-25T00:00:00Z",
+  "title": "Design System: MUSD Compass",
+  "extensions": {
+    "colorMeta": {
+      "label-yellow": {
+        "role": "primary",
+        "displayName": "Label Yellow",
+        "canonical": "#ffd200",
+        "tonalRamp": [
+          "#3d3100",
+          "#665300",
+          "#8f7500",
+          "#bf9c00",
+          "#ffd200",
+          "#ffe04d",
+          "#ffeb8f",
+          "#fff6cc"
+        ]
+      },
+      "on-yellow": {
+        "role": "primary",
+        "displayName": "On-Yellow Ink",
+        "canonical": "#111214",
+        "tonalRamp": [
+          "#111214",
+          "#24262a",
+          "#383b40",
+          "#4d5158",
+          "#6b7078",
+          "#959aa1",
+          "#c3c7cc",
+          "#eceef0"
+        ]
+      },
+      "offer-red": {
+        "role": "secondary",
+        "displayName": "Offer Red",
+        "canonical": "#c8202a",
+        "tonalRamp": [
+          "#3a0a0d",
+          "#5f1015",
+          "#87171e",
+          "#c8202a",
+          "#e04a52",
+          "#ec8186",
+          "#f5b7ba",
+          "#fbe3e4"
+        ]
+      },
+      "on-sticker": {
+        "role": "secondary",
+        "displayName": "Sticker White",
+        "canonical": "#ffffff"
+      },
+      "shelf-steel": {
+        "role": "neutral",
+        "displayName": "Shelf Steel",
+        "canonical": "#e6e9ed",
+        "tonalRamp": [
+          "#1f2226",
+          "#3b4048",
+          "#5b626b",
+          "#7d858f",
+          "#a1a8b1",
+          "#c3c9d0",
+          "#e6e9ed",
+          "#f5f6f8"
+        ]
+      },
+      "label-stock": {
+        "role": "neutral",
+        "displayName": "Label Stock",
+        "canonical": "#ffffff"
+      },
+      "ink": {
+        "role": "neutral",
+        "displayName": "Ink",
+        "canonical": "#111214"
+      },
+      "ink-muted": {
+        "role": "neutral",
+        "displayName": "Muted Ink",
+        "canonical": "#474c54"
+      },
+      "rule-grey": {
+        "role": "neutral",
+        "displayName": "Rule Grey",
+        "canonical": "#c3c9d0"
+      },
+      "shelf-charcoal": {
+        "role": "neutral",
+        "displayName": "Charcoal Shelf (dark)",
+        "canonical": "#15171a"
+      },
+      "label-graphite": {
+        "role": "neutral",
+        "displayName": "Graphite Label (dark)",
+        "canonical": "#22252a"
+      },
+      "ink-dark": {
+        "role": "neutral",
+        "displayName": "Ink (dark)",
+        "canonical": "#f1f2f0"
+      },
+      "ink-muted-dark": {
+        "role": "neutral",
+        "displayName": "Muted Ink (dark)",
+        "canonical": "#b2b8bf"
+      },
+      "rule-grey-dark": {
+        "role": "neutral",
+        "displayName": "Rule Grey (dark)",
+        "canonical": "#3b4048"
+      },
+      "danger-text": {
+        "role": "secondary",
+        "displayName": "Danger Text",
+        "canonical": "#b3141c",
+        "tonalRamp": [
+          "#3a0608",
+          "#5e0a0e",
+          "#860f15",
+          "#b3141c",
+          "#d9454c",
+          "#ff8a8f",
+          "#ffbcbf",
+          "#ffe6e7"
+        ]
+      },
+      "danger-text-dark": {
+        "role": "secondary",
+        "displayName": "Danger Text (dark)",
+        "canonical": "#ff8a8f"
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Lead Price",
+        "purpose": "The lead label's cash figure only; decimals and % at 0.55em, top-aligned."
+      },
+      "headline": {
+        "displayName": "Shelf Price",
+        "purpose": "Cash figure on every other ranked label; amount input uses the same face at 1.5rem."
+      },
+      "title": {
+        "displayName": "Venue Title",
+        "purpose": "Venue names; section headings at 0.875rem; wordmark at width 88%."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Controls, buttons (700), notices, list rows."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Legends, unit-price box, chain badge, tags, captions, footer."
+      }
+    },
+    "shadows": [
+      {
+        "name": "label-lift",
+        "value": "0 1px 2px rgb(0 0 0 / 0.08), 0 8px 20px -12px rgb(0 0 0 / 0.25)",
+        "purpose": "Ranked price label cards only."
+      }
+    ],
+    "motion": [
+      {
+        "name": "re-rank",
+        "value": "260ms cubic-bezier(0.16, 1, 0.3, 1)",
+        "purpose": "View transition when calculator choices re-rank labels; the one motion moment."
+      },
+      {
+        "name": "segment-fill",
+        "value": "150ms colors",
+        "purpose": "Segmented option checked fill."
+      },
+      {
+        "name": "disclosure-chevron",
+        "value": "200ms transform",
+        "purpose": "Why-this-number chevron rotates 90deg."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "sm",
+        "value": "640px"
+      },
+      {
+        "name": "md",
+        "value": "768px"
+      },
+      {
+        "name": "container",
+        "value": "64rem"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Ink-filled action; once per screen, on the lead label.",
+      "html": "<a class=\"ds-btn-primary\" href=\"#\">Deposit (testnet)</a>",
+      "css": ".ds-btn-primary { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 16px; border-radius: 4px; background: var(--ink, #111214); color: var(--label, #ffffff); font-family: 'Archivo Variable', system-ui, sans-serif; font-size: 0.875rem; font-weight: 700; text-decoration: none; } .ds-btn-primary:hover { text-decoration: underline; text-underline-offset: 0.18em; } .ds-btn-primary:focus-visible { outline: 3px solid var(--focus, #111214); outline-offset: 2px; }"
+    },
+    {
+      "name": "Outline Button",
+      "kind": "button",
+      "refersTo": "button-outline",
+      "description": "2px ink outline action on every non-lead label; external links add the arrow icon.",
+      "html": "<a class=\"ds-btn-outline\" href=\"#\">Provide liquidity <svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M7 17 17 7M9 7h8v8\"/></svg></a>",
+      "css": ".ds-btn-outline { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 16px; border: 2px solid var(--ink, #111214); border-radius: 4px; background: var(--label, #ffffff); color: var(--ink, #111214); font-family: 'Archivo Variable', system-ui, sans-serif; font-size: 0.875rem; font-weight: 700; text-decoration: none; } .ds-btn-outline:hover { text-decoration: underline; text-underline-offset: 0.18em; } .ds-btn-outline:focus-visible { outline: 3px solid var(--focus, #111214); outline-offset: 2px; }"
+    },
+    {
+      "name": "Segmented Control",
+      "kind": "input",
+      "refersTo": "segmented-option",
+      "description": "Radio group in a 2px ink frame; checked option fills ink.",
+      "html": "<fieldset class=\"ds-seg\"><legend>Hold for (days)</legend><div class=\"ds-seg-row\"><label><input type=\"radio\" name=\"d\">30</label><label><input type=\"radio\" name=\"d\" checked>90</label><label><input type=\"radio\" name=\"d\">365</label></div></fieldset>",
+      "css": ".ds-seg { border: 0; padding: 0; margin: 0; font-family: 'Archivo Variable', system-ui, sans-serif; color: var(--ink, #111214); } .ds-seg legend { margin-bottom: 4px; font-size: 0.75rem; font-weight: 600; } .ds-seg-row { display: flex; border: 2px solid var(--ink, #111214); border-radius: 4px; background: var(--label, #ffffff); } .ds-seg-row label { flex: 1; display: flex; align-items: center; justify-content: center; min-height: 44px; padding: 0 8px; font-size: 0.875rem; font-weight: 600; cursor: pointer; transition: background-color 150ms, color 150ms; } .ds-seg-row input { position: absolute; opacity: 0; width: 1px; height: 1px; } .ds-seg-row label:has(:checked) { background: var(--ink, #111214); color: var(--label, #ffffff); } .ds-seg-row label:has(:focus-visible) { outline: 3px solid var(--focus, #111214); outline-offset: 2px; }"
+    },
+    {
+      "name": "Amount Input",
+      "kind": "input",
+      "refersTo": "input-amount",
+      "description": "Amount field set in the condensed price face; errors in Danger Text.",
+      "html": "<label class=\"ds-field\"><span>Amount (MUSD)</span><input class=\"ds-input-amount\" inputmode=\"decimal\" value=\"2000\"></label><p class=\"ds-error\" role=\"alert\">Enter an amount above 0.</p>",
+      "css": ".ds-field { display: block; font-family: 'Archivo Variable', system-ui, sans-serif; color: var(--ink, #111214); } .ds-field span { display: block; margin-bottom: 4px; font-size: 0.75rem; font-weight: 600; } .ds-input-amount { display: block; width: 100%; height: 44px; padding: 0 8px; border: 2px solid var(--ink, #111214); border-radius: 4px; background: var(--label, #ffffff); color: var(--ink, #111214); font: inherit; font-size: 1.5rem; font-weight: 800; font-stretch: 68%; line-height: 0.9; letter-spacing: -0.01em; font-variant-numeric: tabular-nums; } .ds-input-amount:focus-visible { outline: 3px solid var(--focus, #111214); outline-offset: 2px; } .ds-error { margin: 4px 0 0; color: var(--danger-text, #b3141c); font-family: 'Archivo Variable', system-ui, sans-serif; font-size: 0.875rem; font-weight: 600; }"
+    },
+    {
+      "name": "Header Navigation",
+      "kind": "nav",
+      "refersTo": "nav-item-current",
+      "description": "Yellow band; current item inverts to an on-yellow block; focus ring is on-yellow ink in both schemes.",
+      "html": "<header class=\"ds-header\"><span class=\"ds-wordmark\"><svg width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><circle cx=\"12\" cy=\"12\" r=\"10\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"/><path d=\"M15.5 8.5 13.4 13.4 8.5 15.5l2.1-4.9z\" fill=\"currentColor\"/></svg>MUSD Compass</span><nav><a href=\"#\" aria-current=\"page\">Yields</a><a href=\"#\">Vault</a><a href=\"#\">API</a></nav></header>",
+      "css": ".ds-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 16px; background: var(--yellow, #ffd200); color: var(--on-yellow, #111214); font-family: 'Archivo Variable', system-ui, sans-serif; } .ds-wordmark { display: flex; align-items: center; gap: 8px; font-weight: 700; font-stretch: 88%; letter-spacing: -0.025em; } .ds-header nav { display: flex; gap: 2px; font-size: 0.875rem; font-weight: 600; } .ds-header nav a { display: inline-flex; align-items: center; min-height: 44px; padding: 0 8px; border-radius: 4px; color: inherit; text-decoration: none; } .ds-header nav a:hover { text-decoration: underline; } .ds-header nav a[aria-current=page] { background: var(--on-yellow, #111214); color: var(--yellow, #ffd200); } .ds-header nav a:focus-visible { outline: 3px solid var(--on-yellow, #111214); outline-offset: 2px; }"
+    },
+    {
+      "name": "Tag Chip",
+      "kind": "chip",
+      "refersTo": "tag-chip",
+      "description": "Risk and context fact on a shelf-steel fill.",
+      "html": "<span class=\"ds-tag\">No lock, no withdrawal fee</span>",
+      "css": ".ds-tag { display: inline-block; padding: 2px 6px; border-radius: 4px; background: var(--shelf, #e6e9ed); color: var(--ink, #111214); font-family: 'Archivo Variable', system-ui, sans-serif; font-size: 0.75rem; }"
+    },
+    {
+      "name": "Lead Price Label",
+      "kind": "card",
+      "refersTo": "price-field-lead",
+      "description": "The signature: white stock, 4px ink top rule, yellow price field, boxed unit price.",
+      "html": "<article class=\"ds-label\"><div class=\"ds-label-top\"><h3>MUSD Savings Vault (sMUSD)</h3><span class=\"ds-chain\">Mezo</span></div><div class=\"ds-price-field\"><p class=\"ds-price\">4<span>.01%</span></p><p class=\"ds-cap\">cash / yr<br>after costs</p></div><p class=\"ds-unit\"><b>Unit price:</b> 4.01% yield − 0.00% costs · assumes 90-day hold</p></article>",
+      "css": ".ds-label { background: var(--label, #ffffff); color: var(--ink, #111214); border-top: 4px solid var(--ink, #111214); box-shadow: 0 1px 2px rgb(0 0 0 / 0.08), 0 8px 20px -12px rgb(0 0 0 / 0.25); padding-bottom: 12px; font-family: 'Archivo Variable', system-ui, sans-serif; font-variant-numeric: tabular-nums; } .ds-label-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; padding: 12px 16px 0; } .ds-label h3 { margin: 0; font-size: 1rem; font-weight: 700; font-stretch: 90%; line-height: 1.375; } .ds-chain { border: 1px solid var(--ink, #111214); border-radius: 4px; padding: 2px 6px; font-size: 0.75rem; font-weight: 600; } .ds-price-field { display: flex; align-items: flex-end; gap: 12px; margin-top: 8px; padding: 12px 16px; background: var(--yellow, #ffd200); color: var(--on-yellow, #111214); } .ds-price { margin: 0; font-size: 3.5rem; font-weight: 800; font-stretch: 68%; line-height: 0.9; letter-spacing: -0.01em; } .ds-price span { font-size: 0.55em; vertical-align: top; } .ds-cap { margin: 0 0 2px; font-size: 0.75rem; font-weight: 600; line-height: 1.25; } .ds-unit { margin: 8px 16px 0; border: 1px solid var(--ink, #111214); padding: 4px 8px; font-size: 0.75rem; line-height: 1.375; }"
+    },
+    {
+      "name": "Offer Sticker",
+      "kind": "custom",
+      "refersTo": "offer-sticker",
+      "description": "Locked veMEZO value; red, rotated -1deg, lock icon. Never inside the price.",
+      "html": "<p class=\"ds-sticker\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><rect x=\"4\" y=\"10.5\" width=\"16\" height=\"10\" rx=\"1.5\"/><path d=\"M8 10.5V7.5a4 4 0 0 1 8 0v3\"/></svg>+4.77% locked veMEZO <span>· total 4.64%</span></p>",
+      "css": ".ds-sticker { display: inline-flex; align-items: center; gap: 6px; margin: 0; padding: 4px 8px; border-radius: 4px; transform: rotate(-1deg); background: var(--sticker, #c8202a); color: var(--on-sticker, #ffffff); font-family: 'Archivo Variable', system-ui, sans-serif; font-size: 0.875rem; font-weight: 700; font-variant-numeric: tabular-nums; } .ds-sticker span { font-weight: 600; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Shelf-Edge Price Label",
+    "overview": "Every venue is a supermarket shelf tag: white label stock clipped to a cool steel shelf, a heavy condensed price figure, and beside it the small boxed \"unit price\" a careful shopper uses to compare true cost. The big number is always cash carry after costs; the box underneath states exactly what produced it. Value that is not cash (locked veMEZO) is a red offer sticker slapped on the label, slightly askew, never printed inside the price.\n\nThe world is dense, legible and plain-spoken. One saturated colour, label yellow, marks the shop's own band (the header) and the best deal's price field; black ink does everything else. Borders are printed rules, not decoration: a thick black top rule on each label, 2px ink outlines on controls, 1px boxes around assumptions. Motion is a single event: labels slide to their new rank when the calculator changes.\n\nDark mode is the same shop after hours: a charcoal shelf, graphite label stock, and price figures that turn yellow on the shelf labels while the lead price field stays a yellow block with black ink.",
+    "keyCharacteristics": [
+      "Steel-grey ground, white label cards with a 4px black top rule.",
+      "One accent (label yellow), one alarm (offer red); both used as flat fills, never gradients.",
+      "One family, Archivo Variable, with width as the hierarchy axis: 68% for prices, 88–90% for titles, 100% for reading text.",
+      "Every cash figure carries its own boxed assumption line.",
+      "Tabular figures everywhere."
+    ],
+    "rules": [
+      {
+        "name": "The One Price Field Rule",
+        "body": "Yellow fills exactly one price per screen: the lead label's. Every other label prints its figure on white stock (yellow ink only in dark mode).",
+        "section": "colors"
+      },
+      {
+        "name": "The Sticker Is Not The Price Rule",
+        "body": "Offer Red belongs to locked value. It never colours a cash figure, and locked value never appears inside the price field.",
+        "section": "colors"
+      },
+      {
+        "name": "The Width Ladder Rule",
+        "body": "Hierarchy comes from width before size: 68% prices, 88–90% names and headings, 100% reading text. Don't introduce a second family to make a contrast width already makes.",
+        "section": "typography"
+      },
+      {
+        "name": "The Tabular Rule",
+        "body": "All numerals are tabular so labels compare digit-for-digit.",
+        "section": "typography"
+      },
+      {
+        "name": "The Rules Not Shadows Rule",
+        "body": "Structure is drawn with ink rules (4px label top, 2px controls and band edges, 1px boxes and dividers). Shadow is reserved for the label card.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "Do give every cash figure its own boxed unit-price line stating costs and holding period.",
+      "Do print price figures in Archivo at width 68%, weight 800, line-height 0.9, with tabular numerals.",
+      "Do keep yellow to the header band, the lead price field, notices and selection; pair it with On-Yellow ink.",
+      "Do put locked value on the red, -1deg offer sticker with the lock icon, outside the price.",
+      "Do draw structure with ink rules: 4px label top rule, 2px controls and band edges, 1px boxes.",
+      "Do keep every interactive target at least 44px tall and keep the single re-rank motion behind reduced-motion."
+    ],
+    "donts": [
+      "Don't fold locked or reward value into the big cash figure.",
+      "Don't fill more than one price per screen with yellow.",
+      "Don't add a second typeface; vary width and weight instead.",
+      "Don't add shadows to controls, bands or chips; only the label card lifts.",
+      "Don't use Offer Red for anything but the locked-value sticker; errors use Danger Text.",
+      "Don't let a focus ring match its ground: on the yellow band it is On-Yellow ink in both schemes."
+    ]
+  }
+}
