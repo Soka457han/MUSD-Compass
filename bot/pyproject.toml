@@ -1,0 +1,9 @@
+[project]
+name = "musd-compass-bot"
+version = "0.1.0"
+# Same version as .python-version; tests/test_config.py keeps the two (and the dependency pins) in sync.
+requires-python = "==3.13.*"
+dependencies = ["httpx==0.28.1"]
+
+[tool.vercel]
+entrypoint = "api.telegram:app"
