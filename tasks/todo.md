@@ -102,7 +102,7 @@ Every task also meets the Definition of Done: acceptance criteria met, verified 
 
 ## Phase 4: Reach + judge kit
 
-- [ ] **T12: Python bot** (M)
+- [x] **T12: Python bot** (M)
   - Acceptance: `/start`, `/help`, `/yield [amount]`, `/carry <amount> [borrow]`, `/vault <address>`; calls the API only, with the `x-compass-bot` header; `/help` and the usage replies of `/vault` (and `/rewards`) include a sample address to try; break-even for Ethereum venues in `/yield`; shows the API `notice` as-is (e.g. `/carry 1000 borrow`); every reply says "Mainnet data · assumes 90-day hold" (or the chosen period), and `/vault` says "Testnet"; deposit link to `/vault?action=deposit&amount=…`; per-chat rate limit; friendly error when the API is down; never asks for keys.
   - Verify: pytest (parsing, formatting, API-down) green; live check happens in T15 after H5 (Claude never holds the token).
   - Files: `bot/api/telegram.py` (webhook: checks `X-Telegram-Bot-Api-Secret-Token`, handles one update per request), `bot/{bot,api_client,fmt}.py` (`--poll` mode for local runs), `bot/tests/test_bot.py`, `bot/requirements.txt`, `bot/vercel.json`
