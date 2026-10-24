@@ -33,7 +33,7 @@ Build order: `chain` → `carry`, `sources` → `yields-api` → `web-ui`, `vaul
 
 ## Tech Stack (versions checked 24 Oct; pin exact versions in package-lock)
 - Next.js 16.4 (App Router, TypeScript, Tailwind from create-next-app), React 19
-- viem 2.57 (has `mezo` 31612 and `mezoTestnet` 31611 chains), wagmi 3.7 + @tanstack/react-query 5. Connectors: injected; WalletConnect only when `NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID` is set
+- viem 2.57 (has `mezo` 31612 and `mezoTestnet` 31611 chains), used directly for the wallet too (injected EIP-1193 provider via `custom(window.ethereum)`). wagmi was dropped: one connector and three writes don't need it. WalletConnect is Wave 2 (needs `@walletconnect/ethereum-provider` and a project id)
 - @x402/next, @x402/evm, @x402/fetch 2.28. `@x402/evm` already lists Mezo MUSD as the default asset for `eip155:31611` and `eip155:31612` (Permit2 + EIP-2612), so `price: "$0.001"` settles in MUSD
 - Vitest 5 (unit), @playwright/test pinned to **1.56.0** (matches the preinstalled browser) + @axe-core/playwright 4.14 (e2e and accessibility)
 - Bot: Python 3.13 on Vercel (file-based function, `BaseHTTPRequestHandler`), httpx, pytest. No bot framework: one update per request, reply in the response body (Telegram "making requests when getting updates")

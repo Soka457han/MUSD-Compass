@@ -22,15 +22,15 @@ Every task also meets the Definition of Done: acceptance criteria met, verified 
   - Files: `src/lib/carry/{carry,breakEven,identity}.ts`, `tests/unit/carry.test.ts`, `tests/unit/identity.test.ts`
   - Deps: T1
 
-- [ ] **[H1] Create GitHub repo `musd-compass` (public) and push** (Claude gives exact steps)
-- [ ] **[H2] Import repo into Vercel with Root Directory = `web`, set env vars from `.env.example` (incl. `BOT_API_KEY` = a random value you generate, e.g. from a password manager), deploy**
+- [x] **[H1] Create GitHub repo `musd-compass` (public) and push** (Claude gives exact steps)
+- [x] **[H2] Import repo into Vercel with Root Directory = `web`, set env vars from `.env.example` (incl. `BOT_API_KEY` = a random value you generate, e.g. from a password manager), deploy**
 - [ ] **[H2b] Create a free Reown (WalletConnect) project, put its id in Vercel as `NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID`** (lets judges use phone wallets)
-- [ ] **[H4] Create the bot with @BotFather now (5 min); keep the token for the bot's Vercel env only (never paste it into chat)**
-- [ ] **[H5] Import the same repo as a 2nd Vercel project with Root Directory = `bot`; set `TELEGRAM_WEBHOOK_SECRET`, `BOT_API_KEY` (same as web), `COMPASS_API_URL`, `COMPASS_WEB_URL`; then open the one setWebhook link Claude gives you**
+- [x] **[H4] Create the bot with @BotFather now (5 min); keep the token for the bot's Vercel env only (never paste it into chat)**
+- [x] **[H5] Import the same repo as a 2nd Vercel project with Root Directory = `bot`; set `TELEGRAM_WEBHOOK_SECRET`, `BOT_API_KEY` (same as web), `COMPASS_API_URL`, `COMPASS_WEB_URL`; then open the one setWebhook link Claude gives you**
 
 ### Checkpoint 0 ([H-push] first)
-- [ ] Deployed `https://<app>.vercel.app/api/health` reads Mezo mainnet (primary and fallback RPC), testnet, Merkl and Ethereum → closes log #27
-- [ ] The hello webhook replies to `/start` in Telegram (proves the bot host; else switch to the Railway fallback)
+- [x] Deployed `https://<app>.vercel.app/api/health` reads Mezo mainnet (primary and fallback RPC), testnet, Merkl and Ethereum → closes log #27
+- [x] The hello webhook replies to `/start` in Telegram (proves the bot host; else switch to the Railway fallback)
 - [ ] CI green on GitHub
 
 ## Phase 2: Live read path
@@ -72,24 +72,24 @@ Every task also meets the Definition of Done: acceptance criteria met, verified 
   - Deps: T7
 
 ### Checkpoint A ([H-push] first)
-- [ ] Wallet-free table live on Vercel with real numbers; API shape frozen (bot work may start)
+- [x] Wallet-free table live on Vercel with real numbers; API shape frozen (bot work may start)
 - [ ] Human review of the page on the user's phone
 
 ## Phase 3: Write action
 
-- [ ] **T9: Wallet + network** (S)
+- [x] **T9: Wallet + network** (S)
   - Acceptance: wagmi config (injected; WalletConnect if id set); connect button; auto add/switch to chain 31611; persistent "Testnet action — real Mezo contracts, test funds. APR shown is mainnet." banner on `/vault`.
   - Verify: e2e renders banner + connect without a wallet; manual connect with MetaMask.
   - Files: `src/lib/wagmi.ts`, `src/components/{Providers,ConnectButton,TestnetBanner}.tsx`
   - Deps: T2
 
-- [ ] **T10: `/api/vault/[address]` + vault page (read)** (S)
+- [x] **T10: `/api/vault/[address]` + vault page (read)** (S)
   - Acceptance: returns testnet MUSD balance, allowance, sMUSD balance, pending yield (simulated `claimYield`) — the only per-request reads — plus last distribution time from a cached testnet scan (`unstable_cache`, revalidate 300, 14-day lookback so a weekly cadence is never blank); invalid address → 400; shares the API rate limiter; page shows them with "Try a sample" (dev wallet) and "last distribution <time ago>"; reads `?action=deposit&amount=…` from the bot link and pre-fills the deposit form.
   - Verify: unit test with mocked client; live call for the dev wallet returns its on-chain MUSD balance (157.31 before H3).
   - Files: `src/app/api/vault/[address]/route.ts`, `src/app/vault/page.tsx`, `tests/unit/vault.test.ts`
   - Deps: T5 (last distribution), T7 (rate limiter), T9
 
-- [ ] **T11: Deposit / claim / withdraw** (M)
+- [x] **T11: Deposit / claim / withdraw** (M)
   - Acceptance: `sendSafely()` = allowlist (testnet MUSD, sMUSD only; anything else refused) → simulate → estimateGas × 1.2 → write → poll receipt (null-safe); deposit = approve **exact** amount (skipped if allowance suffices) then `deposit`; `claimYield`; `withdraw` (states that it also pays out pending yield); explorer links; human-readable errors; buttons disabled while pending.
   - Verify: unit tests for allowlist refusal, gas limit math, simulate-failure path; manual run [H3].
   - Files: `src/lib/sendSafely.ts`, `src/components/VaultActions.tsx`, `tests/unit/sendSafely.test.ts`
