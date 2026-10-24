@@ -18,8 +18,9 @@ function PriceFigure({ value }: { value: number }) {
 
 function rangeText(r: Range): string {
   if (r.kind === "never") return "never at today's rates";
-  if (r.kind === "from") return `from ${musd(r.min)}`;
-  return `${musd(r.min)} – ${musd(r.max)}`;
+  // Round inward so every amount shown is inside the range (1,798.21 → 1,799, the real trove minimum).
+  if (r.kind === "from") return `from ${musd(Math.ceil(r.min))}`;
+  return `${musd(Math.ceil(r.min))} – ${musd(Math.floor(r.max))}`;
 }
 
 /** One venue as a shelf-edge price label: the big figure is cash carry; the boxed line is its unit price. */

@@ -95,7 +95,7 @@ Every task also meets the Definition of Done: acceptance criteria met, verified 
   - Files: `src/lib/sendSafely.ts`, `src/components/VaultActions.tsx`, `tests/unit/sendSafely.test.ts`
   - Deps: T10
 
-- [ ] **[H3] From the dev wallet: approve + deposit 100 MUSD, claim (may pay 0 before the next distribution), withdraw 10 MUSD; send Claude the 4 tx links** (public hashes only)
+- [x] **[H3] From the dev wallet: approve + deposit 100 MUSD, claim (may pay 0 before the next distribution), withdraw 10 MUSD; send Claude the 4 tx links** (public hashes only) — done 24 Oct: approve, deposit, withdraw; claim after the next distribution
 
 ### Checkpoint B ([H-push] first)
 - [ ] 4 testnet tx hashes (approve, deposit, claimYield, withdraw) recorded in README; balances on `/vault` match the explorer
@@ -120,7 +120,7 @@ Every task also meets the Definition of Done: acceptance criteria met, verified 
   - Files: `src/app/{get-test-musd,developers}/page.tsx`, `README.md`, `e2e/a11y.spec.ts`, `scripts/latency.sh`
   - Deps: T8, T11
 
-- [ ] **T15: Bot live check** (XS)
+- [x] **T15: Bot live check** (XS) — 25 Oct: `/yield`, `/carry 2000 borrow`, `/vault <dev wallet>` match `/api/yields` and `/api/vault`
   - Acceptance: deployed bot answers `/yield`, `/carry 2000 borrow`, `/vault <dev wallet>` with the same numbers as the web page; README run instructions.
   - Verify: screenshots from your phone in < 5 s each.
   - Files: `README.md`

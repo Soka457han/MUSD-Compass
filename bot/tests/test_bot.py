@@ -76,6 +76,7 @@ def test_carry_borrow_shows_api_notice_as_is(api):
     assert api.calls[0]["params"] == {"amount": "1000", "mode": "borrower"}
     assert "⚠️ New troves need at least 1,800 MUSD of debt" in text
     assert "new trove, 1% rate, 0.1% fee" in text
+    assert "with 🔒 1,799–57,591 MUSD" in text  # 1,798.21 rounds up: 1,798 could not open a trove
     assert "Usage: /carry" in say("/carry")
     assert "Usage: /carry" in say("/carry 1000 lend")
 

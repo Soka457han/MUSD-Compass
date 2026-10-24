@@ -9,6 +9,7 @@ Local run without a webhook: TELEGRAM_BOT_TOKEN=... python compass_bot.py --poll
 from __future__ import annotations
 
 import html
+import math
 import os
 import re
 import time
@@ -67,9 +68,11 @@ def _n(x: float) -> str:
 def _range(r: dict) -> str:
     if r["kind"] == "never":
         return "never"
+    # Round inward so every amount shown is inside the range (e.g. 1,798.21 → 1,799, the real trove minimum).
+    lo = _n(math.ceil(r["min"]))
     if r["kind"] == "from":
-        return f"from {_n(r['min'])} MUSD"
-    return f"{_n(r['min'])}–{_n(r['max'])} MUSD"
+        return f"from {lo} MUSD"
+    return f"{lo}–{_n(math.floor(r['max']))} MUSD"
 
 
 def _venue(i: int, v: dict) -> str:
