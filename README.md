@@ -41,11 +41,36 @@ Every number re-checked on the live site against its primary source (chain or Me
 - [x] `/api/premium/yields` unpaid → 402 asking for exactly 0.001 testnet MUSD (`exact`, `eip155:31611`, Permit2) to the dev wallet, extension `eip2612GasSponsoring` only.
 - [x] All 10 pages and files answer 200 (`/`, `/vault`, `/rewards`, `/trove`, `/incentives`, `/developers`, `/get-test-musd`, `/embed`, `/embed.js`, manifest).
 - [x] Cached `/api/yields` from a browser: p50 50 ms, p95 54 ms (20 requests; target < 1.5 s).
-- [x] Telegram bot: `/yield`, `/carry 2000 borrow`, `/vault` match the API (checked 25 Oct from a phone).
+- [x] Telegram bot: `/yield`, `/carry 2000 borrow`, `/vault` match the API (checked 24 Oct from a phone).
+- [ ] Telegram bot: `/rewards 0xeaC6A75e19beB1283352d24c0311De865a867DAB` and `/trove sample` (added after that check).
 - [x] Tests: 63 unit, 20 end-to-end (axe on every page, light and dark), 16 bot.
 - [x] Lighthouse mobile, production build: performance 0.92–0.98, accessibility 1, best practices 1, CLS 0; LCP median 3.1 s simulated (0.1–0.5 s observed).
-- [ ] Lighthouse on the live URL — run [PageSpeed Insights](https://pagespeed.web.dev/analysis?url=https%3A%2F%2Fmusd-compass.vercel.app%2F&form_factor=mobile).
-- [ ] CI green on GitHub Actions for the final commit.
+- [x] PageSpeed Insights on the live URL (25 Oct, before the fixes below): mobile 92 / 100 / 100 / 100 (LCP 3.0 s), desktop 100 / 100 / 100 / 100.
+- [x] After the fixes below (production build, Lighthouse mobile ×3): performance 0.96, LCP 2.6 s, FCP 0.8 s, Speed Index 1.2 s, no render-blocking requests.
+- [x] Telegram `/rewards` and `/trove sample` match the API (25 Oct, from a phone).
+- [ ] CI green on GitHub Actions for the final commit (every earlier run failed at typecheck — fixed below).
+
+## Security review (25 Oct 2026)
+Threat model by trust boundary — browsers, the public API, the Telegram webhook, third-party data (Merkl, RPCs), wallets — then a fix and a test for each finding.
+
+| # | Finding | Fix | Test |
+|---|---|---|---|
+| 1 | Pages with wallet actions could be framed by another site (clickjacking) | `X-Frame-Options: DENY` + CSP `frame-ancestors 'none'` everywhere except `/embed`, which is meant to be framed | `e2e/security.spec.ts` |
+| 2 | No CSP, `nosniff`, referrer or permissions policy | CSP (`default-src 'self'`, `connect-src 'self' https://rpc.test.mezo.org`, `object-src 'none'`, `base-uri 'self'`, `form-action 'self'`), `nosniff`, `strict-origin-when-cross-origin`, camera/mic/geolocation/payment off | `e2e/security.spec.ts` (headers + no CSP violations) |
+| 3 | Links from Merkl's API were rendered as they came | Only `https:` links survive; anything else points to Merkl's own app | `tests/unit/merkl.test.ts` |
+| 4 | `/api/health` returned raw upstream errors (can contain a keyed RPC URL) and had no rate limit | Says `unreachable`, details go to server logs; rate-limited | `tests/unit/health.test.ts` |
+| 5 | Bot key compared with `===` | `timingSafeEqual` | `tests/unit/rateLimit.test.ts` |
+| 6 | Bot webhook crashed on valid JSON that isn't an update object (`[]`, `null`) | Shape checked; anything else is ignored with 200 | `bot/tests/test_webhook.py` |
+| 7 | CI typecheck failed on every run (route types not generated before `tsc`) | `next typegen && tsc --noEmit` | full CI pipeline re-run in a clean clone |
+| 8 | Home page also downloaded the `/developers` wallet code (nav prefetch): 13 scripts / 290 KB | Nav links don't prefetch; CSS inlined | Lighthouse ×3 above (7 scripts / 148 KB) |
+
+Already in place and re-checked: every API input validated at the route (amount, mode, days, rate, addresses); the webhook checks Telegram's secret with `hmac.compare_digest` and caps the body at 1 MB; the vault only sends to testnet MUSD and sMUSD, simulates first and approves the exact amount; the x402 button checks the asset, network, payee and amount before signing; no secrets in the repo or its history; no raw-HTML sinks.
+
+Accepted, with reasons:
+- **zod 3 advisory inside `@x402` 2.28** (GHSA-mrhx-c7xc-m3w5, high): no fix exists within zod 3 and x402 needs zod 3. The server only parses payment headers after refusing any over 16 KB; review again when x402 moves to zod 4 or by 26 Nov 2026.
+- **Rate limits are per serverless instance** (in memory): fine for Wave 1 traffic; a shared store is the upgrade if the API is abused.
+- **CSP allows inline scripts**: Next's App Router needs them without per-request nonces; everything else is locked to `'self'`.
+- `npm audit signatures` couldn't run from the build sandbox; `pip-audit` on the bot: no known vulnerabilities.
 
 ## Run locally
 ```

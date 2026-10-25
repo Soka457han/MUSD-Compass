@@ -2,21 +2,14 @@ import { connection } from "next/server";
 import { createPublicClient, http } from "viem";
 import { mezo } from "viem/chains";
 import { ethereumClient, mezoTestnetClient, rpcUrls } from "@/lib/chain/clients";
-
-// Deployment check (verification log #27): can this host reach every upstream we read?
-async function check(name: string, run: () => Promise<unknown>) {
-  const t = Date.now();
-  try {
-    return { name, ok: true, value: String(await run()), ms: Date.now() - t };
-  } catch (e) {
-    return { name, ok: false, error: e instanceof Error ? e.message.slice(0, 160) : String(e), ms: Date.now() - t };
-  }
-}
+import { check } from "@/lib/health";
+import { allow } from "@/lib/rateLimit";
 
 const single = (url: string) => createPublicClient({ chain: mezo, transport: http(url) });
 
-export async function GET() {
+export async function GET(req: Request) {
   await connection(); // always run at request time
+  if (!allow(req)) return Response.json({ error: "Too many requests — try again in a minute." }, { status: 429 }); // each call fires 5 upstream requests
   const results = await Promise.all([
     check("mezo-mainnet", () => single(rpcUrls.mezo).getBlockNumber()),
     check("mezo-mainnet-fallback", () => single(rpcUrls.mezoFallback).getBlockNumber()),

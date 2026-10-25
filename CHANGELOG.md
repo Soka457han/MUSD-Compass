@@ -1,6 +1,8 @@
 # Changelog
 
 ## 0.1.0 — Wave 1 (25 Oct 2026)
+- Security review: no framing outside `/embed`, CSP and security headers, only https links from Merkl, `/api/health` hides upstream errors and is rate-limited, timing-safe bot key, webhook ignores malformed updates.
+- Fixed: CI typecheck (route types generated first); home page no longer prefetches other pages' code; CSS inlined.
 - Project scaffold: Next.js web app, Python bot webhook skeleton, CI.
 - Live sources: sMUSD realised 14-day APR, Stability Pool, six Mezo MUSD pools, Mezo-paid Merkl venues (Uniswap V4, Curve with nested routes), Morpho, live borrow parameters, live Ethereum round-trip cost.
 - `GET /api/yields`: two-number carry (cash ranks, locked veMEZO beside it), break-even vs sMUSD, validated query, CORS, rate limit.

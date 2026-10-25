@@ -255,11 +255,16 @@ def reply_text(text: str) -> str:
 
 def handle_update(update: dict) -> dict | None:
     """Return a sendMessage payload for a Telegram update, or None to ignore it."""
-    message = update.get("message") or {}
-    text = (message.get("text") or "").strip()
-    chat_id = (message.get("chat") or {}).get("id")
-    if chat_id is None or not text.startswith("/"):
+    # The body is untrusted JSON: anything that isn't the documented shape is ignored, never a crash.
+    message = update.get("message") if isinstance(update, dict) else None
+    if not isinstance(message, dict):
         return None
+    chat = message.get("chat")
+    text = message.get("text")
+    chat_id = chat.get("id") if isinstance(chat, dict) else None
+    if not isinstance(chat_id, int) or not isinstance(text, str) or not text.strip().startswith("/"):
+        return None
+    text = text.strip()
     body = reply_text(text) if allowed(chat_id) else "Too many requests — try again in a minute."
     return {
         "method": "sendMessage",

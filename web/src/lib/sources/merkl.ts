@@ -23,6 +23,15 @@ export type MerklListing = {
 const API = "https://api.merkl.xyz/v4";
 const VE_MEZO = MAINNET.merklVeMezo.toLowerCase();
 const same = (a: string, b: string) => a.toLowerCase() === b.toLowerCase();
+const MERKL_APP = "https://app.merkl.xyz";
+/** Links come from a third-party API: only https survives, anything else points to Merkl's own app. */
+const safeUrl = (u?: string) => {
+  try {
+    return u && new URL(u).protocol === "https:" ? u : MERKL_APP;
+  } catch {
+    return MERKL_APP;
+  }
+};
 
 const paysVeMezo = (l: MerklListing) =>
   l.rewardsRecord.breakdowns.some((b) => b.token.chainId === 31612 && same(b.token.address, VE_MEZO));
@@ -47,9 +56,9 @@ export function parseMerkl(listings: MerklListing[], now = new Date()): Venue[] 
       rates: { liquidApr: l.nativeApr ?? null, lockedApr: l.apr, fixedCostUsd: 0, tvl: l.tvl },
       tvlUsd: l.tvl,
       ends: new Date(Number(l.latestCampaignEnd) * 1000).toISOString(),
-      action: { label: "Provide liquidity", url: l.depositUrl ?? "https://app.merkl.xyz" },
+      action: { label: "Provide liquidity", url: safeUrl(l.depositUrl) },
       source: { label: "Merkl", url: "https://app.merkl.xyz" },
-      routes: nested.map((n) => ({ name: n.protocol?.name ?? n.name, url: n.depositUrl ?? "https://app.merkl.xyz" })),
+      routes: nested.map((n) => ({ name: n.protocol?.name ?? n.name, url: safeUrl(n.depositUrl) })),
       tags: ["Ethereum — bridge needed", "veMEZO locked 12 weeks", "7-day campaign", ...(isUniV4 ? ["Two tokens", "Range position"] : [])],
       notes,
       incentiveUsdPerDay: l.dailyRewards,

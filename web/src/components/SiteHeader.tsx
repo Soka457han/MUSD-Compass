@@ -29,7 +29,7 @@ export function SiteHeader({ current }: { current: string }) {
                     {n.label}
                   </a>
                 ) : (
-                  <Link href={n.href} aria-current={current === n.href ? "page" : undefined} className={ITEM}>
+                  <Link href={n.href} prefetch={false} aria-current={current === n.href ? "page" : undefined} className={ITEM}>
                     {n.label}
                   </Link>
                 )}

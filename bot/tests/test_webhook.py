@@ -60,3 +60,16 @@ def test_webhook_replies_with_method_payload_and_guards_body(monkeypatch):
     assert call(body=b"", headers={SECRET: "s3cret"})[0] == 400
     assert call(body=b"{not json", headers={SECRET: "s3cret"})[0] == 400
     assert call(method="GET")[0] == 200
+
+
+def test_valid_json_that_is_not_an_update_object_is_ignored_not_a_crash():
+    headers = {SECRET: "s3cret"}
+    os.environ["TELEGRAM_WEBHOOK_SECRET"] = "s3cret"
+    try:
+        for body in (b"[]", b"42", b'"text"', b"null"):
+            status, out = call(body=body, headers=headers)
+            assert (status, out) == (200, {}), body
+        status, out = call(body=json.dumps({"message": "not a dict"}).encode(), headers=headers)
+        assert (status, out) == (200, {})
+    finally:
+        del os.environ["TELEGRAM_WEBHOOK_SECRET"]

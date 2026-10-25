@@ -40,3 +40,21 @@ describe("parseUserRewards (documented response shape)", () => {
     expect(parseUserRewards([])).toEqual({ unclaimed: 0, pending: 0 });
   });
 });
+
+describe("parseMerkl treats Merkl's links as untrusted", () => {
+  it("keeps only https links; anything else falls back to Merkl's own app", () => {
+    const evil = (listings as MerklListing[]).map((l) => ({ ...l, depositUrl: "javascript:alert(document.domain)" }));
+    const out = parseMerkl(evil, new Date("2026-10-24T15:00:00Z"));
+    for (const v of out) {
+      expect(v.action.url).toBe("https://app.merkl.xyz");
+      for (const r of v.routes) expect(r.url).toBe("https://app.merkl.xyz");
+    }
+    const phish = (listings as MerklListing[]).map((l) => ({ ...l, depositUrl: "http://curve-finance.example/deposit" }));
+    expect(parseMerkl(phish).every((v) => v.action.url === "https://app.merkl.xyz")).toBe(true);
+  });
+
+  it("keeps a normal https deposit link as it is", () => {
+    const curve = venues.find((v) => v.name.startsWith("Curve"))!;
+    expect(curve.action.url).toBe("https://www.curve.finance/dex/ethereum/pools/factory-stable-ng-518/deposit");
+  });
+});
