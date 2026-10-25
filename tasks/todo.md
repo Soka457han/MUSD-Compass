@@ -134,7 +134,7 @@ Every task also meets the Definition of Done: acceptance criteria met, verified 
 
 ## Phase 5: SHOULDs (build in this order; cut from the bottom)
 
-- [x] **T16: Rewards reminder (SHOULD 6)** (M) — built 25 Oct against Merkl's documented user-rewards shape (Morpho integration guide; Merkl's own reference lists no fields). Merkl was unreachable from the build machine, so the live check of sample `0xeaC6…7DAB` is still open (do it after the push).
+- [x] **T16: Rewards reminder (SHOULD 6)** (M) — built 25 Oct against Merkl's documented user-rewards shape (Morpho integration guide; Merkl's own reference lists no fields). Merkl was unreachable from the build machine, live check 25 Oct: the real Merkl response matches; sample `0xeaC6…7DAB` shows 728.10 unclaimed + 105.28 pending veMEZO.
   - Acceptance: `/api/rewards/[address]` → unclaimed veMEZO (`amount − claimed`), USD at MEZO price, campaign end, warning "no published deadline; unclaimed rewards can be reallocated after a campaign — claim soon", "claiming needs ~$0.02 BTC on Mezo for gas", reward path (Ethereum LP → claim on Merkl → 12-week veMEZO on Mezo → Matchbox/Boar); page with sample button; bot `/rewards`.
   - Verify: fixture test; bot pytest for `/rewards`; live sample `0xeaC6…7DAB` shows a non-zero amount (or a new sample is picked).
   - Files: `src/lib/sources/merklUser.ts`, `src/app/api/rewards/[address]/route.ts`, `src/app/rewards/page.tsx`, `bot/bot.py`, `bot/tests/test_bot.py`
@@ -146,7 +146,7 @@ Every task also meets the Definition of Done: acceptance criteria met, verified 
   - Files: `src/lib/sources/trove.ts`, `src/app/api/trove/[address]/route.ts`, `src/app/trove/page.tsx`, `tests/unit/trove.test.ts`
   - Deps: T3, T8
 
-- [x] **T18: x402 premium (SHOULD 8)** (M) — 25 Oct: spike checks passed (facilitator `/supported` lists exact · eip155:31611 · testnet MUSD via Permit2 + `eip2612GasSponsoring` only; Permit2 deployed on 31611; the 2.28 client signs an EIP-2612 permit for exactly the payment amount). `/api/premium/yields` + "Pay & fetch" on `/developers` with a pre-sign guard (testnet MUSD, ≤ 0.001, Compass payee). Open: the real paid call [H7] after the push.
+- [x] **T18: x402 premium (SHOULD 8)** (M) — 25 Oct: spike checks passed (facilitator `/supported` lists exact · eip155:31611 · testnet MUSD via Permit2 + `eip2612GasSponsoring` only; Permit2 deployed on 31611; the 2.28 client signs an EIP-2612 permit for exactly the payment amount). `/api/premium/yields` + "Pay & fetch" on `/developers` with a pre-sign guard (testnet MUSD, ≤ 0.001, Compass payee). Real paid call done 25 Oct (`0x0454c620…4997`).
   - Acceptance: 30-min spike first (one paid call on 31611 via the facilitator; needs [H7] your signature, same evening); then `withX402` on `/api/premium/yields?address=` at `$0.001` (MUSD), advertising only the `eip2612GasSponsoring` extension (exact-amount permit; checked in @x402/evm 2.28 source — the ERC-20 approval extension signs `maxUint256` and is not offered), returning carry for every mode × holding period, per-venue cost breakdown, raw sMUSD yield events and raw Merkl listings, plus planner + rewards when `address` is given and T16/T17 shipped; "Pay & fetch" button on `/developers` using `wrapFetchWithPayment` with the connected wallet; one real paid call recorded [H7].
   - Verify: unpaid request → 402 with MUSD requirements; paid request → 200 + settlement header.
   - Files: `src/app/api/premium/yields/route.ts`, `src/components/PayAndFetch.tsx`, `src/app/developers/page.tsx`
@@ -158,7 +158,7 @@ Every task also meets the Definition of Done: acceptance criteria met, verified 
   - Files: `src/app/efficiency/page.tsx`, `tests/unit/efficiency.test.ts`
   - Deps: T4
 
-- [ ] **[H7] Sign the x402 paid call from the dev wallet** (during T18)
+- [x] **[H7] Sign the x402 paid call from the dev wallet** (during T18) — 25 Oct 05:47 UTC: `0x0454c620…4997` (exact 0.001 MUSD Permit2 approval + transfer, sent by the facilitator)
 
 ### Checkpoint D ([H-push] first)
 - [ ] Every shipped SHOULD meets its acceptance criteria; unshipped ones are removed from the UI and listed as Wave 2 in README
@@ -170,7 +170,7 @@ Every task also meets the Definition of Done: acceptance criteria met, verified 
   - Verify: the user reads everything and approves.
   - Deps: Checkpoint C
 
-- [ ] **T21: Final live re-verification** (S)
+- [x] **T21: Final live re-verification** (S) — 25 Oct 05:55 UTC, checklist in README; open: Lighthouse on the live URL (PageSpeed quota was used up) and CI green — both for you; tag `v0.1.0` after the final push
   - Acceptance: re-run verification log checks against live data; recheck sample addresses; CI green; Lighthouse mobile < 3 s; CHANGELOG "Wave 1" entry; tag `v0.1.0` prepared (pushed by you in the final [H-push]).
   - Verify: checklist recorded in README.
   - Deps: T20

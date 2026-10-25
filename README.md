@@ -12,18 +12,40 @@ Everything works on a phone, without a wallet.
 5. **Rewards and trove planner** — [`/rewards`](https://musd-compass.vercel.app/rewards) and [`/trove`](https://musd-compass.vercel.app/trove) → *Try a sample*: unclaimed veMEZO for a real address; a live mainnet trove's ratio, rate, redemption-queue position and safe extra borrow.
 6. **API and widget** — [`/developers`](https://musd-compass.vercel.app/developers): free JSON API with curl examples, a one-tag widget ([preview](https://musd-compass.vercel.app/embed)), and a paid x402 endpoint you can try with *Pay 0.001 MUSD & fetch* (testnet MUSD).
 
-> Work in progress for the Mezo Buildathon (Wave 1). Spec: [`SPEC.md`](SPEC.md) · design: [`docs/design.md`](docs/design.md) · plan: [`tasks/plan.md`](tasks/plan.md)
+> Mezo Buildathon, Wave 1. Spec: [`SPEC.md`](SPEC.md) · design: [`docs/design.md`](docs/design.md) · plan: [`tasks/plan.md`](tasks/plan.md)
 
 ## Testnet proof (Mezo testnet, chain 31611)
-Made through [`/vault`](https://musd-compass.vercel.app/vault) from the public dev wallet [`0xfe21…676C`](https://explorer.test.mezo.org/address/0xfe21B2782B35BE770DD4a7b05f81cE43790D676C) on 24 Oct 2026:
+Made through [`/vault`](https://musd-compass.vercel.app/vault) from the public dev wallet [`0xfe21…676C`](https://explorer.test.mezo.org/address/0xfe21B2782B35BE770DD4a7b05f81cE43790D676C) on 24–25 Oct 2026:
 
 | Step | Amount | Transaction |
 |---|---|---|
 | Approve (exact amount, not unlimited) | 100 MUSD | [`0xa5ec9c45…570f`](https://explorer.test.mezo.org/tx/0xa5ec9c450e27dfac27fb18f2ad91d2cdd5e2a1c782472108be93126766b1570f) |
 | Deposit into the Savings Vault | 100 MUSD → 100 sMUSD | [`0x1f4ddeb6…8f3c`](https://explorer.test.mezo.org/tx/0x1f4ddeb61396464e32ee63806a35a3e5cf8cb9218613880e24a5324293458f3c) |
 | Withdraw (also pays any pending yield) | 10 MUSD | [`0x3045fba8…77cf`](https://explorer.test.mezo.org/tx/0x3045fba85e8551ca6a465567911f96b68ded7a336f99640c51b3104525f777cf) |
+| x402 payment for `/api/premium/yields` (25 Oct; the facilitator sent it and paid the gas; Permit2 approval was exactly 0.001, not unlimited; payer and payee are both the dev wallet) | 0.001 MUSD | [`0x0454c620…4997`](https://explorer.test.mezo.org/tx/0x0454c620d5b02fa6dd9ba0fb3f6665894498d15b825cf8730ff47a0683fa4997) |
 
 After these the wallet holds 90 sMUSD and 67.31 MUSD, the vault allowance is back to 0, and [`/api/vault/0xfe21…676C`](https://musd-compass.vercel.app/api/vault/0xfe21B2782B35BE770DD4a7b05f81cE43790D676C) shows the same. A claim is added after the next yield distribution, so it pays a real amount.
+
+## Live re-verification (25 Oct 2026, 05:40–05:55 UTC)
+Every number re-checked on the live site against its primary source (chain or Merkl), not only against our API.
+
+- [x] `/api/health`: Mezo mainnet, fallback RPC, Mezo testnet, Ethereum and Merkl all OK (108–224 ms).
+- [x] `/api/yields`: 11 of 11 venues OK; borrow parameters live and equal to the chain (1% rate, 0.1% fee, 1,800 minimum debt, 200 gas compensation); Ethereum round trip ≈ $0.16.
+- [x] Savings Vault APR recomputed from raw mainnet events: 9 yield events, 11,349 MUSD over 14 days ÷ 7.38M sMUSD = **4.008%**; API 4.008%.
+- [x] Stability Pool 14,172,052 MUSD on-chain = API.
+- [x] Merkl: 5 live veMEZO listings (Uniswap V4 + 4 nested Curve listings, shown as 2 rows); Uniswap V4 locked 79.93% diluted for 2,000 MUSD = 75.6% on both sides; Curve cash 0.09% / total 7.75%; MEZO $0.00475 on both sides.
+- [x] Borrower notice under the new-trove minimum and a readable 400 for bad input.
+- [x] Testnet vault: 90 sMUSD + 67.31 MUSD on-chain = `/api/vault`; all 4 proof transactions above are `success`.
+- [x] `/api/rewards` sample: 728.10 unclaimed + 105.28 pending veMEZO = Merkl's own response (`amount − claimed`).
+- [x] `/api/trove/sample`: reads the live mainnet trove `0x593c…5bb5` (ratio ≈ 9,200%, 1% rate). Mainnet has one open trove today, so the queue shows 0 of 1.
+- [x] `/api/premium/yields` unpaid → 402 asking for exactly 0.001 testnet MUSD (`exact`, `eip155:31611`, Permit2) to the dev wallet, extension `eip2612GasSponsoring` only.
+- [x] All 10 pages and files answer 200 (`/`, `/vault`, `/rewards`, `/trove`, `/incentives`, `/developers`, `/get-test-musd`, `/embed`, `/embed.js`, manifest).
+- [x] Cached `/api/yields` from a browser: p50 50 ms, p95 54 ms (20 requests; target < 1.5 s).
+- [x] Telegram bot: `/yield`, `/carry 2000 borrow`, `/vault` match the API (checked 25 Oct from a phone).
+- [x] Tests: 63 unit, 20 end-to-end (axe on every page, light and dark), 16 bot.
+- [x] Lighthouse mobile, production build: performance 0.92–0.98, accessibility 1, best practices 1, CLS 0; LCP median 3.1 s simulated (0.1–0.5 s observed).
+- [ ] Lighthouse on the live URL — run [PageSpeed Insights](https://pagespeed.web.dev/analysis?url=https%3A%2F%2Fmusd-compass.vercel.app%2F&form_factor=mobile).
+- [ ] CI green on GitHub Actions for the final commit.
 
 ## Run locally
 ```

@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased (Wave 1)
+## 0.1.0 — Wave 1 (25 Oct 2026)
 - Project scaffold: Next.js web app, Python bot webhook skeleton, CI.
 - Live sources: sMUSD realised 14-day APR, Stability Pool, six Mezo MUSD pools, Mezo-paid Merkl venues (Uniswap V4, Curve with nested routes), Morpho, live borrow parameters, live Ethereum round-trip cost.
 - `GET /api/yields`: two-number carry (cash ranks, locked veMEZO beside it), break-even vs sMUSD, validated query, CORS, rate limit.
