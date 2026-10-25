@@ -1,5 +1,4 @@
 @import "tailwindcss";
-@import "@fontsource-variable/archivo/wdth.css";
 
 /* Shelf-edge label world: steel shelf, white label stock, label-yellow price field, red offer sticker. */
 :root {
@@ -45,7 +44,7 @@
   --color-sticker: var(--sticker);
   --color-on-sticker: var(--on-sticker);
   --color-danger-text: var(--danger-text);
-  --font-sans: "Archivo Variable", system-ui, sans-serif;
+  --font-sans: var(--font-archivo), system-ui, sans-serif;
 }
 
 html {

@@ -4,9 +4,11 @@ export function pct(n: number | null, digits = 2): string {
   return `${n < 0 ? "−" : ""}${s}%`;
 }
 
+// minimumFractionDigits is explicit: Node and Chromium default it differently for compact currency
+// ("$77.0K" vs "$77K"), which broke hydration of the home page.
 export function usd(n: number | null): string {
   if (n === null) return "—";
-  return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", notation: "compact", maximumFractionDigits: n < 1000 ? 0 : 1 }).format(n);
+  return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", notation: "compact", minimumFractionDigits: n < 10 ? 2 : 0, maximumFractionDigits: n < 10 ? 2 : n < 1000 ? 0 : 1 }).format(n);
 }
 
 export function musd(n: number): string {

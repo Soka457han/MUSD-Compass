@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { parseUnits, type Address, type WalletClient } from "viem";
 import { erc20Abi, smusdAbi } from "@/lib/chain/abis";
@@ -129,14 +130,10 @@ export function VaultPanel() {
         )}
         <p className="mt-3 text-xs text-ink-muted">
           Need test funds?{" "}
-          <a href="https://faucet.test.mezo.org" target="_blank" rel="noreferrer" className="font-semibold text-ink underline">
-            Mezo testnet faucet
-          </a>{" "}
-          gives BTC; swap it for MUSD on{" "}
-          <a href="https://testnet.mezo.org" target="_blank" rel="noreferrer" className="font-semibold text-ink underline">
-            testnet.mezo.org
-          </a>
-          .
+          <Link href="/get-test-musd" className="font-semibold text-ink underline">
+            Get test MUSD in 3 steps
+          </Link>{" "}
+          (faucet BTC, then swap on testnet.mezo.org).
         </p>
       </section>
 

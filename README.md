@@ -2,6 +2,16 @@
 
 Where does Mezo MUSD earn the most **after costs**? MUSD Compass ranks every venue — Mezo and Ethereum — by net carry (cash first, locked veMEZO 🔒 beside it) and lets you deposit into the Mezo Savings Vault on testnet in a few taps. Phone-first web app, open API, embeddable widget, Telegram bot.
 
+## Judge check in 60 seconds
+Everything works on a phone, without a wallet.
+
+1. **Ranking** — open [musd-compass.vercel.app](https://musd-compass.vercel.app). The top label is where 2,000 MUSD earns the most **cash** per year after costs; locked veMEZO 🔒 sits beside it and never counts as cash.
+2. **Calculator** — change the amount, switch to *Borrower* or *365 days*: labels re-rank and every number states its assumption. Ethereum venues show the amount where they beat the Savings Vault.
+3. **Testnet vault** — [`/vault`](https://musd-compass.vercel.app/vault) → *Try a sample* shows the dev wallet's real position (90 sMUSD). To deposit yourself: [get test MUSD in 3 steps](https://musd-compass.vercel.app/get-test-musd), then *Connect wallet*.
+4. **Telegram** — [@musd_compass_bot](https://t.me/musd_compass_bot): `/yield`, `/carry 2000 borrow`, `/vault 0xfe21B2782B35BE770DD4a7b05f81cE43790D676C`, `/rewards 0xeaC6A75e19beB1283352d24c0311De865a867DAB`, `/trove sample`.
+5. **Rewards and trove planner** — [`/rewards`](https://musd-compass.vercel.app/rewards) and [`/trove`](https://musd-compass.vercel.app/trove) → *Try a sample*: unclaimed veMEZO for a real address; a live mainnet trove's ratio, rate, redemption-queue position and safe extra borrow.
+6. **API and widget** — [`/developers`](https://musd-compass.vercel.app/developers): free JSON API with curl examples, a one-tag widget ([preview](https://musd-compass.vercel.app/embed)), and a paid x402 endpoint you can try with *Pay 0.001 MUSD & fetch* (testnet MUSD).
+
 > Work in progress for the Mezo Buildathon (Wave 1). Spec: [`SPEC.md`](SPEC.md) · design: [`docs/design.md`](docs/design.md) · plan: [`tasks/plan.md`](tasks/plan.md)
 
 ## Testnet proof (Mezo testnet, chain 31611)
@@ -24,7 +34,7 @@ Bot without the webhook (local test, needs your own bot token; delete the webhoo
 ```
 cd bot && TELEGRAM_BOT_TOKEN=... COMPASS_API_URL=http://localhost:3000 python compass_bot.py --poll
 ```
-Telegram: [@musd_compass_bot](https://t.me/musd_compass_bot) — `/yield [amount]`, `/carry <amount> [borrow]`, `/vault <address>`, `/help`.
+Telegram: [@musd_compass_bot](https://t.me/musd_compass_bot) — `/yield [amount]`, `/carry <amount> [borrow]`, `/vault <address>`, `/rewards <address>`, `/trove <address|sample>`, `/help`.
 
 ## License
 MIT

@@ -6,7 +6,7 @@ const NAV = [
   { href: "/", label: "Yields" },
   { href: "/vault", label: "Vault" },
   { href: BOT, label: "Bot" },
-  { href: "/api/yields", label: "API" },
+  { href: "/developers", label: "API" },
 ];
 
 const ITEM =
@@ -24,7 +24,7 @@ export function SiteHeader({ current }: { current: string }) {
           <ul className="flex items-center gap-0.5 text-sm font-semibold">
             {NAV.map((n) => (
               <li key={n.href}>
-                {!n.href.startsWith("/") || n.href.startsWith("/api") ? (
+                {!n.href.startsWith("/") ? (
                   <a href={n.href} className={ITEM}>
                     {n.label}
                   </a>

@@ -21,6 +21,7 @@ import httpx
 WEB_URL = os.environ.get("COMPASS_WEB_URL", "https://musd-compass.vercel.app").rstrip("/")
 API_URL = os.environ.get("COMPASS_API_URL", WEB_URL).rstrip("/")
 SAMPLE_WALLET = "0xfe21B2782B35BE770DD4a7b05f81cE43790D676C"  # public dev wallet with a testnet deposit
+SAMPLE_REWARDS = "0xeaC6A75e19beB1283352d24c0311De865a867DAB"  # public address with unclaimed veMEZO
 TOP = 5
 DEFAULT_AMOUNT = 2000
 ADDRESS = re.compile(r"^0x[0-9a-fA-F]{40}$")
@@ -30,7 +31,10 @@ HELP = (
     "/yield [amount] — top places for your MUSD (default 2,000)\n"
     "/carry &lt;amount&gt; [borrow] — same, as a borrower on a new trove\n"
     "/vault &lt;address&gt; — your testnet Savings Vault position\n"
-    f"   try: <code>/vault {SAMPLE_WALLET}</code>\n\n"
+    f"   try: <code>/vault {SAMPLE_WALLET}</code>\n"
+    "/rewards &lt;address&gt; — unclaimed veMEZO from Merkl\n"
+    "/trove &lt;address&gt; — your trove: ratio, rate, safe extra borrow (or <code>/trove sample</code>)\n"
+    f"   try: <code>/rewards {SAMPLE_REWARDS}</code>\n\n"
     "Cash carry ranks; 🔒 = locked veMEZO, shown beside it, never counted as cash.\n"
     "Compass never asks for keys or seed phrases.\n"
     f"Web: {WEB_URL}"
@@ -172,7 +176,54 @@ def cmd_vault(args: list[str]) -> str:
     return format_vault(api_get(f"/api/vault/{quote(args[0])}"))
 
 
-COMMANDS = {"yield": cmd_yield, "carry": cmd_carry, "vault": cmd_vault}
+def format_rewards(d: dict) -> str:
+    lines = [
+        f"<b>Unclaimed veMEZO</b> · <code>{d['address']}</code>",
+        "<i>Mezo mainnet · Merkl rewards for MUSD liquidity on Ethereum</i>",
+        "",
+        f"🔒 Unclaimed: {d['unclaimed']:,.2f} veMEZO" + (f" (≈ ${d['usd']:,.2f} at MEZO spot)" if d.get("usd") is not None else ""),
+        f"Not claimable yet: {d['pending']:,.2f}",
+    ]
+    if d["unclaimed"] > 0:
+        lines += ["", f"⚠️ {html.escape(d['warning'])}", html.escape(d["gas"]), f"Claim: {d['claimUrl']}"]
+    else:
+        lines += ["", "Nothing to claim right now."]
+    lines += ["", "veMEZO is locked 12 weeks once claimed — Compass never counts it as cash."]
+    return "\n".join(lines)
+
+
+def cmd_rewards(args: list[str]) -> str:
+    if not args or not ADDRESS.match(args[0]):
+        return f"Usage: /rewards &lt;address&gt; — public address only, for example\n<code>/rewards {SAMPLE_REWARDS}</code>"
+    return format_rewards(api_get(f"/api/rewards/{quote(args[0])}"))
+
+
+def format_trove(d: dict) -> str:
+    head = [f"<b>Trove</b> · <code>{d['address']}</code>", "<i>Mezo mainnet</i>", ""]
+    if not d["active"]:
+        return "\n".join(head + ["This address has no open trove."])
+    queue = "unavailable right now" if d.get("ahead") is None else f"≈ {d['ahead']:,} of {d['troves']:,} troves are redeemed before yours"
+    lines = head + [
+        f"Collateral ratio: {d['icrPct']:,.0f}%",
+        f"Interest rate: {d['ratePct']:g}%",
+        f"Collateral: {d['collateralBtc']:,.4f} BTC · Debt: {d['debt']:,.2f} MUSD",
+        f"Redemption queue: {queue}",
+        "",
+        f"Borrow up to <b>{d['safeExtra']:,.0f} MUSD</b> more and stay at or above {d['safeIcrPct']}% (fee counted; Mezo's minimum is {d['minIcrPct']}%).",
+    ]
+    if d.get("recoveryMode"):
+        lines.append("⚠️ Mezo is in recovery mode: borrowing rules are stricter for now.")
+    lines.append(f"Plan it: {WEB_URL}/trove")
+    return "\n".join(lines)
+
+
+def cmd_trove(args: list[str]) -> str:
+    if not args or not (args[0] == "sample" or ADDRESS.match(args[0])):
+        return "Usage: /trove &lt;address&gt; — public address only, or <code>/trove sample</code>"
+    return format_trove(api_get(f"/api/trove/{quote(args[0])}"))
+
+
+COMMANDS = {"yield": cmd_yield, "carry": cmd_carry, "vault": cmd_vault, "rewards": cmd_rewards, "trove": cmd_trove}
 
 # shortcut: per-instance memory, so the limit is per serverless instance; move to a shared store if abused.
 RATE_WINDOW, RATE_MAX = 60, 10

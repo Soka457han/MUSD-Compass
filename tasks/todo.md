@@ -114,7 +114,8 @@ Every task also meets the Definition of Done: acceptance criteria met, verified 
   - Files: `src/app/embed/page.tsx`, `public/embed.js`, `e2e/embed.spec.ts`
   - Deps: T8
 
-- [ ] **T14: Judge pages + README + accessibility CI** (M)
+- [x] **T14: Judge pages + README + accessibility CI** (M) — 25 Oct, local production build with fixtures: axe clean on 5 pages (home, vault, embed, get-test-musd, developers; light + dark); Lighthouse mobile ×5: performance 0.92–0.98, accessibility 1, best practices 1, CLS 0, LCP simulated 2.0–3.3 s (median 3.1; observed 0.1–0.5 s — runs over 3 s are the ~300 ms batched reveal of the streamed venue table, stretched by Lighthouse's slow-phone simulation); `scripts/latency.sh` local p95 0.006 s. Still to do on the live URL: latency + Lighthouse, and the 60-second README check on a phone (user).
+  - Found and fixed on the way: hydration mismatch on the home page (`usd()` printed "$77.0K" in Node, "$77K" in Chromium → React re-rendered the page); the font is now preloaded through next/font/local (same fontsource file).
   - Acceptance: `/get-test-musd` (faucet → swap, 3 steps, no CAPTCHA help); `/developers` (API docs + curl examples); README "judge check in 60 seconds" with links and tx hashes; axe e2e on 4 pages in CI.
   - Verify: CI green; `npx lighthouse <home> --form-factor=mobile` LCP < 3 s (the LCP element is the venue table); `scripts/latency.sh` p95 < 1.5 s on cached `/api/yields`; a non-builder follows the README in ≤60 s (user checks on phone).
   - Files: `src/app/{get-test-musd,developers}/page.tsx`, `README.md`, `e2e/a11y.spec.ts`, `scripts/latency.sh`
@@ -133,25 +134,25 @@ Every task also meets the Definition of Done: acceptance criteria met, verified 
 
 ## Phase 5: SHOULDs (build in this order; cut from the bottom)
 
-- [ ] **T16: Rewards reminder (SHOULD 6)** (M)
+- [x] **T16: Rewards reminder (SHOULD 6)** (M) — built 25 Oct against Merkl's documented user-rewards shape (Morpho integration guide; Merkl's own reference lists no fields). Merkl was unreachable from the build machine, so the live check of sample `0xeaC6…7DAB` is still open (do it after the push).
   - Acceptance: `/api/rewards/[address]` → unclaimed veMEZO (`amount − claimed`), USD at MEZO price, campaign end, warning "no published deadline; unclaimed rewards can be reallocated after a campaign — claim soon", "claiming needs ~$0.02 BTC on Mezo for gas", reward path (Ethereum LP → claim on Merkl → 12-week veMEZO on Mezo → Matchbox/Boar); page with sample button; bot `/rewards`.
   - Verify: fixture test; bot pytest for `/rewards`; live sample `0xeaC6…7DAB` shows a non-zero amount (or a new sample is picked).
   - Files: `src/lib/sources/merklUser.ts`, `src/app/api/rewards/[address]/route.ts`, `src/app/rewards/page.tsx`, `bot/bot.py`, `bot/tests/test_bot.py`
   - Deps: T4, T12
 
-- [ ] **T17: Trove planner (SHOULD 7)** (M)
+- [x] **T17: Trove planner (SHOULD 7)** (M) — built 25 Oct from the mezo-org/musd sources (TroveManager, SortedTroves, InterestRateMath: rate in bps). Mezo mainnet was unreachable from the build machine, so the live check (sample = `SortedTroves.getFirst()`, queue scan time) is still open. Vigil and Lifeline linked by their GitHub repos, labelled testnet-only and not audited. Live check 25 Oct: reads work; mainnet has 1 open trove (`0x593c…5bb5`), so the queue reads "0 of 1".
   - Acceptance: `/api/trove/[address]` → collateral, debt, ICR, rate, redemption-queue position, safe extra borrow at ICR ≥ 200%; sample = `SortedTroves.getFirst()`; "Use in calculator" sets existing-trove mode + rate; links to Vigil/Lifeline.
   - Verify: unit tests for the safe-borrow math; live sample returns sane values.
   - Files: `src/lib/sources/trove.ts`, `src/app/api/trove/[address]/route.ts`, `src/app/trove/page.tsx`, `tests/unit/trove.test.ts`
   - Deps: T3, T8
 
-- [ ] **T18: x402 premium (SHOULD 8)** (M)
+- [x] **T18: x402 premium (SHOULD 8)** (M) — 25 Oct: spike checks passed (facilitator `/supported` lists exact · eip155:31611 · testnet MUSD via Permit2 + `eip2612GasSponsoring` only; Permit2 deployed on 31611; the 2.28 client signs an EIP-2612 permit for exactly the payment amount). `/api/premium/yields` + "Pay & fetch" on `/developers` with a pre-sign guard (testnet MUSD, ≤ 0.001, Compass payee). Open: the real paid call [H7] after the push.
   - Acceptance: 30-min spike first (one paid call on 31611 via the facilitator; needs [H7] your signature, same evening); then `withX402` on `/api/premium/yields?address=` at `$0.001` (MUSD), advertising only the `eip2612GasSponsoring` extension (exact-amount permit; checked in @x402/evm 2.28 source — the ERC-20 approval extension signs `maxUint256` and is not offered), returning carry for every mode × holding period, per-venue cost breakdown, raw sMUSD yield events and raw Merkl listings, plus planner + rewards when `address` is given and T16/T17 shipped; "Pay & fetch" button on `/developers` using `wrapFetchWithPayment` with the connected wallet; one real paid call recorded [H7].
   - Verify: unpaid request → 402 with MUSD requirements; paid request → 200 + settlement header.
   - Files: `src/app/api/premium/yields/route.ts`, `src/components/PayAndFetch.tsx`, `src/app/developers/page.tsx`
   - Deps: T7, T16, T17 (works without them, with fewer fields)
 
-- [ ] **T19: Incentive Efficiency board (SHOULD 9)** (S)
+- [x] **T19: Incentive Efficiency board (SHOULD 9)** (S) — 25 Oct: `/incentives` + `incentiveUsdPerDay` on Merkl venues in `/api/yields`
   - Acceptance: per venue (2 rows): $/day, TVL, cost per $1k TVL; nested Curve listings never summed.
   - Verify: unit test on the fixture (Curve $32/day on $244,750 → $0.13 per $1k/day).
   - Files: `src/app/efficiency/page.tsx`, `tests/unit/efficiency.test.ts`
@@ -164,7 +165,7 @@ Every task also meets the Definition of Done: acceptance criteria met, verified 
 
 ## Phase 6: Materials + submission
 
-- [ ] **T20: Deck, video script, AKINDO answers, docs PR draft** (M)
+- [ ] **T20: Deck, video script, AKINDO answers, docs PR draft** (M) — drafts in `docs/submission/` (25 Oct); waiting for your read-through; the deck is built from `deck.md` after you approve the wording
   - Acceptance: 5 slides (problem, product, Mezo integration, demo/tx proof, roadmap) for both tracks; 2-min video script with shot list; AKINDO form answers; Mezo docs Community Projects PR text.
   - Verify: the user reads everything and approves.
   - Deps: Checkpoint C

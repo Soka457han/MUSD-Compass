@@ -52,6 +52,7 @@ export function parseMerkl(listings: MerklListing[], now = new Date()): Venue[] 
       routes: nested.map((n) => ({ name: n.protocol?.name ?? n.name, url: n.depositUrl ?? "https://app.merkl.xyz" })),
       tags: ["Ethereum — bridge needed", "veMEZO locked 12 weeks", "7-day campaign", ...(isUniV4 ? ["Two tokens", "Range position"] : [])],
       notes,
+      incentiveUsdPerDay: l.dailyRewards,
       status: "ok",
       updatedAt: now.toISOString(),
     } satisfies Venue;
@@ -80,4 +81,34 @@ export async function fetchMerkl(): Promise<MerklData> {
     ethPriceUsd: weth[0]?.price ?? null,
     raw: listings.filter(paysVeMezo),
   };
+}
+
+// Merkl v4 user rewards (documented shape: https://docs.morpho.org/developers/rewards/tutorials/fetch-rewards-data/).
+// amount and claimed are cumulative base-unit strings; claimable = amount − claimed; pending is not claimable yet.
+export type MerklUserRewards = {
+  chain: { id: number };
+  rewards: { token: { address: string; decimals: number }; amount: string; claimed: string; pending: string }[];
+}[];
+
+/** Unclaimed and pending veMEZO for one address, in whole tokens. */
+export function parseUserRewards(data: MerklUserRewards): { unclaimed: number; pending: number } {
+  let unclaimed = 0n;
+  let pending = 0n;
+  let decimals = 18;
+  for (const chain of data) {
+    if (chain.chain.id !== 31612) continue;
+    for (const r of chain.rewards) {
+      if (!same(r.token.address, VE_MEZO)) continue;
+      unclaimed += BigInt(r.amount) - BigInt(r.claimed);
+      pending += BigInt(r.pending);
+      decimals = r.token.decimals;
+    }
+  }
+  const whole = (v: bigint) => Number(v) / 10 ** decimals;
+  return { unclaimed: whole(unclaimed), pending: whole(pending) };
+}
+
+/** Not cached: a user who just claimed should see it (Merkl itself may lag up to ~5 min). */
+export async function fetchUserRewards(address: string) {
+  return parseUserRewards(await getJson<MerklUserRewards>(`${API}/users/${address}/rewards?chainId=31612`));
 }

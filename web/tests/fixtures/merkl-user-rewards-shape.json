@@ -1,0 +1,33 @@
+[
+  {
+    "chain": { "id": 31612, "name": "Mezo" },
+    "rewards": [
+      {
+        "token": { "address": "0x089A6af90041c3ac734cbdeFa84832Aa7fBF67C8", "symbol": "veMEZO", "decimals": 18 },
+        "amount": "300000000000000000000",
+        "claimed": "60720000000000000000",
+        "pending": "12500000000000000000",
+        "proofs": ["0xproof"]
+      },
+      {
+        "token": { "address": "0x7B7c000000000000000000000000000000000001", "symbol": "MEZO", "decimals": 18 },
+        "amount": "5000000000000000000",
+        "claimed": "0",
+        "pending": "0",
+        "proofs": []
+      }
+    ]
+  },
+  {
+    "chain": { "id": 1, "name": "Ethereum" },
+    "rewards": [
+      {
+        "token": { "address": "0x089A6af90041c3ac734cbdeFa84832Aa7fBF67C8", "symbol": "X", "decimals": 18 },
+        "amount": "999000000000000000000",
+        "claimed": "0",
+        "pending": "0",
+        "proofs": []
+      }
+    ]
+  }
+]

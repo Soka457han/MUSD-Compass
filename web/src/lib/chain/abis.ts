@@ -40,3 +40,17 @@ export const interestRateManagerAbi = parseAbi(["function interestRate() view re
 export const stabilityPoolAbi = parseAbi(["function getTotalMUSDDeposits() view returns (uint256)"]);
 
 export const erc4626Abi = parseAbi(["function totalAssets() view returns (uint256)"]);
+
+// TroveManager / SortedTroves (mezo-org/musd solidity/contracts, interfaces/ITroveManager.sol, ISortedTroves.sol).
+export const troveManagerAbi = parseAbi([
+  "function getEntireDebtAndColl(address) view returns (uint256 coll, uint256 principal, uint256 interest, uint256 pendingCollateral, uint256 pendingPrincipal, uint256 pendingInterest)",
+  "function getCurrentICR(address, uint256 price) view returns (uint256)",
+  "function getNominalICR(address) view returns (uint256)",
+  "function getTroveStatus(address) view returns (uint8)",
+  "function getTroveInterestRate(address) view returns (uint16)",
+  "function getTroveOwnersCount() view returns (uint256)",
+  "function getTroveFromTroveOwnersArray(uint256) view returns (address)",
+  "function checkRecoveryMode(uint256 price) view returns (bool)",
+]);
+// Sorted by nominal ICR, descending; redemptions start at getLast() (the lowest ratio).
+export const sortedTrovesAbi = parseAbi(["function getFirst() view returns (address)", "function getSize() view returns (uint256)"]);

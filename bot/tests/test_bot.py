@@ -27,6 +27,10 @@ class FakeApi:
             raise self.error
         if self.body is not None:
             body = self.body
+        elif "/api/trove/" in url:
+            body = json.loads((FIX / "trove.json").read_text())
+        elif "/api/rewards/" in url:
+            body = json.loads((FIX / "rewards.json").read_text())
         elif "/api/vault/" in url:
             body = json.loads((FIX / "vault.json").read_text())
         elif (params or {}).get("mode") == "borrower":
@@ -118,3 +122,21 @@ def test_per_chat_rate_limit():
     assert not compass_bot.allowed(7, now=101.0)
     assert compass_bot.allowed(8, now=101.0)  # other chats unaffected
     assert compass_bot.allowed(7, now=200.0)  # window passed
+
+
+def test_rewards_shows_unclaimed_warning_and_usage(api):
+    text = say("/rewards 0xeaC6A75e19beB1283352d24c0311De865a867DAB")
+    assert api.calls[0]["url"].endswith("/api/rewards/0xeaC6A75e19beB1283352d24c0311De865a867DAB")
+    assert "🔒 Unclaimed: 239.28 veMEZO (≈ $0.71 at MEZO spot)" in text
+    assert "reallocated" in text and "Claim: https://app.merkl.xyz" in text
+    assert "0xeaC6A75e19beB1283352d24c0311De865a867DAB" in say("/rewards nope")
+    assert "/rewards" in say("/help")
+
+
+def test_trove_shows_ratio_rate_queue_and_safe_borrow(api):
+    text = say("/trove sample")
+    assert api.calls[0]["url"].endswith("/api/trove/sample")
+    assert "Collateral ratio: 333%" in text and "Interest rate: 1%" in text
+    assert "≈ 812 of 1,204 troves are redeemed before yours" in text
+    assert "Borrow up to <b>20,068 MUSD</b> more and stay at or above 200%" in text
+    assert "Usage: /trove" in say("/trove 0x12")

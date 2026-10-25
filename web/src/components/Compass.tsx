@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 import { timeUtc, usd } from "@/lib/format";
@@ -165,6 +166,13 @@ export function Compass({ sources }: { sources: Sources }) {
               <div>
                 <Segmented legend="Trove" name="trove" value={form.trove} onChange={(trove) => update({ trove })} options={[{ value: "new", label: "New" }, { value: "existing", label: "Mine" }]} />
               </div>
+              {form.trove === "existing" && (
+                <p className="col-span-2 text-sm sm:col-span-4">
+                  <Link href="/trove" className="font-semibold underline">
+                    Read your trove&apos;s rate and safe extra borrow
+                  </Link>
+                </p>
+              )}
             </>
           ) : null}
           {!parsed.ok && (
@@ -211,7 +219,11 @@ export function Compass({ sources }: { sources: Sources }) {
             <span className="font-semibold">Mezo testnet</span>.
           </p>
           <p>
-            Cash carry ranks. Locked rewards are veMEZO: claimed on Mezo, locked 12 weeks, valued at MEZO spot{sources.mezoPriceUsd ? ` ($${sources.mezoPriceUsd.toFixed(5)})` : ""} — shown on the red sticker, never in the price.
+            Cash carry ranks. Locked rewards are veMEZO: claimed on Mezo, locked 12 weeks, valued at MEZO spot{sources.mezoPriceUsd ? ` ($${sources.mezoPriceUsd.toFixed(5)})` : ""} — shown on the red sticker, never in the price.{" "}
+            <Link href="/rewards" className="font-semibold underline">
+              Check an address for unclaimed veMEZO
+            </Link>
+            .
           </p>
           {sources.ethRoundTrip && (
             <p>

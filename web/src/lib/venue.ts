@@ -15,6 +15,7 @@ export type Venue = {
   routes: { name: string; url: string }[]; // "also via" chips (never summed)
   tags: string[]; // plain-language risk tags
   notes: string[];
+  incentiveUsdPerDay?: number; // what the reward campaign pays out per day (Merkl venues only)
   status: "ok" | "unavailable";
   updatedAt: string;
 };

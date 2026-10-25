@@ -20,6 +20,7 @@ describe("parseMerkl (live sample, 24 Oct 2026)", () => {
     expect(curve.rates.lockedApr).toBeCloseTo(4.81, 2);
     expect(curve.rates.liquidApr).toBe(0.12);
     expect(curve.routes.map((r) => r.name)).toEqual(["Curve", "Stake DAO", "Convex"]);
+    expect(curve.incentiveUsdPerDay).toBeCloseTo(32.28, 2); // the outer listing's stream only, nested ones not added
   });
 
   it("Uniswap V4: fees not reported → liquid APR null, locked 49.83%, campaign end parsed", () => {
@@ -28,5 +29,14 @@ describe("parseMerkl (live sample, 24 Oct 2026)", () => {
     expect(uni.rates.lockedApr).toBeCloseTo(49.83, 2);
     expect(uni.ends).toBe("2026-10-30T10:00:00.000Z"); // latestCampaignEnd 1793354400
     expect(uni.notes.join(" ")).toMatch(/not reported/);
+  });
+});
+
+describe("parseUserRewards (documented response shape)", () => {
+  it("claimable = amount − claimed, veMEZO on Mezo only; pending kept apart", async () => {
+    const { parseUserRewards } = await import("@/lib/sources/merkl");
+    const shape = (await import("../fixtures/merkl-user-rewards-shape.json")).default;
+    expect(parseUserRewards(shape)).toEqual({ unclaimed: 239.28, pending: 12.5 });
+    expect(parseUserRewards([])).toEqual({ unclaimed: 0, pending: 0 });
   });
 });
