@@ -45,12 +45,13 @@ export const stabilityPoolAbi = parseAbi([
   "function getCompoundedMUSDDeposit(address) view returns (uint256)",
 ]);
 
-// VaultGauge for sMUSD (verified source on explorer.mezo.org, read 26 Oct): pays MEZO to staked sMUSD.
+// Mezo gauges (VaultGauge for sMUSD, pool gauges alike; verified source on explorer.mezo.org, read 26 Oct): pay MEZO to staked tokens.
 export const vaultGaugeAbi = parseAbi([
   "function balanceOf(address) view returns (uint256)",
   "function totalSupply() view returns (uint256)",
   "function rewardRate() view returns (uint256)",
   "function periodFinish() view returns (uint256)",
+  "function stakingToken() view returns (address)",
 ]);
 
 export const erc4626Abi = parseAbi(["function totalAssets() view returns (uint256)"]);

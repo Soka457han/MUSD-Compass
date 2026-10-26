@@ -1,9 +1,10 @@
 import { cacheLife } from "next/cache";
 import { formatUnits, getAddress, type Address } from "viem";
 import type { BorrowParams } from "@/lib/carry/carry";
-import { borrowerOperationsAbi, erc20Abi, interestRateManagerAbi, poolAbi, priceFeedAbi, stabilityPoolAbi } from "@/lib/chain/abis";
+import { borrowerOperationsAbi, erc20Abi, interestRateManagerAbi, poolAbi, priceFeedAbi, stabilityPoolAbi, vaultGaugeAbi } from "@/lib/chain/abis";
 import { MAINNET } from "@/lib/chain/addresses";
 import { mezoClient } from "@/lib/chain/clients";
+import { gaugeAprPct } from "@/lib/gauge";
 import type { Venue } from "@/lib/venue";
 
 // Values read live on 24 Oct 2026; used only if the chain read fails.
@@ -35,13 +36,14 @@ export function poolTvlUsd(
 
 export type MezoData = { venues: Venue[]; borrow: ReturnType<typeof toBorrowParams>; btcPriceUsd: number; gasPriceWei: string; paramsLive: boolean };
 
-const POOLS: { address: Address; name: string; kind: string }[] = [
-  { address: MAINNET.pools.musdcMusdCl10, name: "Mezo pool mUSDC/MUSD-10", kind: "Concentrated stable" },
-  { address: MAINNET.pools.btcMusd, name: "Mezo pool BTC/MUSD", kind: "Basic volatile" },
-  { address: MAINNET.pools.btcMusdCl200, name: "Mezo pool BTC/MUSD-200", kind: "Concentrated volatile" },
-  { address: MAINNET.pools.musdMusdt, name: "Mezo pool MUSD/mUSDT", kind: "Basic stable" },
-  { address: MAINNET.pools.musdcMusd, name: "Mezo pool mUSDC/MUSD", kind: "Basic stable" },
-  { address: MAINNET.pools.mezoMusdCl200, name: "Mezo pool MEZO/MUSD-200", kind: "Concentrated volatile" },
+// Gauges from the Mezo app (26 Oct); each is used only if its stakingToken() is the pool, so a wrong address is ignored.
+const POOLS: { address: Address; name: string; kind: string; gauge: Address }[] = [
+  { address: MAINNET.pools.musdcMusdCl10, name: "Mezo pool mUSDC/MUSD-10", kind: "Concentrated stable", gauge: "0x6d446E27505c71EE39D632488cE849fEF6aFFc57" as Address },
+  { address: MAINNET.pools.btcMusd, name: "Mezo pool BTC/MUSD", kind: "Basic volatile", gauge: "0x8Be20a5fF57E381025aE5E3A121B697269569AaF" as Address },
+  { address: MAINNET.pools.btcMusdCl200, name: "Mezo pool BTC/MUSD-200", kind: "Concentrated volatile", gauge: "0x21d7AcB0D128fA039064B6aCe8Db88c0aDe0209E" as Address },
+  { address: MAINNET.pools.musdMusdt, name: "Mezo pool MUSD/mUSDT", kind: "Basic stable", gauge: "0x4887Fa1C88f8927932e5e1545b3b29A1a29656E7" as Address },
+  { address: MAINNET.pools.musdcMusd, name: "Mezo pool mUSDC/MUSD", kind: "Basic stable", gauge: "0x2945401F5E015A122b482de0EA5Bf92C005C3C75" as Address },
+  { address: MAINNET.pools.mezoMusdCl200, name: "Mezo pool MEZO/MUSD-200", kind: "Concentrated volatile", gauge: "0xa763cEE0cBE643e2381CE2B0C457b4451d59C40D" as Address },
 ];
 
 async function readPool(address: Address) {
@@ -60,31 +62,22 @@ async function readPool(address: Address) {
 
 export type MezoChain = Awaited<ReturnType<typeof readMezo>>;
 
-/** A pool's two rates in the Mezo app, in %: trading fees for unstaked LP, MEZO emissions for LP staked in the gauge. */
-export type MezoPoolApr = { feeApr: number; emissionsApr: number };
-
-const bps = (n: unknown) => (typeof n === "number" && Number.isFinite(n) && n >= 0 && n < 10_000_000 ? n / 100 : null);
-
-/** api.mezo.org/pools gives both rates in basis points (9 = 0.09%, checked against mezo.org/earn/pools on 26 Oct). */
-export function parseMezoPools(data: { address?: unknown; emissionsApr?: unknown; stats?: { apr?: unknown } }[]): Record<string, MezoPoolApr> {
-  const out: Record<string, MezoPoolApr> = {};
-  for (const p of data) {
-    const fee = bps(p.stats?.apr);
-    const em = bps(p.emissionsApr);
-    if (typeof p.address === "string" && fee !== null && em !== null) out[p.address.toLowerCase()] = { feeApr: fee, emissionsApr: em };
+/** A gauge's MEZO stream and how much LP is staked in it, as strings for the cache. Null if it is not this pool's gauge. */
+async function readGauge(gauge: Address, pool: Address) {
+  try {
+    const g = { address: gauge, abi: vaultGaugeAbi } as const;
+    const [stakingToken, rewardRate, staked, periodFinish, poolSupply] = await Promise.all([
+      mezoClient.readContract({ ...g, functionName: "stakingToken" }),
+      mezoClient.readContract({ ...g, functionName: "rewardRate" }),
+      mezoClient.readContract({ ...g, functionName: "totalSupply" }),
+      mezoClient.readContract({ ...g, functionName: "periodFinish" }),
+      mezoClient.readContract({ address: pool, abi: erc20Abi, functionName: "totalSupply" }).catch(() => 0n), // concentrated pools have no LP token
+    ]);
+    if (stakingToken.toLowerCase() !== pool.toLowerCase()) return null;
+    return { rewardRate: rewardRate.toString(), staked: staked.toString(), periodFinish: periodFinish.toString(), poolSupply: poolSupply.toString() };
+  } catch {
+    return null;
   }
-  return out;
-}
-
-/** The endpoint the Mezo app's pools page reads. Not a documented API, so a failure only leaves pools unranked. */
-export async function fetchMezoPoolAprs(): Promise<Record<string, MezoPoolApr>> {
-  "use cache: remote";
-  cacheLife({ revalidate: 300, expire: 86_400 });
-  const r = await fetch("https://api.mezo.org/pools?filter=known%2Ctvl", { signal: AbortSignal.timeout(8000) });
-  if (!r.ok) throw new Error(`api.mezo.org/pools → HTTP ${r.status}`);
-  const j = (await r.json()) as { data?: unknown };
-  if (!Array.isArray(j.data)) throw new Error("api.mezo.org/pools: no data array");
-  return parseMezoPools(j.data);
 }
 
 /** Everything read from the Mezo chain, cached on its own. It takes no arguments on purpose: a cached function's
@@ -112,14 +105,14 @@ export async function readMezo() {
 
   const [spDeposits, pools, gasPrice] = await Promise.all([
     mezoClient.readContract({ address: MAINNET.stabilityPool, abi: stabilityPoolAbi, functionName: "getTotalMUSDDeposits" }),
-    Promise.all(POOLS.map(async (p) => ({ ...p, tokens: (await readPool(p.address)).map((t) => ({ ...t, reserve: t.reserve.toString() })) }))),
+    Promise.all(POOLS.map(async (p) => ({ ...p, tokens: (await readPool(p.address)).map((t) => ({ ...t, reserve: t.reserve.toString() })), gaugeRead: await readGauge(p.gauge, p.address) }))),
     mezoClient.getGasPrice(),
   ]);
   return { now, btcPrice, borrow, paramsLive, spDeposits: Number(formatUnits(spDeposits, 18)), pools, gasPriceWei: gasPrice.toString() };
 }
 
 /** Builds the Mezo venues from the cached chain read and today's MEZO price. */
-export function mezoVenues(chain: MezoChain, mezoPriceUsd: number, aprs: Record<string, MezoPoolApr> | null = null): MezoData {
+export function mezoVenues(chain: MezoChain, mezoPriceUsd: number): MezoData {
   const { now, btcPrice, borrow, paramsLive, spDeposits } = chain;
   const pools = chain.pools.map((p) => ({ ...p, tvl: poolTvlUsd(p.tokens.map((t) => ({ ...t, reserve: BigInt(t.reserve) })), { btcUsd: btcPrice, mezoUsd: mezoPriceUsd }) }));
 
@@ -140,36 +133,43 @@ export function mezoVenues(chain: MezoChain, mezoPriceUsd: number, aprs: Record<
       updatedAt: now,
     },
     ...pools.map((p): Venue => {
-      const a = aprs?.[p.address.toLowerCase()];
+      const g = p.gaugeRead;
+      // Staked value: a basic pool's share of LP in the gauge. Concentrated pools have no LP token, so all liquidity counts (a floor on the rate).
+      const concentrated = p.kind.startsWith("Concentrated");
+      const share = g && !concentrated && BigInt(g.poolSupply) > 0n ? Number((BigInt(g.staked) * 10_000n) / BigInt(g.poolSupply)) / 10_000 : 1;
+      const stakedUsd = p.tvl * share;
+      const mezoApr = g && mezoPriceUsd > 0 ? gaugeAprPct(BigInt(g.rewardRate), stakedUsd, BigInt(g.periodFinish), Date.parse(now) / 1000, mezoPriceUsd) : null;
       // Only stable pairs are a place for MUSD alone; a BTC or MEZO pair needs that token too, so it stays unranked.
-      const ranked = a && p.kind.includes("stable");
-      const staked = a ? a.emissionsApr >= a.feeApr : false; // staked LP earns MEZO, and its fees go to voters: the better of the two
+      const ranked = mezoApr !== null && mezoApr > 0 && p.kind.includes("stable");
       const p2 = (n: number) => `${n.toFixed(2)}%`;
+      const atLeast = concentrated ? "at least " : "";
       return {
         id: `mezo-pool-${p.address.toLowerCase()}`,
         name: p.name,
         chain: "Mezo",
         rates: ranked
-          ? { liquidApr: staked ? 0 : a.feeApr, lockedApr: null, fixedCostUsd: 0, tvl: p.tvl, emissionsApr: staked ? a.emissionsApr : null }
+          ? { liquidApr: 0, lockedApr: null, fixedCostUsd: 0, tvl: stakedUsd, emissionsApr: mezoApr }
           : { liquidApr: null, lockedApr: null, fixedCostUsd: 0, tvl: p.tvl },
         tvlUsd: p.tvl,
         ends: null,
-        action: { label: a ? "Add liquidity in the Mezo app" : "See APR in the Mezo app", url: "https://mezo.org/earn/pools" },
-        source: a ? { label: "Mezo app (api.mezo.org/pools)", url: "https://mezo.org/earn/pools" } : { label: "Mezo chain — pool reserves", url: `https://explorer.mezo.org/address/${p.address}` },
+        action: { label: ranked ? "Add liquidity in the Mezo app" : "See APR in the Mezo app", url: "https://mezo.org/earn/pools" },
+        source: { label: g ? "Mezo chain — pool reserves and gauge" : "Mezo chain — pool reserves", url: `https://explorer.mezo.org/address/${g ? p.gauge : p.address}` },
         routes: [],
         tags: [
           "Mezo-native",
           p.kind,
           ...(p.name.includes("BTC") ? ["BTC price exposure"] : []),
           ...(p.name.includes("MEZO/") ? ["MEZO price exposure"] : []),
-          ...(a ? [ranked ? (staked ? `Paid in MEZO when staked (liquid, price moves)` : "Trading fees") : `Mezo app: ${p2(a.feeApr)} fees, or ${p2(a.emissionsApr)} in MEZO staked`] : []),
+          ...(ranked ? ["Paid in MEZO when staked (liquid, price moves)"] : []),
+          ...(mezoApr !== null && mezoApr > 0 && !ranked ? [`Mezo chain: ${atLeast}${p2(mezoApr)} in MEZO staked`] : []),
         ],
-        notes: a
-          ? [
-              `Mezo app today: ${p2(a.feeApr)} trading fees unstaked, or ${p2(a.emissionsApr)} in MEZO with the LP staked in its gauge (staking hands the fees to voters). Compass uses the higher one.`,
-              ...(p.kind.startsWith("Concentrated") ? ["Concentrated pool: your rate depends on the price range you pick."] : []),
-            ]
-          : ["The Mezo app shows this pool's fee APR and emissions APR; Compass shows its size and links there."],
+        notes:
+          mezoApr !== null
+            ? [
+                `The gauge pays ${atLeast}${p2(mezoApr)} a year in MEZO to staked LP (reward rate × a year × MEZO price ÷ staked value). Staking hands the pool's trading fees to voters, so fees are not added.`,
+                ...(concentrated ? ["Concentrated pool: only in-range liquidity earns, so in-range LP gets more than this floor."] : []),
+              ]
+            : ["The Mezo app shows this pool's fee APR and emissions APR; Compass shows its size and links there."],
         status: "ok",
         updatedAt: now,
       };

@@ -32,7 +32,7 @@ function actionFor(r: Row, benchmarkId: string) {
 function Places({ amount, sources }: { amount: number; sources: Sources }) {
   const all = placesFor(amount, sources);
   const ranked = all.filter((v) => v.carry.cash !== null);
-  const paired = all.filter((v) => v.carry.cash === null && v.tags.some((t) => t.startsWith("Mezo app:")));
+  const paired = all.filter((v) => v.carry.cash === null && v.tags.some((t) => t.startsWith("Mezo chain:")));
   const link = (v: VenueOut) => (v.id === sources.benchmarkId ? { label: "Mezo app", url: MEZO_VAULTS } : { label: v.chain === "Mezo" ? "Mezo app" : "Open", url: v.action.url });
   return (
     <section aria-labelledby="places-h" className="rounded-[20px] border border-line bg-card px-5 py-5">
@@ -70,7 +70,7 @@ function Places({ amount, sources }: { amount: number; sources: Sources }) {
           <ul className="mt-2 space-y-1.5 text-xs text-ink-muted">
             {paired.map((v) => (
               <li key={v.id}>
-                <span className="font-semibold text-ink">{v.name}</span>: {v.tags.find((t) => t.startsWith("Mezo app:"))!.replace("Mezo app: ", "")} · {v.tags.filter((t) => t.endsWith("price exposure")).join(", ")}
+                <span className="font-semibold text-ink">{v.name}</span>: {v.tags.find((t) => t.startsWith("Mezo chain:"))!.replace("Mezo chain: ", "")} · {v.tags.filter((t) => t.endsWith("price exposure")).join(", ")}
               </li>
             ))}
           </ul>
@@ -202,7 +202,7 @@ export function MyPanel({ sources }: { sources: Sources }) {
             })}
           </ul>
           <p className="mt-3 text-xs text-ink-muted">
-            Compared with every ranked place for that same amount: the Savings Vault, Mezo&apos;s stable pools (fees, or MEZO when staked) and Mezo-paid pools on Ethereum, holding 90 days, after costs. Locked veMEZO is not counted as cash. Rates and reward campaigns change week to week.
+            Compared with every ranked place for that same amount: the Savings Vault, Mezo&apos;s stable pools (MEZO paid to staked LP) and Mezo-paid pools on Ethereum, holding 90 days, after costs. Locked veMEZO is not counted as cash. Rates and reward campaigns change week to week.
           </p>
         </section>
       )}

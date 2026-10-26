@@ -32,5 +32,5 @@ Guard code: [`web/src/lib/sendSafely.ts`](../web/src/lib/sendSafely.ts). The all
 ## Live numbers checked against their source (26 Oct 2026)
 
 - Savings Vault gauge: `rewardRate` 0.4425 MEZO/s over 5,309,027 staked sMUSD at MEZO $0.005276 = 1.39% a year; the Mezo app shows 1.38%. Staking hands the vault's savings yield to veBTC voters (Mezo docs, Earn → Vaults).
-- Mezo pool rates come from `api.mezo.org/pools` in basis points (mUSDC/MUSD-10: 9 = 0.09% fees, 181 = 1.81% MEZO), the same figures as mezo.org/earn/pools.
+- Mezo pool rates are read from each pool's gauge on chain, the same way as the vault gauge. The Mezo app showed mUSDC/MUSD-10 at 0.09% fees or 1.81% MEZO staked on 26 Oct; compare it with Compass's figure on the live site.
 - Testnet trove inputs read from BorrowerOperations: minimum net debt 1,800 MUSD, fee 0.1%, gas compensation 200 MUSD; `openTrove(1800 MUSD)` with 0.04 BTC simulates successfully.

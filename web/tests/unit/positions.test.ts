@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { checkText } from "@/components/PriceLabel";
 import { fixtureSources } from "@/lib/sources/fixture";
-import { compare, gaugeAprPct, placesFor, type Positions } from "@/lib/positions";
+import { compare, placesFor, type Positions } from "@/lib/positions";
+import { gaugeAprPct } from "@/lib/gauge";
 
 const sources = fixtureSources();
 const vaultApr = sources.venues.find((v) => v.id === "mezo-smusd")!.rates.liquidApr!;
@@ -37,9 +38,9 @@ describe("checkText", () => {
 
 describe("staked sMUSD", () => {
   it("gauge rate: rewardRate × a year × MEZO price ÷ staked (26 Oct live values give the Mezo app's 1.38%)", () => {
-    const apr = gaugeAprPct(442519857974567886n, 5309027191230031438220956n, 1793232000n, 1793001797, 0.005276);
+    const apr = gaugeAprPct(442519857974567886n, 5_309_027.19, 1793232000n, 1793001797, 0.005276);
     expect(apr).toBeCloseTo(1.387, 2);
-    expect(gaugeAprPct(1n, 1n, 100n, 200, 1)).toBe(0); // reward period over
+    expect(gaugeAprPct(1n, 1, 100n, 200, 1)).toBe(0); // reward period over
   });
   it("staked earns MEZO instead of the savings yield, so unstaking is the better cash place", () => {
     const [row] = compare({ ...base, staked: 10_000, stakedApr: 1.38 }, sources);

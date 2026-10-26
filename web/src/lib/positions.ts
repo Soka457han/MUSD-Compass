@@ -1,6 +1,7 @@
 import { formatUnits, type Address, type PublicClient } from "viem";
 import { erc20Abi, smusdAbi, stabilityPoolAbi, troveManagerAbi, vaultGaugeAbi } from "@/lib/chain/abis";
 import { MAINNET } from "@/lib/chain/addresses";
+import { gaugeAprPct } from "@/lib/gauge";
 import { buildYields, type Sources, type VenueOut } from "@/lib/yields";
 
 /** Where one address's MUSD sits on Mezo mainnet (amounts in MUSD). */
@@ -16,12 +17,6 @@ export type Positions = {
 };
 
 const f = (v: bigint) => Number(formatUnits(v, 18));
-
-/** MEZO a staked sMUSD earns a year, in % at MEZO spot: rewardRate × a year × price ÷ staked. 0 once the period ended. */
-export function gaugeAprPct(rewardRate: bigint, totalSupply: bigint, periodFinish: bigint, nowSec: number, mezoUsd: number): number {
-  if (totalSupply === 0n || Number(periodFinish) <= nowSec) return 0;
-  return ((f(rewardRate) * 31_536_000 * mezoUsd) / f(totalSupply)) * 100;
-}
 
 export async function readPositions(client: PublicClient, address: Address, mezoUsd: number | null): Promise<Omit<Positions, "veMezo">> {
   const tm = { address: MAINNET.troveManager, abi: troveManagerAbi } as const;
@@ -47,7 +42,7 @@ export async function readPositions(client: PublicClient, address: Address, mezo
     wallet: f(wallet),
     vault: f(vault),
     staked: staked === null ? null : f(staked[0]),
-    stakedApr: staked === null || mezoUsd === null ? null : gaugeAprPct(staked[2], staked[1], staked[3], Date.now() / 1000, mezoUsd),
+    stakedApr: staked === null || mezoUsd === null ? null : gaugeAprPct(staked[2], f(staked[1]), staked[3], Date.now() / 1000, mezoUsd), // 1 sMUSD = 1 MUSD ≈ $1
     stability: f(stability),
     trove: status === 1 ? { debt: f(principal + interest + pendingPrincipal + pendingInterest), ratePct: rate / 100 } : null,
   };
