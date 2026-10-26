@@ -90,14 +90,14 @@ export function MyPanel({ sources }: { sources: Sources }) {
     setError(null);
     setBusy(true);
     try {
-      const r = await fetch(`/api/positions/${encodeURIComponent(addr)}`);
+      const r = await fetch(`/api/positions/${encodeURIComponent(addr)}`, { signal: AbortSignal.timeout(25_000) });
       const j = await r.json();
       if (!r.ok) {
         setData(null);
         setError(j.error ?? "Could not read this address.");
       } else setData(j);
-    } catch {
-      setError("Could not reach Compass — check your connection.");
+    } catch (e) {
+      setError(e instanceof DOMException && e.name === "TimeoutError" ? "Mezo is slow to answer right now. Try again in a minute." : "Could not reach Compass — check your connection.");
     } finally {
       setBusy(false);
     }

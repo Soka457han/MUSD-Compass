@@ -27,7 +27,7 @@ export function TrovePanel() {
     setError(null);
     setBusy(true);
     try {
-      const r = await fetch(`/api/trove/${encodeURIComponent(addr)}`);
+      const r = await fetch(`/api/trove/${encodeURIComponent(addr)}`, { signal: AbortSignal.timeout(25_000) });
       const j = await r.json();
       if (!r.ok) {
         setT(null);
@@ -36,8 +36,8 @@ export function TrovePanel() {
         setT(j);
         if (addr === "sample") setLookup(j.address);
       }
-    } catch {
-      setError("Could not reach Compass — check your connection.");
+    } catch (e) {
+      setError(e instanceof DOMException && e.name === "TimeoutError" ? "Mezo is slow to answer right now. Try again in a minute." : "Could not reach Compass — check your connection.");
     } finally {
       setBusy(false);
     }

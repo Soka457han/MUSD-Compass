@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { connection } from "next/server";
 import { Suspense } from "react";
 import { MyPanel } from "@/components/MyPanel";
 import { SiteHeader } from "@/components/SiteHeader";
@@ -7,6 +8,8 @@ import { loadSources } from "@/lib/sources";
 export const metadata: Metadata = { title: "My MUSD · MUSD Compass" };
 
 async function Live() {
+  // Rendered per request, not at build time: a slow chain read during the build stopped two deploys on 26 Oct.
+  await connection();
   return <MyPanel sources={await loadSources()} />;
 }
 
