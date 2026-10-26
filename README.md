@@ -7,8 +7,8 @@ Mezo Buildathon, Wave 1 · Track 1 (DeFi) and Track 2 (Access & Distribution) ·
 | | |
 |---|---|
 | **Live app** | [musd-compass.vercel.app](https://musd-compass.vercel.app) (works on a phone, no wallet needed) |
-| **Demo video (2 min)** | [add the video link] |
-| **Deck** | [add the deck PDF link] |
+| **Demo video (2 min)** | [(https://www.youtube.com/watch?v=MzgrWvwby00)] |
+| **Deck** | [(https://musd-compass.vercel.app/musd-compass-deck.pdf)] |
 | **Telegram bot** | [@musd_compass_bot](https://t.me/musd_compass_bot) |
 | **API and widget** | [/developers](https://musd-compass.vercel.app/developers) |
 | **Proof** | [Testnet transactions](#testnet-proof) · [all evidence](docs/evidence.md) |
@@ -123,7 +123,7 @@ Accepted for Wave 1: a zod 3 advisory inside `@x402` (GHSA-mrhx-c7xc-m3w5; the s
 
 Free for people. Apps and agents pay 0.001 test MUSD per call to the premium endpoint (every mode × holding period, plus planner and rewards for an address) over x402, and a real paid call is on-chain (see proof). Mainnet pricing is not set yet; it needs a mainnet x402 deployment.
 
-## Verification (26 Oct 2026)
+## Verification 
 
 Each number was compared with its primary source, the chain or Merkl, as well as with our own API.
 
@@ -154,10 +154,7 @@ Each number was compared with its primary source, the chain or Merkl, as well as
 - x402 on mainnet MUSD, with real pricing set at the same time.
 - A shared rate-limit store, and a review of the zod advisory once x402 moves to zod 4 (by 26 Nov 2026).
 - Mezo pool APRs read on chain, so the pools join the ranking.
-
-### After Wave 2
-
-Routes into Mezo pools and veMEZO, the API inside other Mezo apps, and the bot on WhatsApp.
+- Routes into Mezo pools and veMEZO, the API inside other Mezo apps, and the bot on WhatsApp.
 
 ## Run locally
 
