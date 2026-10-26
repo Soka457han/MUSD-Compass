@@ -37,7 +37,7 @@ MUSD Compass ranks every place Mezo's MUSD can earn by cash you keep after costs
 
 **Business model.** Free for people. Agents and apps that want everything in one call — every mode × holding period, plus an address's trove and rewards — pay 0.001 MUSD per call over x402. Distribution: the Telegram bot, the widget inside other sites, and the API inside other apps.
 
-**Proof (Mezo testnet):** exact approve 100 MUSD, deposit 100, withdraw 10, and one x402 payment — explorer links in the README.
+**Proof (Mezo testnet):** exact approve 100 MUSD, deposit 100, withdraw 10, a yield claim, and one x402 payment — explorer links in the README.
 
 ## Target group
 - **Who:** MUSD holders and borrowers on Mezo, and BTC holders deciding whether to borrow MUSD at all — retail and DeFi users from beginner to intermediate who want one clear answer: "where does my MUSD earn most after costs?" Secondary: developers and AI agents who want the same numbers by API.

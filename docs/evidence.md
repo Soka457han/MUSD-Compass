@@ -12,7 +12,7 @@ Every on-chain action Compass has taken, in one place. All writes are on Mezo te
 | 4 | x402 payment for `/api/premium/yields` (facilitator sent it and paid gas; Permit2 approval exactly 0.001) | 0.001 MUSD | dev wallet (payer = payee) | [`0x0454c620…4997`](https://explorer.test.mezo.org/tx/0x0454c620d5b02fa6dd9ba0fb3f6665894498d15b825cf8730ff47a0683fa4997) |
 | 5 | x402 payment from a second wallet (payer ≠ payee) | 0.001 MUSD | TODO | TODO |
 | 6 | Open a trove, then deposit the borrowed MUSD (Borrow → Earn on `/vault`) | TODO | TODO | TODO |
-| 7 | Claim yield | — | dev wallet | Not yet: on 26 Oct 10:20 UTC the vault reported 0 MUSD pending for this wallet, so a claim would pay nothing |
+| 7 | Claim yield after a distribution (26 Oct) | 0.1031 MUSD | dev wallet | [`0xe79ae272…7734`](https://explorer.test.mezo.org/tx/0xe79ae272024d2fe8998a1891ad07166d9a72c8093e17fdf7d6cee8007d6f7734) |
 
 ## How to add the missing rows
 
