@@ -81,3 +81,12 @@ test("while the wallet is asking, the picker says so and waits", async ({ page }
   await expect(dialog.getByText("Opening Slow Wallet…")).toBeVisible();
   await expect(dialog.getByText(/Confirm the connection in your wallet/)).toBeVisible();
 });
+
+test("Try to break it: unlimited approval and an unknown contract are refused with no wallet", async ({ page }) => {
+  await page.goto("/vault");
+  const panel = page.getByRole("region", { name: "Try to break it" });
+  await panel.getByRole("button", { name: "Ask for an unlimited MUSD approval" }).click();
+  await expect(panel.getByText(/Refused before any wallet is asked: Compass never asks for an unlimited approval/)).toBeVisible();
+  await panel.getByRole("button", { name: "Send to a contract that is not the vault" }).click();
+  await expect(panel.getByText(/Refused before any wallet is asked: Compass only sends to testnet MUSD, sMUSD and BorrowerOperations/)).toBeVisible();
+});

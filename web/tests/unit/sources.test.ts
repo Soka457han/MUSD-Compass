@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { parseUnits } from "viem";
-import { mezoVenues, poolTvlUsd, readMezo, toBorrowParams, type MezoChain } from "@/lib/sources/mezo";
+import { mezoVenues, parseMezoPools, poolTvlUsd, readMezo, toBorrowParams, type MezoChain } from "@/lib/sources/mezo";
 import { roundTripCostUsd } from "@/lib/sources/ethereum";
 import { MAINNET } from "@/lib/chain/addresses";
 
@@ -98,5 +98,40 @@ describe("Mezo source caching", () => {
     const tvlAt = (price: number) => mezoVenues(chain, price).venues.find((v) => v.name.includes("MEZO/"))!.tvlUsd;
     expect(tvlAt(0.005)).toBeCloseTo(10_000, 6);
     expect(tvlAt(0.006)).toBeCloseTo(11_000, 6);
+  });
+});
+
+describe("Mezo app pool rates", () => {
+  it("reads basis points and drops anything that is not a sane number", () => {
+    const r = parseMezoPools([
+      { address: "0xCC372B7E15535aB225fe17c1075831D38ef7aC1a", stats: { apr: 9 }, emissionsApr: 181 },
+      { address: "0xbad", stats: { apr: -1 }, emissionsApr: 5 },
+      { address: 7, stats: { apr: 1 }, emissionsApr: 1 },
+    ]);
+    expect(r).toEqual({ "0xcc372b7e15535ab225fe17c1075831d38ef7ac1a": { feeApr: 0.09, emissionsApr: 1.81 } });
+  });
+});
+
+describe("Mezo pools with the Mezo app's rates", () => {
+  const pool = (address: string, name: string, kind: string) => ({ address, name, kind, tokens: [{ address: MAINNET.musd, reserve: (10n ** 24n).toString(), decimals: 18 }] });
+  const chain: MezoChain = {
+    now: "2026-10-26T00:00:00.000Z", btcPrice: 80_000, borrow: { feePct: 0.1, gasCompensation: 200, minNetDebt: 1800, ratePct: 1 },
+    paramsLive: true, spDeposits: 1, gasPriceWei: "1",
+    pools: [pool("0x00000000000000000000000000000000000000aa", "Mezo pool mUSDC/MUSD-10", "Concentrated stable"), pool("0x00000000000000000000000000000000000000bb", "Mezo pool BTC/MUSD", "Basic volatile")] as MezoChain["pools"],
+  };
+  const aprs = { "0x00000000000000000000000000000000000000aa": { feeApr: 0.09, emissionsApr: 1.81 }, "0x00000000000000000000000000000000000000bb": { feeApr: 1.54, emissionsApr: 82.21 } };
+  const v = mezoVenues(chain, 0.005, aprs).venues;
+  it("a stable pool is ranked at the better of fees or staked MEZO, not both", () => {
+    const s = v.find((x) => x.name.includes("mUSDC"))!;
+    expect(s.rates).toMatchObject({ liquidApr: 0, emissionsApr: 1.81 });
+    expect(s.tags).toContain("Paid in MEZO when staked (liquid, price moves)");
+  });
+  it("a BTC pair stays unranked (it needs BTC too) but shows the Mezo app's rates", () => {
+    const b = v.find((x) => x.name.includes("BTC/"))!;
+    expect(b.rates.liquidApr).toBeNull();
+    expect(b.tags).toContain("Mezo app: 1.54% fees, or 82.21% in MEZO staked");
+  });
+  it("without the Mezo app's rates the pools stay size-only, as before", () => {
+    expect(mezoVenues(chain, 0.005).venues.every((x) => x.rates.liquidApr === null)).toBe(true);
   });
 });

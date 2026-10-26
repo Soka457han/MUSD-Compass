@@ -60,6 +60,33 @@ async function readPool(address: Address) {
 
 export type MezoChain = Awaited<ReturnType<typeof readMezo>>;
 
+/** A pool's two rates in the Mezo app, in %: trading fees for unstaked LP, MEZO emissions for LP staked in the gauge. */
+export type MezoPoolApr = { feeApr: number; emissionsApr: number };
+
+const bps = (n: unknown) => (typeof n === "number" && Number.isFinite(n) && n >= 0 && n < 10_000_000 ? n / 100 : null);
+
+/** api.mezo.org/pools gives both rates in basis points (9 = 0.09%, checked against mezo.org/earn/pools on 26 Oct). */
+export function parseMezoPools(data: { address?: unknown; emissionsApr?: unknown; stats?: { apr?: unknown } }[]): Record<string, MezoPoolApr> {
+  const out: Record<string, MezoPoolApr> = {};
+  for (const p of data) {
+    const fee = bps(p.stats?.apr);
+    const em = bps(p.emissionsApr);
+    if (typeof p.address === "string" && fee !== null && em !== null) out[p.address.toLowerCase()] = { feeApr: fee, emissionsApr: em };
+  }
+  return out;
+}
+
+/** The endpoint the Mezo app's pools page reads. Not a documented API, so a failure only leaves pools unranked. */
+export async function fetchMezoPoolAprs(): Promise<Record<string, MezoPoolApr>> {
+  "use cache: remote";
+  cacheLife({ revalidate: 300, expire: 86_400 });
+  const r = await fetch("https://api.mezo.org/pools?filter=known%2Ctvl", { signal: AbortSignal.timeout(8000) });
+  if (!r.ok) throw new Error(`api.mezo.org/pools → HTTP ${r.status}`);
+  const j = (await r.json()) as { data?: unknown };
+  if (!Array.isArray(j.data)) throw new Error("api.mezo.org/pools: no data array");
+  return parseMezoPools(j.data);
+}
+
 /** Everything read from the Mezo chain, cached on its own. It takes no arguments on purpose: a cached function's
  *  arguments are part of its cache key, and the MEZO price used to be one, so every Merkl price tick forced a fresh
  *  (slow, blocking) set of chain reads. Prices are applied afterwards in mezoVenues(). */
@@ -92,7 +119,7 @@ export async function readMezo() {
 }
 
 /** Builds the Mezo venues from the cached chain read and today's MEZO price. */
-export function mezoVenues(chain: MezoChain, mezoPriceUsd: number): MezoData {
+export function mezoVenues(chain: MezoChain, mezoPriceUsd: number, aprs: Record<string, MezoPoolApr> | null = null): MezoData {
   const { now, btcPrice, borrow, paramsLive, spDeposits } = chain;
   const pools = chain.pools.map((p) => ({ ...p, tvl: poolTvlUsd(p.tokens.map((t) => ({ ...t, reserve: BigInt(t.reserve) })), { btcUsd: btcPrice, mezoUsd: mezoPriceUsd }) }));
 
@@ -112,23 +139,41 @@ export function mezoVenues(chain: MezoChain, mezoPriceUsd: number): MezoData {
       status: "ok",
       updatedAt: now,
     },
-    ...pools.map(
-      (p): Venue => ({
+    ...pools.map((p): Venue => {
+      const a = aprs?.[p.address.toLowerCase()];
+      // Only stable pairs are a place for MUSD alone; a BTC or MEZO pair needs that token too, so it stays unranked.
+      const ranked = a && p.kind.includes("stable");
+      const staked = a ? a.emissionsApr >= a.feeApr : false; // staked LP earns MEZO, and its fees go to voters: the better of the two
+      const p2 = (n: number) => `${n.toFixed(2)}%`;
+      return {
         id: `mezo-pool-${p.address.toLowerCase()}`,
         name: p.name,
         chain: "Mezo",
-        rates: { liquidApr: null, lockedApr: null, fixedCostUsd: 0, tvl: p.tvl },
+        rates: ranked
+          ? { liquidApr: staked ? 0 : a.feeApr, lockedApr: null, fixedCostUsd: 0, tvl: p.tvl, emissionsApr: staked ? a.emissionsApr : null }
+          : { liquidApr: null, lockedApr: null, fixedCostUsd: 0, tvl: p.tvl },
         tvlUsd: p.tvl,
         ends: null,
-        action: { label: "See APR in the Mezo app", url: "https://mezo.org/earn/pools" },
-        source: { label: "Mezo chain — pool reserves", url: `https://explorer.mezo.org/address/${p.address}` },
+        action: { label: a ? "Add liquidity in the Mezo app" : "See APR in the Mezo app", url: "https://mezo.org/earn/pools" },
+        source: a ? { label: "Mezo app (api.mezo.org/pools)", url: "https://mezo.org/earn/pools" } : { label: "Mezo chain — pool reserves", url: `https://explorer.mezo.org/address/${p.address}` },
         routes: [],
-        tags: ["Mezo-native", p.kind, ...(p.name.includes("BTC") ? ["BTC price exposure"] : []), ...(p.name.includes("MEZO/") ? ["MEZO price exposure"] : [])],
-        notes: ["The Mezo app shows this pool's fee APR and emissions APR; Compass shows its size and links there."],
+        tags: [
+          "Mezo-native",
+          p.kind,
+          ...(p.name.includes("BTC") ? ["BTC price exposure"] : []),
+          ...(p.name.includes("MEZO/") ? ["MEZO price exposure"] : []),
+          ...(a ? [ranked ? (staked ? `Paid in MEZO when staked (liquid, price moves)` : "Trading fees") : `Mezo app: ${p2(a.feeApr)} fees, or ${p2(a.emissionsApr)} in MEZO staked`] : []),
+        ],
+        notes: a
+          ? [
+              `Mezo app today: ${p2(a.feeApr)} trading fees unstaked, or ${p2(a.emissionsApr)} in MEZO with the LP staked in its gauge (staking hands the fees to voters). Compass uses the higher one.`,
+              ...(p.kind.startsWith("Concentrated") ? ["Concentrated pool: your rate depends on the price range you pick."] : []),
+            ]
+          : ["The Mezo app shows this pool's fee APR and emissions APR; Compass shows its size and links there."],
         status: "ok",
         updatedAt: now,
-      }),
-    ),
+      };
+    }),
   ];
 
   return { venues, borrow, btcPriceUsd: btcPrice, gasPriceWei: chain.gasPriceWei, paramsLive };

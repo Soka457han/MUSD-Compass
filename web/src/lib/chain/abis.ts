@@ -33,6 +33,8 @@ export const borrowerOperationsAbi = parseAbi([
   "function minNetDebt() view returns (uint256)",
   "function borrowingRate() view returns (uint256)",
   "function MUSD_GAS_COMPENSATION() view returns (uint256)",
+  // mezo-org/musd solidity/contracts/interfaces/IBorrowerOperations.sol: collateral is the BTC sent with the call.
+  "function openTrove(uint256 _debtAmount, address _upperHint, address _lowerHint) payable",
 ]);
 
 export const interestRateManagerAbi = parseAbi(["function interestRate() view returns (uint16)"]);
@@ -41,6 +43,14 @@ export const interestRateManagerAbi = parseAbi(["function interestRate() view re
 export const stabilityPoolAbi = parseAbi([
   "function getTotalMUSDDeposits() view returns (uint256)",
   "function getCompoundedMUSDDeposit(address) view returns (uint256)",
+]);
+
+// VaultGauge for sMUSD (verified source on explorer.mezo.org, read 26 Oct): pays MEZO to staked sMUSD.
+export const vaultGaugeAbi = parseAbi([
+  "function balanceOf(address) view returns (uint256)",
+  "function totalSupply() view returns (uint256)",
+  "function rewardRate() view returns (uint256)",
+  "function periodFinish() view returns (uint256)",
 ]);
 
 export const erc4626Abi = parseAbi(["function totalAssets() view returns (uint256)"]);

@@ -113,9 +113,17 @@ test("My MUSD: each holding against the best place, plus trove and veMEZO; reach
   await expect(page).toHaveURL(/\/my$/);
   await page.getByRole("button", { name: "Try a sample" }).click();
   const holdings = page.getByRole("region", { name: "Each holding against the best cash place today" });
-  await expect(holdings.getByRole("listitem").filter({ hasText: "Idle in your wallet" })).toContainText(/1,250 MUSD.*Earns 0\.00% cash.*more a year/);
-  await expect(holdings.getByRole("listitem").filter({ hasText: /^Savings Vault/ })).toContainText("This is the best cash place today.");
-  await expect(holdings.getByRole("listitem").filter({ hasText: "Stability Pool" })).toContainText("No steady APR");
+  const row = (name: string) => holdings.getByRole("listitem").filter({ has: page.getByRole("heading", { name, exact: true }) });
+  await expect(row("Idle in your wallet")).toContainText(/1,250 MUSD.*Earns nothing.*more a year/);
+  // Mainnet holdings act in the Mezo app, not on the testnet vault page.
+  await expect(row("Idle in your wallet").getByRole("link", { name: /Deposit in the Mezo app/ })).toHaveAttribute("href", "https://mezo.org/earn/vaults");
+  await expect(row("Savings Vault")).toContainText("This is the best cash place today.");
+  await expect(row("Savings Vault, staked in the gauge")).toContainText(/about 1\.38% a year, paid in MEZO.*unstaked/);
+  await expect(row("Savings Vault, staked in the gauge").getByRole("link", { name: /Unstake in the Mezo app/ })).toBeVisible();
+  await expect(row("Stability Pool")).toContainText("No steady APR");
+  const places = page.getByRole("region", { name: "Every place 7,050 MUSD could go today" }).getByRole("listitem");
+  await expect(places.first()).toContainText(/MUSD Savings Vault.*4\.01% cash.*about 282 MUSD a year/);
+  await expect(places.filter({ hasText: "Ethereum" }).first()).toContainText("locked veMEZO, not counted");
   await expect(page.getByText(/30,210 MUSD borrowed at 1%/)).toBeVisible();
   await expect(page.getByText(/239\.28 veMEZO waiting/)).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBe(0);

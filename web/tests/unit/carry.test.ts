@@ -125,3 +125,10 @@ describe("entryCheck", () => {
     expect(c.keepMusd!).toBeLessThan(0);
   });
 });
+
+describe("emissions", () => {
+  it("liquid MEZO emissions count as cash and are diluted by the amount added", () => {
+    const c = venueCarry({ liquidApr: 0, lockedApr: null, fixedCostUsd: 0, tvl: 8000, emissionsApr: 2 }, { ...base, mode: "holder" });
+    expect(c.cash).toBeCloseTo((2 * 8000) / 10_000, 6); // 2,000 MUSD into an 8,000 pool
+  });
+});

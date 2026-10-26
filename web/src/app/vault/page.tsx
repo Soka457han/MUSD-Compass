@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { SafetyPanel } from "@/components/SafetyPanel";
 import { SiteHeader } from "@/components/SiteHeader";
 import { VaultPanel } from "@/components/VaultPanel";
 
@@ -14,6 +15,7 @@ export default function VaultPage() {
       <main id="main" className="flex flex-1 flex-col">
         <h1 className="sr-only">MUSD Savings Vault on Mezo testnet</h1>
         <VaultPanel />
+        <SafetyPanel />
       </main>
     </>
   );

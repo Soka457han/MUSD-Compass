@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
-import { parseUnits, type Address, type WalletClient } from "viem";
-import { erc20Abi, smusdAbi } from "@/lib/chain/abis";
+import { formatEther, parseUnits, zeroAddress, type Abi, type Address, type WalletClient } from "viem";
+import { borrowerOperationsAbi, erc20Abi, smusdAbi } from "@/lib/chain/abis";
+import { collateralFor, readBorrowSetup, type BorrowSetup } from "@/lib/borrow";
 import { SAMPLES, TESTNET } from "@/lib/chain/addresses";
 import { sendSafely } from "@/lib/sendSafely";
 import type { VaultState } from "@/lib/vault";
@@ -41,13 +42,15 @@ export function VaultPanel() {
   const [picking, setPicking] = useState(false);
   const [picked, setPicked] = useState<Picked | null>(null);
   const [pickError, setPickError] = useState<string | null>(null);
+  const [setup, setSetup] = useState<BorrowSetup | null>(null);
+  const [borrowAmt, setBorrowAmt] = useState("2000");
 
   const [loading, setLoading] = useState(false);
   const load = useCallback(async (addr: string) => {
     setLoadError(null);
     setLoading(true);
     try {
-      const r = await fetch(`/api/vault/${addr}`);
+      const r = await fetch(`/api/vault/${encodeURIComponent(addr)}`);
       const j = await r.json();
       if (!r.ok) {
         setState(null);
@@ -89,7 +92,12 @@ export function VaultPanel() {
     await load(c.account);
   };
 
-  const run = async (label: string, steps: { label: string; address: Address; abi: typeof erc20Abi | typeof smusdAbi; functionName: string; args: readonly unknown[] }[]) => {
+  // Re-read the trove inputs whenever the vault position is re-read (after connecting and after every transaction).
+  useEffect(() => {
+    if (account) readBorrowSetup(testnetPublic as never, account).then(setSetup, () => setSetup(null));
+  }, [account, state]);
+
+  const run = async (label: string, steps: { label: string; address: Address; abi: Abi; functionName: string; args: readonly unknown[]; value?: bigint }[]) => {
     if (!wallet || !account) return;
     setBusy(true);
     try {
@@ -119,6 +127,20 @@ export function VaultPanel() {
     const wei = toWei(withdrawAmt);
     if (!wei) return;
     run("Withdraw", [{ label: `Withdraw ${withdrawAmt} sMUSD`, address: TESTNET.smusd, abi: smusdAbi, functionName: "withdraw", args: [wei] }]);
+  };
+  const borrowWei = toWei(borrowAmt);
+  const minBorrow = setup ? Math.ceil(setup.minNetDebt / (1 + setup.feePct / 100)) : 0;
+  const coll = setup && borrowWei ? collateralFor(Number(borrowAmt), setup) : null;
+  const shortBtc = Boolean(setup && coll !== null && Number(formatEther(coll)) + 0.0001 > setup.btcBalance); // keep a little BTC for gas
+  const borrowEarn = () => {
+    if (!borrowWei || !coll || !state) return;
+    const allowance = parseUnits(state.allowance, 18);
+    run("Borrow → Earn", [
+      // shortcut: zero hints make SortedTroves search from the top; fine for testnet's short list, use HintHelpers on mainnet.
+      { label: `Open a trove: lock ${formatEther(coll)} BTC, borrow ${borrowAmt} MUSD`, address: TESTNET.borrowerOperations, abi: borrowerOperationsAbi, functionName: "openTrove", args: [borrowWei, zeroAddress, zeroAddress], value: coll },
+      ...(allowance < borrowWei ? [{ label: `Approve exactly ${borrowAmt} MUSD`, address: TESTNET.musd, abi: erc20Abi, functionName: "approve", args: [TESTNET.smusd, borrowWei] }] : []),
+      { label: `Deposit ${borrowAmt} MUSD`, address: TESTNET.smusd, abi: smusdAbi, functionName: "deposit", args: [borrowWei] },
+    ]);
   };
   const claim = () => run("Claim yield", [{ label: "Claim yield", address: TESTNET.smusd, abi: smusdAbi, functionName: "claimYield", args: [] }]);
 
@@ -282,6 +304,46 @@ export function VaultPanel() {
           <button type="button" onClick={claim} disabled={busy} className="mt-4 inline-flex min-h-11 items-center rounded-full border border-line px-4 text-sm font-bold disabled:opacity-50">
             Claim yield
           </button>
+        </section>
+      )}
+
+      {own && setup && (
+        <section aria-labelledby="borrow-h" className="rounded-[20px] border border-line bg-card px-5 py-5">
+          <h2 id="borrow-h" className="text-base font-bold">
+            Borrow MUSD against BTC, then earn
+          </h2>
+          <p className="mt-1 max-w-prose text-sm text-ink-muted">
+            Opens a trove on Mezo testnet&apos;s BorrowerOperations with your test BTC, then approves exactly that amount and deposits it in the Savings Vault. Three wallet prompts, each simulated first.
+          </p>
+          {setup.hasTrove ? (
+            <p className="mt-3 text-sm">This wallet already has a testnet trove. Deposit its MUSD above; adjust or close the trove in the Mezo app.</p>
+          ) : (
+            <form
+              className="mt-3 space-y-2"
+              onSubmit={(e) => {
+                e.preventDefault();
+                borrowEarn();
+              }}
+            >
+              <label htmlFor="borrow-amt" className="block text-xs font-semibold">
+                Borrow (MUSD, at least {minBorrow.toLocaleString("en-US")})
+              </label>
+              <input id="borrow-amt" inputMode="decimal" value={borrowAmt} onChange={(e) => setBorrowAmt(e.target.value)} className="block h-11 w-full max-w-xs rounded-full border border-field bg-card px-4 text-sm" />
+              {coll !== null && (
+                <p className="text-sm text-ink-muted">
+                  Locks <span className="font-semibold text-ink">{formatEther(coll)} BTC</span> (testnet price ${setup.btcUsd.toLocaleString("en-US", { maximumFractionDigits: 0 })}) for a 200% ratio · fee {(Number(borrowAmt) * setup.feePct / 100).toFixed(2)} MUSD · {setup.gasComp} MUSD gas deposit, returned when the trove closes · you have {setup.btcBalance.toFixed(5)} BTC
+                </p>
+              )}
+              {shortBtc && (
+                <p role="alert" className="text-sm font-semibold text-danger-text">
+                  Not enough test BTC for this trove. <Link href="/get-test-musd" className="underline">Get test BTC</Link> or borrow less.
+                </p>
+              )}
+              <button type="submit" disabled={busy || !borrowWei || Number(borrowAmt) < minBorrow || shortBtc} className="inline-flex min-h-11 items-center rounded-full bg-accent px-5 text-sm font-bold text-on-accent disabled:opacity-50">
+                Borrow {borrowWei ? borrowAmt : ""} MUSD and deposit it
+              </button>
+            </form>
+          )}
         </section>
       )}
 

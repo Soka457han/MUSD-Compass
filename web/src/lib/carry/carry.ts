@@ -24,6 +24,7 @@ export type VenueRates = {
   lockedApr: number | null; // veMEZO rewards, priced at MEZO spot
   fixedCostUsd: number; // one-off round-trip cost (bridge + gas); 0 on Mezo
   tvl: number | null; // for diluting fixed reward streams
+  emissionsApr?: number | null; // liquid MEZO from a Mezo gauge: a fixed stream, so diluted like locked rewards
 };
 
 export type Carry = {
@@ -59,10 +60,10 @@ export function minNewTroveAmount(p: BorrowParams): number {
 
 export function venueCarry(v: VenueRates, i: CarryInput): Carry {
   const costs = borrowCostPct(i) + amortisedPct(v.fixedCostUsd, i.amount, i.days);
-  if (v.liquidApr === null && v.lockedApr === null) {
+  if (v.liquidApr === null && v.lockedApr === null && !v.emissionsApr) {
     return { liquid: null, locked: null, costs, cash: null, total: null };
   }
-  const liquid = v.liquidApr ?? 0;
+  const liquid = (v.liquidApr ?? 0) + (v.emissionsApr ? dilutedApr(v.emissionsApr, v.tvl, i.amount) : 0);
   const locked = v.lockedApr === null ? 0 : dilutedApr(v.lockedApr, v.tvl, i.amount);
   const cash = liquid - costs;
   return { liquid, locked, costs, cash, total: cash + locked };

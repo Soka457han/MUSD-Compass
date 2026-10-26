@@ -27,7 +27,7 @@ export function TrovePanel() {
     setError(null);
     setBusy(true);
     try {
-      const r = await fetch(`/api/trove/${addr}`);
+      const r = await fetch(`/api/trove/${encodeURIComponent(addr)}`);
       const j = await r.json();
       if (!r.ok) {
         setT(null);

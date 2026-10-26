@@ -29,7 +29,7 @@ export function RewardsPanel() {
     setError(null);
     setBusy(true);
     try {
-      const r = await fetch(`/api/rewards/${addr}`);
+      const r = await fetch(`/api/rewards/${encodeURIComponent(addr)}`);
       const j = await r.json();
       if (!r.ok) {
         setData(null);

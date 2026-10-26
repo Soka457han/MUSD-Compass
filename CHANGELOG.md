@@ -1,6 +1,12 @@
 # Changelog
 
 ## 0.1.0 — Wave 1 (25 Oct 2026)
+- Borrow → Earn on testnet (26 Oct): `/vault` opens a trove on Mezo testnet's BorrowerOperations with BTC for a 200% ratio, then approves exactly that MUSD and deposits it in the Savings Vault. The guard allows BorrowerOperations for `openTrove` only.
+- Try to break it (26 Oct): a `/vault` panel that runs an unlimited approval, an unknown contract and an oversized deposit for real with no wallet; the guard now refuses unlimited approvals and approvals to anyone but the vault on its own. `docs/evidence.md` lists every transaction and live check.
+- Client API paths encode the typed address (26 Oct).
+- My MUSD lists every place the address's MUSD could go (26 Oct): best cash first with MUSD a year, locked veMEZO beside it, Mezo's stable pools and Ethereum pools, then the BTC and MEZO pools with their Mezo app rates and what else they need.
+- Mezo pool rates (26 Oct): stable MUSD pools on Mezo are now ranked, using the fee and MEZO-emission rates the Mezo app shows (api.mezo.org/pools). Staked LP earns MEZO and hands its fees to voters, so Compass takes the better of the two, never both; emissions are diluted by the amount you add. BTC and MEZO pairs stay unranked (they need that token too) but show both rates.
+- My MUSD fixes (26 Oct): sMUSD staked in the vault gauge earns MEZO emissions instead of the savings yield (Mezo docs), so it now shows the gauge's live rate (rewardRate × a year × MEZO price ÷ staked; 1.38% on 26 Oct, the same as the Mezo app) and suggests unstaking when the vault pays more. Mainnet holdings link to the Mezo app, not the testnet vault page.
 - My MUSD (26 Oct): `/my` and `GET /api/positions/{address}` read an address's idle MUSD, Savings Vault (and gauge-staked sMUSD), Stability Pool deposit, trove and unclaimed veMEZO on Mezo mainnet, and put each holding next to the best cash place for that amount with the MUSD a year it would add. Linked from the home hero, the Browse tiles and the footer.
 - Before you go in (26 Oct): every ranked venue shows, for your amount and hold, the MUSD you keep, the one-off costs (bridge, gas, borrow fee) and the day they are earned back.
 - Have BTC? (26 Oct): a home button switches to borrowing a new trove and the best-cash card says in one line whether borrowing MUSD to earn pays after the fee and interest.
