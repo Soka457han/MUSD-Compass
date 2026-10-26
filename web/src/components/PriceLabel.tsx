@@ -16,6 +16,22 @@ function PriceFigure({ value }: { value: number }) {
   );
 }
 
+const m2 = (n: number) => `${Math.abs(n).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} MUSD`;
+
+/** "Before you go in": the venue's carry turned into MUSD for this amount and hold. */
+export function checkText(c: VenueOut["check"], days: number): string {
+  if (c.keepMusd === null) return "";
+  const keep = c.keepMusd >= 0 ? `you keep ${m2(c.keepMusd)} cash` : `you lose ${m2(c.keepMusd)}`;
+  if (c.paybackDays === null) return `${keep}, no one-off costs`;
+  const back =
+    c.paybackDays === "never"
+      ? "never earned back at today's yield"
+      : c.paybackDays > days
+        ? `earned back after ${c.paybackDays} days, longer than your hold`
+        : `earned back after ${c.paybackDays} days`;
+  return `${keep} · ${m2(c.oneOffMusd)} one-off costs, ${back}`;
+}
+
 function rangeText(r: Range): string {
   if (r.kind === "never") return "never at today's rates";
   // Round inward so every amount shown is inside the range (1,798.21 → 1,799, the real trove minimum).
@@ -24,7 +40,7 @@ function rangeText(r: Range): string {
 }
 
 /** One venue as a card: the big figure is cash carry; the line under it is how it was worked out. */
-export function PriceLabel({ v, days, lead }: { v: VenueOut; days: number; lead?: boolean }) {
+export function PriceLabel({ v, days, amount, lead }: { v: VenueOut; days: number; amount: number; lead?: boolean }) {
   const { carry } = v;
   const hasCash = carry.cash !== null;
   const locked = carry.locked ?? 0;
@@ -82,6 +98,14 @@ export function PriceLabel({ v, days, lead }: { v: VenueOut; days: number; lead?
       )}
 
       <dl className="mt-4 grid grid-cols-2 gap-x-4 gap-y-1.5 px-5 text-xs">
+        {hasCash && v.check.keepMusd !== null && (
+          <div className="col-span-2">
+            <dt className="text-ink-muted">
+              Before you go in: {musd(amount)} for {days} days
+            </dt>
+            <dd className="font-semibold">{checkText(v.check, days)}</dd>
+          </div>
+        )}
         <div>
           <dt className="text-ink-muted">Size</dt>
           <dd className="font-semibold">{usd(v.tvlUsd)}</dd>

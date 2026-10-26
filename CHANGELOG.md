@@ -1,6 +1,9 @@
 # Changelog
 
 ## 0.1.0 — Wave 1 (25 Oct 2026)
+- My MUSD (26 Oct): `/my` and `GET /api/positions/{address}` read an address's idle MUSD, Savings Vault (and gauge-staked sMUSD), Stability Pool deposit, trove and unclaimed veMEZO on Mezo mainnet, and put each holding next to the best cash place for that amount with the MUSD a year it would add. Linked from the home hero, the Browse tiles and the footer.
+- Before you go in (26 Oct): every ranked venue shows, for your amount and hold, the MUSD you keep, the one-off costs (bridge, gas, borrow fee) and the day they are earned back.
+- Have BTC? (26 Oct): a home button switches to borrowing a new trove and the best-cash card says in one line whether borrowing MUSD to earn pays after the fee and interest.
 - Bot buttons (26 Oct): six buttons under the message box (Best yields, Borrow carry, My vault, My rewards, My trove, Help & FAQ). A button that needs an amount or address asks for it and answers the reply; a bare number gives the best places for that amount. Commands still work.
 - Restyle (26 Oct): white (light) by default with a purple accent and pastel tiles, dark theme behind a saved toggle, Plus Jakarta Sans, phone tab bar; home adds the problem cards (stacked, spread on tap), how it works, where the numbers come from, other channels, FAQ and a full footer. Same data and calculator.
 - Security review: no framing outside `/embed`, CSP and security headers, only https links from Merkl, `/api/health` hides upstream errors and is rate-limited, timing-safe bot key, webhook ignores malformed updates.

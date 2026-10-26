@@ -67,3 +67,21 @@ export function venueCarry(v: VenueRates, i: CarryInput): Carry {
   const cash = liquid - costs;
   return { liquid, locked, costs, cash, total: cash + locked };
 }
+
+export type EntryCheck = {
+  keepMusd: number | null; // cash kept over the hold, in MUSD (negative = a loss)
+  oneOffMusd: number; // bridge round trip + gas, plus the borrow fee
+  paybackDays: number | "never" | null; // days until the one-off costs are earned back; null when there are none
+};
+
+/** One venue for this amount and hold, in MUSD: what you keep, what you pay up front, and when that is earned back. */
+export function entryCheck(v: VenueRates, i: CarryInput): EntryCheck {
+  const c = venueCarry(v, i);
+  const keepMusd = c.cash === null ? null : (i.amount * c.cash * i.days) / 36_500;
+  const fee = i.mode === "borrower" ? i.amount * (i.params.feePct / 100) : 0;
+  const oneOffMusd = v.fixedCostUsd + fee;
+  if (oneOffMusd === 0 || c.liquid === null) return { keepMusd, oneOffMusd, paybackDays: null };
+  const interestPct = borrowCostPct(i) - amortisedPct(fee, i.amount, i.days); // the running cost, without the one-off fee
+  const perDay = (i.amount * (c.liquid - interestPct)) / 36_500;
+  return { keepMusd, oneOffMusd, paybackDays: perDay > 0 ? Math.ceil(oneOffMusd / perDay) : "never" };
+}

@@ -3,6 +3,7 @@ import {
   amortisedPct,
   borrowCostPct,
   dilutedApr,
+  entryCheck,
   minNewTroveAmount,
   venueCarry,
   type CarryInput,
@@ -102,5 +103,25 @@ describe("breakEven", () => {
     const venue = { liquidApr: 8, lockedApr: 0, fixedCostUsd: 0, tvl: null };
     const r = breakEven(venue, smusd, base);
     expect(r.cash).toEqual({ kind: "from", min: 1798.21 });
+  });
+});
+
+describe("entryCheck", () => {
+  const holder: CarryInput = { ...base, mode: "holder" };
+  it("no one-off costs on Mezo: cash kept is amount × APR × days/365", () => {
+    const c = entryCheck({ liquidApr: 4, lockedApr: 0, fixedCostUsd: 0, tvl: null }, holder);
+    expect(c.keepMusd).toBeCloseTo((2000 * 4 * 90) / 36_500, 6); // 19.73
+    expect(c.paybackDays).toBeNull();
+  });
+  it("Ethereum: the round trip is earned back after cost ÷ daily yield days", () => {
+    const c = entryCheck({ liquidApr: 3.65, lockedApr: 0, fixedCostUsd: 2, tvl: null }, holder);
+    expect(c.oneOffMusd).toBe(2);
+    expect(c.paybackDays).toBe(10); // 2000 × 3.65% / 365 = 0.2 MUSD a day
+  });
+  it("never earned back when the yield is below the running borrow interest", () => {
+    const c = entryCheck({ liquidApr: 0.5, lockedApr: 0, fixedCostUsd: 2, tvl: null }, base);
+    expect(c.oneOffMusd).toBeCloseTo(4, 6); // 2 + the 0.1% fee on 2,000
+    expect(c.paybackDays).toBe("never");
+    expect(c.keepMusd!).toBeLessThan(0);
   });
 });

@@ -1,5 +1,5 @@
 import { breakEven, type Range } from "./carry/breakEven";
-import { minNewTroveAmount, venueCarry, type BorrowParams, type Carry, type CarryInput, type Days } from "./carry/carry";
+import { entryCheck, minNewTroveAmount, venueCarry, type BorrowParams, type Carry, type CarryInput, type Days, type EntryCheck } from "./carry/carry";
 import type { Venue } from "./venue";
 
 export type Query = Omit<CarryInput, "params" | "ratePct"> & { ratePct: number | null };
@@ -31,7 +31,7 @@ export type Sources = {
   mezoPriceUsd: number | null;
 };
 
-export type VenueOut = Venue & { carry: Carry; breakEven: { cash: Range; total: Range } | null };
+export type VenueOut = Venue & { carry: Carry; check: EntryCheck; breakEven: { cash: Range; total: Range } | null };
 
 export function buildYields(s: Sources, q: Query) {
   const input: CarryInput = { ...q, ratePct: q.ratePct ?? s.borrow.ratePct, params: s.borrow };
@@ -48,6 +48,7 @@ export function buildYields(s: Sources, q: Query) {
   const venues: VenueOut[] = s.venues.map(withCost).map((v) => ({
     ...v,
     carry: venueCarry(v.rates, input),
+    check: entryCheck(v.rates, input),
     breakEven: v.chain === "Ethereum" && bench && v.status === "ok" && (v.rates.liquidApr !== null || v.rates.lockedApr !== null) ? breakEven(v.rates, bench.rates, input) : null,
   }));
 

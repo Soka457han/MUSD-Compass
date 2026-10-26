@@ -156,6 +156,7 @@ export function SiteFooter({ notes }: { notes?: React.ReactNode }) {
             Yields
           </a>
           {[
+            ["/my", "My MUSD"],
             ["/vault", "Savings Vault"],
             ["/rewards", "Rewards"],
             ["/trove", "Trove planner"],

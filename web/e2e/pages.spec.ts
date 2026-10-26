@@ -71,7 +71,7 @@ test("incentives: Mezo-paid campaigns, most efficient first, nested Curve listin
   expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBe(0);
 });
 
-for (const path of ["/get-test-musd", "/developers", "/rewards", "/trove", "/incentives"]) {
+for (const path of ["/get-test-musd", "/developers", "/rewards", "/trove", "/incentives", "/my"]) {
   test(`${path}: no serious or critical accessibility issues (light and dark)`, async ({ page }) => {
     for (const scheme of ["light", "dark"] as const) {
       await page.addInitScript((s) => localStorage.setItem("theme", s), scheme); // light is the default; dark is a saved choice
@@ -85,3 +85,40 @@ for (const path of ["/get-test-musd", "/developers", "/rewards", "/trove", "/inc
     }
   });
 }
+
+test("Have BTC? turns on borrowing and says in one line whether minting MUSD to earn pays", async ({ page }) => {
+  await page.goto("/");
+  await page.locator("form[data-hydrated]").waitFor();
+  await expect(page.getByTestId("mint-line")).toHaveCount(0);
+  await page.getByRole("button", { name: "Have BTC? See if borrowing MUSD pays" }).click();
+  await expect(page).toHaveURL(/mode=borrower/);
+  // 4.01 − 1.10 interest − 0.41 fee = 2.50% → about 50 MUSD a year on 2,000
+  await expect(page.getByTestId("mint-line")).toHaveText(/^Borrow 2,000 MUSD against your BTC at 1%: .+ pays 4\.01%\. After the fee and interest you keep 2\.50% a year, about 50 MUSD\.$/);
+  await expect(page.getByRole("button", { name: /Have BTC/ })).toHaveCount(0);
+});
+
+test("every ranked venue says what this amount keeps before you go in", async ({ page }) => {
+  await page.goto("/");
+  await page.locator("form[data-hydrated]").waitFor();
+  const cards = page.getByRole("list", { name: "Venues ranked by cash carry" }).getByRole("article");
+  await expect(cards.first()).toContainText("Before you go in: 2,000 MUSD for 90 days");
+  await expect(cards.first()).toContainText(/you keep \d+\.\d\d MUSD cash, no one-off costs/);
+  // Ethereum rows carry the bridge round trip as a one-off cost.
+  await expect(cards.nth(1)).toContainText(/MUSD one-off costs, (never earned back|earned back after \d+ days)/);
+});
+
+test("My MUSD: each holding against the best place, plus trove and veMEZO; reachable from home; accessible", async ({ page }) => {
+  await page.goto("/");
+  await page.getByRole("link", { name: "Already hold MUSD? See where it sits" }).click();
+  await expect(page).toHaveURL(/\/my$/);
+  await page.getByRole("button", { name: "Try a sample" }).click();
+  const holdings = page.getByRole("region", { name: "Each holding against the best cash place today" });
+  await expect(holdings.getByRole("listitem").filter({ hasText: "Idle in your wallet" })).toContainText(/1,250 MUSD.*Earns 0\.00% cash.*more a year/);
+  await expect(holdings.getByRole("listitem").filter({ hasText: /^Savings Vault/ })).toContainText("This is the best cash place today.");
+  await expect(holdings.getByRole("listitem").filter({ hasText: "Stability Pool" })).toContainText("No steady APR");
+  await expect(page.getByText(/30,210 MUSD borrowed at 1%/)).toBeVisible();
+  await expect(page.getByText(/239\.28 veMEZO waiting/)).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBe(0);
+  const bad = (await axe(page)).violations.filter((v) => v.impact === "serious" || v.impact === "critical");
+  expect(bad.map((v) => v.id)).toEqual([]);
+});

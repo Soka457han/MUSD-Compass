@@ -37,7 +37,11 @@ export const borrowerOperationsAbi = parseAbi([
 
 export const interestRateManagerAbi = parseAbi(["function interestRate() view returns (uint16)"]);
 
-export const stabilityPoolAbi = parseAbi(["function getTotalMUSDDeposits() view returns (uint256)"]);
+// getCompoundedMUSDDeposit: mezo-org/musd solidity/contracts/interfaces/IStabilityPool.sol (checked 26 Oct 2026).
+export const stabilityPoolAbi = parseAbi([
+  "function getTotalMUSDDeposits() view returns (uint256)",
+  "function getCompoundedMUSDDeposit(address) view returns (uint256)",
+]);
 
 export const erc4626Abi = parseAbi(["function totalAssets() view returns (uint256)"]);
 

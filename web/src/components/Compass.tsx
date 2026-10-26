@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { flushSync } from "react-dom";
-import { pct, shortDate, timeUtc, usd } from "@/lib/format";
+import { musd, pct, shortDate, timeUtc, usd } from "@/lib/format";
+import { minNewTroveAmount } from "@/lib/carry/carry";
 import { buildYields, parseQuery, type Query, type Sources, type VenueOut } from "@/lib/yields";
 import { LockIcon } from "./Icons";
 import { SiteFooter } from "./Landing";
@@ -83,9 +84,10 @@ function SizeOnly({ venues }: { venues: VenueOut[] }) {
 }
 
 /** The answer, up top: the best cash carry for the current inputs. The full card for it leads the ranked list below. */
-function BestCash({ v, holding }: { v: VenueOut; holding: string }) {
+function BestCash({ v, holding, mint }: { v: VenueOut; holding: string; mint: { amount: number; rate: number } | null }) {
   const external = v.action.url.startsWith("http");
   const locked = v.carry.locked ?? 0;
+  const cash = v.carry.cash ?? 0;
   return (
     <section aria-labelledby="best-h" className="flex flex-col gap-3.5 rounded-[20px] border border-line bg-card p-[22px] md:p-8">
       <div className="flex items-center justify-between gap-3">
@@ -101,6 +103,13 @@ function BestCash({ v, holding }: { v: VenueOut; holding: string }) {
       <p className="text-ink-muted">
         cash a year after costs · {holding.toLowerCase()} · {v.chain} · {usd(v.tvlUsd)} size
       </p>
+      {mint && (
+        <p data-testid="mint-line" className="rounded-2xl bg-accent-soft px-4 py-3 text-sm font-semibold md:text-base">
+          {cash > 0
+            ? `Borrow ${musd(mint.amount)} against your BTC at ${mint.rate}%: ${v.name} pays ${pct(v.carry.liquid)}. After the fee and interest you keep ${pct(cash)} a year, about ${musd(Math.floor((mint.amount * cash) / 100))}.`
+            : `Borrow ${musd(mint.amount)} against your BTC at ${mint.rate}%: after the fee and interest the best place pays ${pct(cash)}. Borrowing to earn does not pay today.`}
+        </p>
+      )}
       {locked > 0 && (
         <p className="inline-flex items-center gap-1.5 self-start rounded-full bg-locked px-3 py-1 text-[13px] font-bold text-on-locked">
           <LockIcon className="size-4" />+{pct(locked)} locked veMEZO, not counted
@@ -176,7 +185,7 @@ export function Compass({ sources, between, after }: { sources: Sources; between
         { label: "Ethereum pools", value: String(result.venues.filter((v) => v.chain === "Ethereum" && v.status === "ok").length), href: "#venues", bg: "bg-tile-pink" },
         { label: "Mezo pools", value: String(result.venues.filter((v) => v.chain === "Mezo" && v.status === "ok" && v !== vault && v !== stability).length), href: "#size-only", bg: "bg-tile-lilac" },
         { label: "Stability Pool", value: usd(stability?.tvlUsd ?? null), href: "#size-only", bg: "bg-tile-peach" },
-        { label: "My rewards", value: "Check", href: "/rewards", bg: "bg-tile-blue" },
+        { label: "My MUSD", value: "Check", href: "/my", bg: "bg-tile-blue" },
         { label: "My trove", value: "Plan", href: "/trove", bg: "bg-tile-mint" },
       ]
     : [];
@@ -246,8 +255,26 @@ export function Compass({ sources, between, after }: { sources: Sources; between
                 </p>
               )}
             </form>
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+              {form.mode === "holder" && (
+                <button
+                  type="button"
+                  onClick={() => update({ mode: "borrower", trove: "new", amount: String(Math.max(Number(form.amount) || 0, Math.ceil(minNewTroveAmount(sources.borrow)))) })}
+                  className="inline-flex min-h-11 items-center rounded-full bg-tile-lilac px-5 text-sm font-bold text-tile-ink md:text-[15px]"
+                >
+                  Have BTC? See if borrowing MUSD pays
+                </button>
+              )}
+              <Link href="/my" prefetch={false} className="inline-flex min-h-11 items-center text-sm font-semibold text-accent-text underline md:text-[15px]">
+                Already hold MUSD? See where it sits
+              </Link>
+            </div>
           </div>
-          {result && lead ? <BestCash v={lead} holding={result.assumptions.holding} /> : <p className="text-sm">Enter an amount to rank venues.</p>}
+          {result && lead ? (
+            <BestCash v={lead} holding={result.assumptions.holding} mint={query?.mode === "borrower" ? { amount: query.amount, rate: result.assumptions.ratePct } : null} />
+          ) : (
+            <p className="text-sm">Enter an amount to rank venues.</p>
+          )}
         </section>
 
         <div className="mt-14 flex flex-col gap-14 md:mt-24 md:gap-20">
@@ -280,11 +307,11 @@ export function Compass({ sources, between, after }: { sources: Sources; between
                 </div>
                 <ol aria-label="Venues ranked by cash carry" className="mt-4 grid gap-3 md:mt-5 md:grid-cols-2 md:gap-4">
                   <li className="md:col-span-2" style={{ viewTransitionName: vt(lead.id) }}>
-                    <PriceLabel v={lead} days={days} lead />
+                    <PriceLabel v={lead} days={days} amount={query?.amount ?? 0} lead />
                   </li>
                   {rest.map((v) => (
                     <li key={v.id} style={{ viewTransitionName: vt(v.id) }}>
-                      <PriceLabel v={v} days={days} />
+                      <PriceLabel v={v} days={days} amount={query?.amount ?? 0} />
                     </li>
                   ))}
                 </ol>
