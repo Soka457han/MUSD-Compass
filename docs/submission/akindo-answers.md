@@ -1,67 +1,78 @@
-# AKINDO submission — draft answers (Wave 1)
+# AKINDO submission — answers (Wave 1)
 
-> Draft for you to read and edit. The exact AKINDO form fields weren't recorded, so these follow the usual WaveHack fields; copy each block into the matching box. Every claim below is something that shipped and can be tested on the live site. Update the two `TODO` lines before you submit.
+> Field by field, in the order of the official form (app.akindo.io/wave-hacks/OVOO0gdrVU8379D10, read 25 Oct). Copy each block into its box. Two `TODO`s remain: your X link and the video link.
+>
+> Also required for Stage 1 screening (or the submission is not forwarded): live link, public GitHub repo, project deck, 2-minute pitch video.
 
 ## Project name
 MUSD Compass
 
-## One-line tagline
-Where your MUSD earns the most after costs — ranked by cash, on your phone, in Telegram, or on any website.
+## Project category (3–5 words)
+Yield discovery and aggregation
 
-## Tracks
-- **Track 1 — DeFi**: a net-carry calculator for holding or borrowing MUSD, plus Savings Vault deposit, claim and withdraw on Mezo testnet.
-- **Track 2 — Access & Distribution**: the same numbers on phones (the Mezo app is desktop-only), in a Telegram bot, in a one-tag website widget, and through a free JSON API.
+## TL;DR (one sentence)
+MUSD Compass ranks every place Mezo's MUSD can earn by cash you keep after costs — on your phone, in Telegram, in any website and through an API — and lets you deposit into Mezo's Savings Vault in a few taps.
 
-## Problem
-MUSD holders can put MUSD in the Savings Vault, six Mezo pools, the Stability Pool, or Mezo-paid pools on Ethereum. Each place shows a different number. Some pay in cash, some pay in veMEZO that is locked for 12 weeks, and the Ethereum ones cost a bridge round trip. No screen answers the simple question: *after costs, where does my MUSD earn the most cash?* On a phone there is no Mezo app at all, and unclaimed veMEZO rewards can be reallocated if nobody claims them.
+## How it works
+**The problem.** MUSD can earn in Mezo's Savings Vault, six Mezo pools, the Stability Pool, and Mezo-paid pools on Ethereum. Each shows a different number. Some pay cash; some pay veMEZO that is locked for 12 weeks; the Ethereum ones cost a bridge round trip; borrowers also pay a fee and interest on the whole debt. Nobody shows the one number that matters — what you keep. And on a phone the Mezo app asks for a larger window (checked 26 Oct). Unclaimed veMEZO can even be reallocated if nobody claims it.
 
-## Solution
-MUSD Compass reads Mezo mainnet, Ethereum and Merkl live and ranks every MUSD venue by **net carry**:
-- **Cash first.** The big number is what you can spend: liquid yield minus costs, spread over your holding period (30 / 90 / 365 days, default 90).
-- **Locked beside it, never inside it.** veMEZO rewards (12-week lock, valued at MEZO spot) are shown next to the cash number as 🔒 total carry.
-- **Every number states its assumption** ("assumes 90-day hold") and its source. A source that is down shows as unavailable instead of a guess.
-- **Holder or borrower.** Borrower mode adds the real trove costs: 0.1% fee, interest on the whole debt including the 200 MUSD gas compensation, and the 1,800 MUSD minimum.
-- **Break-even.** For Ethereum venues it shows the amount range where they beat the Savings Vault, for cash and for total.
-- **Act on testnet.** On `/vault` you connect any EVM wallet and deposit into the real Savings Vault contracts on Mezo testnet (exact approval, then deposit), claim yield and withdraw.
-- **Don't lose rewards.** `/rewards` shows any address's unclaimed veMEZO from Mezo's Merkl campaigns, with the reallocation warning and how to claim.
-- **Plan your trove.** `/trove` reads a mainnet trove's collateral ratio, its own interest rate and its place in the redemption queue, shows how much more it can borrow while staying at or above 200%, and hands that rate to the calculator. (Mezo mainnet has one open trove today, so the sample is that trove.)
+**How it functions.** Compass reads Mezo mainnet, Ethereum and Merkl live and ranks every MUSD venue by **net carry**:
+- **Cash first:** liquid yield minus costs, spread over your holding period (30 / 90 / 365 days). Locked veMEZO is shown beside it as a 🔒 total, never mixed into cash.
+- **Holder or borrower:** borrower mode adds real trove costs (0.1% fee, interest on the whole debt incl. the 200 MUSD gas compensation, the 1,800 MUSD minimum).
+- **Break-even:** for Ethereum pools, the amount range where they beat the Savings Vault.
+- **Act:** connect a wallet and deposit into the real Savings Vault contracts on Mezo testnet (exact-amount approval, simulated before you sign), claim and withdraw.
+- **My MUSD:** paste any address to see its idle MUSD, Savings Vault, Stability Pool, trove and unclaimed veMEZO on Mezo mainnet, each next to the best cash place for that amount and how much more a year it would earn there.
+- **Before you go in:** every venue says what your amount keeps over your hold in MUSD, what you pay up front (bridge, gas, borrow fee) and after how many days that is earned back.
+- **Have BTC?:** one tap switches to borrowing and says in one line whether minting MUSD against BTC to put it to work pays after the fee and interest (25 Oct: Savings Vault 4.01% against a 1% borrow rate, about 2.5% a year kept on 2,000 MUSD).
+- **Don't lose rewards:** check any address for unclaimed veMEZO; plan an existing trove (ratio, rate, redemption-queue position, safe extra borrow).
+- **Everywhere:** phone web app, Telegram bot (six buttons, or `/yield`, `/carry`, `/vault`, `/rewards`, `/trove`), a one-tag website widget, a free JSON API, and a premium API paid in MUSD over x402.
 
-## How it uses Mezo
-- **Reads on Mezo mainnet:** sMUSD yield events and supply (a realised 14-day APR from `ProtocolYieldReceived` + `StrategyYieldReceived`), Stability Pool deposits, six Mezo MUSD pools, BTC price from `PriceFeed.fetchPrice()`, and live borrow parameters (BorrowerOperations, InterestRateManager), and for the planner TroveManager and SortedTroves.
-- **Writes on Mezo testnet:** sMUSD `approve` (exact amount) → `deposit`, `claimYield`, `withdraw`. Proof transactions are in the README.
-- **MUSD as payment:** a premium API paid with 0.001 test MUSD over x402 (Permit2 with an exact-amount permit; the facilitator pays gas), with a *Pay & fetch* button anyone can try.
-- **Mezo incentives:** Merkl campaigns that pay veMEZO on Ethereum MUSD pools, and per-user unclaimed veMEZO.
-- **Routes to Mezo's own products** instead of rebuilding them: the Savings Vault, the Mezo app pools pages, Merkl claim.
+**How MUSD and MEZO are used and positioned.**
+- MUSD is the asset every ranking is about; Compass sends holders into Mezo's own products — the Savings Vault, Mezo pools, Merkl claims — instead of rebuilding them ("extend, don't detour").
+- MUSD is also the payment: agents and apps pay 0.001 MUSD per premium API call via x402 (Permit2 with an exact-amount permit; the facilitator pays gas). A real paid call is on-chain.
+- MEZO/veMEZO: Mezo's vote-escrowed incentives are priced at MEZO spot and shown beside cash; Compass reminds users to claim them and measures what each campaign spends per $1k of liquidity (for the Mezo team).
+- Composability: Compass reads Mezo's DEX pools, the Stability Pool, borrowing contracts and the veMEZO incentive layer, and is itself a building block — open API, embeddable widget, pay-per-call API for agents.
 
-## How it's built
-- **Web and API:** Next.js 16 (App Router, Cache Components) on Vercel; viem for chain reads and writes; one adapter per source, cached 5 minutes and shared across instances; JSON-RPC batching to stay inside the RPC's rate limit.
-- **Bot:** a thin Python Telegram webhook on Vercel that only calls the public API. It needs no bot token at runtime and stores nothing.
-- **Safety:**
-  - Compass sends transactions only to testnet MUSD and sMUSD (an allowlist in code).
-  - Every write is simulated before signing and sent with gas = estimate × 1.2.
-  - Approvals are for the exact amount, never unlimited.
-  - No custody, no own contracts, no keys asked for, no mainnet writes.
-- **Quality:**
-  - 63 unit tests (carry math, break-even, sources, safety rules, trove math, the x402 pre-sign guard), 20 end-to-end tests at 360 px and 16 bot tests.
-  - axe accessibility checks on every page in light and dark.
-  - CI on GitHub Actions; Lighthouse mobile accessibility 100.
+**Why it matters even when one venue leads.** The answer changes: overnight on 24→25 Oct the Uniswap V4 veMEZO APR went from 49.8% to 79.9% and MEZO rose 60%. Today the Savings Vault (4.01%) wins on cash, but for a holder who accepts the 12-week lock the Ethereum pools win on total (up to 75.6% for 2,000 MUSD) — and borrowers get a different answer again. Campaigns renew weekly, so the ranking is worth checking every week, and My MUSD shows what that change means for your own address; Wave 2 adds alerts so users don't have to look.
 
-## Try it (no wallet needed)
+**Business model.** Free for people. Agents and apps that want everything in one call — every mode × holding period, plus an address's trove and rewards — pay 0.001 MUSD per call over x402. Distribution: the Telegram bot, the widget inside other sites, and the API inside other apps.
+
+**Proof (Mezo testnet):** exact approve 100 MUSD, deposit 100, withdraw 10, and one x402 payment — explorer links in the README.
+
+## Target group
+- **Who:** MUSD holders and borrowers on Mezo, and BTC holders deciding whether to borrow MUSD at all — retail and DeFi users from beginner to intermediate who want one clear answer: "where does my MUSD earn most after costs?" Secondary: developers and AI agents who want the same numbers by API.
+- **Where and how:** global, phone-first (most crypto users are on phones), plus Telegram for users who live in chat.
+- **Track fit:** Track 2 (Access and Distribution) — a discovery platform and aggregator for Mezo earning products, with a Telegram bot for monitoring; and Track 1 (DeFi yield) — a net-carry calculator for holding vs borrowing MUSD and Savings Vault deposits.
+
+## Tech stack
+Next.js 16 (App Router, React 19) on Vercel · TypeScript · viem · Tailwind CSS 4 · x402 (`@x402/next`, `@x402/evm`, `@x402/fetch`) · Python 3.13 Telegram webhook · Merkl API · Vitest, Playwright, axe-core, pytest · GitHub Actions CI
+
+## Track
+Both — Track 1 (DeFi) and Track 2 (Access and Distribution)
+
+## Chain deployed on
+Mezo — reads Mezo mainnet (and Ethereum for Mezo-paid pools); wallet actions and x402 payments on Mezo testnet
+
+## Project status
+Entirely new, built during the hackathon
+
+## Project readiness
+Testnet deployment (live app with mainnet data; deposits and payments on Mezo testnet)
+
+**Known limit, said plainly:** on a phone, deposits work inside a wallet app's browser (MetaMask, Rabby…). Plain Chrome/Safari on a phone can read everything but can't sign yet — WalletConnect is milestone 2.
+
+## Future milestones
+1. **WhatsApp bot + alerts — Wave 2, by 15 Nov 2026.** The Telegram commands on WhatsApp, and alerts when a better venue appears or veMEZO is waiting to be claimed.
+2. **WalletConnect phone wallets — Wave 2, by 15 Nov 2026.** Deposit, claim and withdraw from any phone browser.
+3. **Mainnet + deeper composability — December 2026 to January 2027.** Savings Vault deposits on Mezo mainnet after review, one-click routes into Mezo pools and veMEZO, and the API offered to other Mezo apps.
+
+## Team info
+Solo builder — product, design, web app, on-chain integration, Telegram bot. X: TODO — paste your X profile link
+
+## Links
 - Live app: https://musd-compass.vercel.app
-- 60-second judge path: in the README.
-- Telegram: https://t.me/musd_compass_bot — `/yield`, `/carry 2000 borrow`, `/vault 0xfe21B2782B35BE770DD4a7b05f81cE43790D676C`, `/rewards 0xeaC6A75e19beB1283352d24c0311De865a867DAB`, `/trove sample`
+- GitHub: https://github.com/Soka457han/MUSD-Compass
+- Telegram bot: https://t.me/musd_compass_bot
 - API and widget: https://musd-compass.vercel.app/developers
-- Get test MUSD: https://musd-compass.vercel.app/get-test-musd
-- GitHub: TODO — paste your repository link
-- Video: TODO — paste the video link after recording
-
-## What's next (Wave 2)
-- Phone wallets through WalletConnect, so deposits work outside a wallet's own browser.
-- Bot alerts when a venue overtakes the one you are in, or when your veMEZO rewards are waiting to be claimed.
-- Mainnet Savings Vault deposits once the testnet flow has been reviewed.
-
-## Honest limits
-- Mezo pool APRs and the Stability Pool are listed by size only; their APR lives in the Mezo app, and the Stability Pool earns only on liquidations.
-- veMEZO is valued at MEZO spot; the 12-week lock means you can't sell it at that price today.
-- Uniswap V4 trading fees are not reported by Merkl, so they count as 0.
-- Testnet distributions come weekly, so a fresh deposit shows 0 pending yield until the next one.
+- Deck: (the PDF you download from the deck)
+- 2-minute video: TODO — paste after recording

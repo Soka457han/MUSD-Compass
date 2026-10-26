@@ -2,19 +2,31 @@
 
 Where does Mezo MUSD earn the most **after costs**? MUSD Compass ranks every venue — Mezo and Ethereum — by net carry (cash first, locked veMEZO 🔒 beside it) and lets you deposit into the Mezo Savings Vault on testnet in a few taps. Phone-first web app, open API, embeddable widget, Telegram bot.
 
+**Who it is for, and why they come back**
+- **MUSD holders:** where MUSD earns most after costs, and *My MUSD* shows whether what an address already holds could earn more elsewhere.
+- **BTC holders:** *Have BTC?* says whether borrowing MUSD against BTC to put it to work pays after the fee and interest. That is the case for minting MUSD.
+- **Builders and agents:** free JSON API, a one-tag widget, and a premium call paid in MUSD over x402.
+- **Why again next week:** Mezo's reward campaigns renew every 7 days and rates jump (Uniswap V4 veMEZO APR 49.8% → 79.9% overnight, 24–25 Oct), so the best place for the same MUSD moves.
+
+Compass holds no funds and deploys no contract: every transaction goes from the user's wallet straight to Mezo's own contracts.
+
 ## Judge check in 60 seconds
 Everything works on a phone, without a wallet.
 
 1. **Ranking** — open [musd-compass.vercel.app](https://musd-compass.vercel.app). The top label is where 2,000 MUSD earns the most **cash** per year after costs; locked veMEZO 🔒 sits beside it and never counts as cash.
 2. **Calculator** — change the amount, switch to *Borrower* or *365 days*: labels re-rank and every number states its assumption. Ethereum venues show the amount where they beat the Savings Vault.
-3. **Testnet vault** — [`/vault`](https://musd-compass.vercel.app/vault) → *Try a sample* shows the dev wallet's real position (90 sMUSD). To deposit yourself: [get test MUSD in 3 steps](https://musd-compass.vercel.app/get-test-musd), then *Connect wallet*.
+3. **Testnet vault** — [`/vault`](https://musd-compass.vercel.app/vault) → *Try a sample* shows the dev wallet's real position (90 sMUSD). To deposit yourself: [get test MUSD in 3 steps](https://musd-compass.vercel.app/get-test-musd), then *Connect wallet*. On a phone, open the link inside your wallet app's browser (MetaMask, Rabby…); plain Chrome/Safari can read everything but can't sign yet — WalletConnect comes in Wave 2.
 4. **Telegram** — [@musd_compass_bot](https://t.me/musd_compass_bot): `/yield`, `/carry 2000 borrow`, `/vault 0xfe21B2782B35BE770DD4a7b05f81cE43790D676C`, `/rewards 0xeaC6A75e19beB1283352d24c0311De865a867DAB`, `/trove sample`.
 5. **Rewards and trove planner** — [`/rewards`](https://musd-compass.vercel.app/rewards) and [`/trove`](https://musd-compass.vercel.app/trove) → *Try a sample*: unclaimed veMEZO for a real address; a live mainnet trove's ratio, rate, redemption-queue position and safe extra borrow.
-6. **API and widget** — [`/developers`](https://musd-compass.vercel.app/developers): free JSON API with curl examples, a one-tag widget ([preview](https://musd-compass.vercel.app/embed)), and a paid x402 endpoint you can try with *Pay 0.001 MUSD & fetch* (testnet MUSD).
+6. **My MUSD and Have BTC?** — [`/my`](https://musd-compass.vercel.app/my) → *Try a sample*: each holding (wallet, Savings Vault, Stability Pool) next to the best cash place for that amount, plus the trove and unclaimed veMEZO. On the home page, *Have BTC? See if borrowing MUSD pays* switches to borrowing and states the result in one line; every venue card says what your amount keeps before you go in.
+7. **Safety and Borrow → Earn** — [`/vault`](https://musd-compass.vercel.app/vault) → *Try to break it*: an unlimited approval and an unknown contract are refused before any wallet is asked, and an oversized deposit is refused by Mezo testnet in simulation, all without a wallet. With a wallet and test BTC, *Borrow … MUSD and deposit it* opens a testnet trove (200% ratio) and puts the MUSD in the Savings Vault.
+8. **API and widget** — [`/developers`](https://musd-compass.vercel.app/developers): free JSON API with curl examples, a one-tag widget ([preview](https://musd-compass.vercel.app/embed)), and a paid x402 endpoint you can try with *Pay 0.001 MUSD & fetch* (testnet MUSD).
 
 > Mezo Buildathon, Wave 1. Spec: [`SPEC.md`](SPEC.md) · design: [`docs/design.md`](docs/design.md) · plan: [`tasks/plan.md`](tasks/plan.md)
 
 ## Testnet proof (Mezo testnet, chain 31611)
+All transactions and live checks in one list: [`docs/evidence.md`](docs/evidence.md).
+
 Made through [`/vault`](https://musd-compass.vercel.app/vault) from the public dev wallet [`0xfe21…676C`](https://explorer.test.mezo.org/address/0xfe21B2782B35BE770DD4a7b05f81cE43790D676C) on 24–25 Oct 2026:
 
 | Step | Amount | Transaction |
@@ -43,7 +55,7 @@ Every number re-checked on the live site against its primary source (chain or Me
 - [x] Cached `/api/yields` from a browser: p50 50 ms, p95 54 ms (20 requests; target < 1.5 s).
 - [x] Telegram bot: `/yield`, `/carry 2000 borrow`, `/vault` match the API (checked 24 Oct from a phone).
 - [ ] Telegram bot: `/rewards 0xeaC6A75e19beB1283352d24c0311De865a867DAB` and `/trove sample` (added after that check).
-- [x] Tests: 63 unit, 20 end-to-end (axe on every page, light and dark), 16 bot.
+- [x] Tests (26 Oct): 90 unit, 39 end-to-end (axe on every page, light and dark), 25 bot.
 - [x] Lighthouse mobile, production build: performance 0.92–0.98, accessibility 1, best practices 1, CLS 0; LCP median 3.1 s simulated (0.1–0.5 s observed).
 - [x] PageSpeed Insights on the live URL (25 Oct, before the fixes below): mobile 92 / 100 / 100 / 100 (LCP 3.0 s), desktop 100 / 100 / 100 / 100.
 - [x] After the fixes below (production build, Lighthouse mobile ×3): performance 0.96, LCP 2.6 s, FCP 0.8 s, Speed Index 1.2 s, no render-blocking requests.

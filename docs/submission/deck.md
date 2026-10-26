@@ -1,6 +1,6 @@
 # Deck — 5 slides (source text)
 
-> Slide text for the deck; the deck itself is built from this once you approve the wording. Claims only what shipped.
+> Superseded by the published 7-slide deck (Claude Slides artifact "MUSD Compass — Wave 1": download it as PDF for AKINDO). Kept as the plain-text outline.
 
 ## 1. Problem — "Where should my MUSD be right now?"
 - MUSD can earn in the Savings Vault, six Mezo pools, the Stability Pool and Mezo-paid pools on Ethereum.
@@ -25,7 +25,7 @@
 - Live: musd-compass.vercel.app · @musd_compass_bot · /developers.
 - Testnet proof: approve 100 MUSD (exact) · deposit 100 · withdraw 10 — explorer links in the README.
 - Safety: allowlisted contracts, simulate before sign, gas × 1.2, no custody, no keys, no mainnet writes.
-- Quality: 63 unit + 20 e2e + 16 bot tests, axe on every page, CI.
+- Quality: 90 unit + 39 e2e + 25 bot tests, axe on every page, CI.
 
 ## 5. Roadmap (Wave 2+)
 - WalletConnect for phone wallets.

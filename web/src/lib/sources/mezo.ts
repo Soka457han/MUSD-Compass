@@ -63,16 +63,19 @@ async function readPool(address: Address) {
 export type MezoChain = Awaited<ReturnType<typeof readMezo>>;
 
 /** A gauge's MEZO stream and how much LP is staked in it, as strings for the cache. Null if it is not this pool's gauge. */
-async function readGauge(gauge: Address, pool: Address) {
+async function readGauge(gauge: Address, pool: Address, concentrated: boolean) {
   try {
     const g = { address: gauge, abi: vaultGaugeAbi } as const;
-    const [stakingToken, rewardRate, staked, periodFinish, poolSupply] = await Promise.all([
+    const reads = Promise.all([
       mezoClient.readContract({ ...g, functionName: "stakingToken" }),
       mezoClient.readContract({ ...g, functionName: "rewardRate" }),
       mezoClient.readContract({ ...g, functionName: "totalSupply" }),
       mezoClient.readContract({ ...g, functionName: "periodFinish" }),
-      mezoClient.readContract({ address: pool, abi: erc20Abi, functionName: "totalSupply" }).catch(() => 0n), // concentrated pools have no LP token
+      concentrated ? Promise.resolve(0n) : mezoClient.readContract({ address: pool, abi: erc20Abi, functionName: "totalSupply" }), // concentrated pools have no LP token
     ]);
+    // A call that reverts is retried by the transport; never let that hold up the page build (Vercel stops a slow cached read).
+    const timeout = new Promise<never>((_, reject) => setTimeout(() => reject(new Error("gauge read timed out")), 4000));
+    const [stakingToken, rewardRate, staked, periodFinish, poolSupply] = await Promise.race([reads, timeout]);
     if (stakingToken.toLowerCase() !== pool.toLowerCase()) return null;
     return { rewardRate: rewardRate.toString(), staked: staked.toString(), periodFinish: periodFinish.toString(), poolSupply: poolSupply.toString() };
   } catch {
@@ -105,7 +108,7 @@ export async function readMezo() {
 
   const [spDeposits, pools, gasPrice] = await Promise.all([
     mezoClient.readContract({ address: MAINNET.stabilityPool, abi: stabilityPoolAbi, functionName: "getTotalMUSDDeposits" }),
-    Promise.all(POOLS.map(async (p) => ({ ...p, tokens: (await readPool(p.address)).map((t) => ({ ...t, reserve: t.reserve.toString() })), gaugeRead: await readGauge(p.gauge, p.address) }))),
+    Promise.all(POOLS.map(async (p) => ({ ...p, tokens: (await readPool(p.address)).map((t) => ({ ...t, reserve: t.reserve.toString() })), gaugeRead: await readGauge(p.gauge, p.address, p.kind.startsWith("Concentrated")) }))),
     mezoClient.getGasPrice(),
   ]);
   return { now, btcPrice, borrow, paramsLive, spDeposits: Number(formatUnits(spDeposits, 18)), pools, gasPriceWei: gasPrice.toString() };
