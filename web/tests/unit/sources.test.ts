@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { parseUnits } from "viem";
-import { poolTvlUsd, toBorrowParams } from "@/lib/sources/mezo";
+import { mezoVenues, poolTvlUsd, readMezo, toBorrowParams, type MezoChain } from "@/lib/sources/mezo";
 import { roundTripCostUsd } from "@/lib/sources/ethereum";
 import { MAINNET } from "@/lib/chain/addresses";
 
@@ -65,5 +65,38 @@ describe("roundTripCostUsd", () => {
     expect(r.usd).toBeGreaterThan(1.2);
     expect(r.usd).toBeLessThan(1.5);
     expect(r.basis).toMatch(/est\./);
+  });
+});
+
+describe("Mezo source caching", () => {
+  // A cached function's arguments are its cache key. The MEZO price used to be one, so each Merkl price tick
+  // forced a fresh, blocking set of chain reads and the home page sat on its loading state.
+  it("the cached chain read takes no arguments", () => {
+    expect(readMezo.length).toBe(0);
+  });
+
+  it("applies the MEZO price after the cached read, so a new price needs no new chain reads", () => {
+    const chain: MezoChain = {
+      now: "2026-10-26T00:00:00.000Z",
+      btcPrice: 80_000,
+      borrow: { feePct: 0.1, gasCompensation: 200, minNetDebt: 1800, ratePct: 1 },
+      paramsLive: true,
+      spDeposits: 14_200_000,
+      gasPriceWei: "1",
+      pools: [
+        {
+          address: "0x0000000000000000000000000000000000000001",
+          name: "Mezo pool MEZO/MUSD-200",
+          kind: "Concentrated volatile",
+          tokens: [
+            { address: MAINNET.mezo, reserve: parseUnits("1000000", 18).toString(), decimals: 18 },
+            { address: MAINNET.musd, reserve: parseUnits("5000", 18).toString(), decimals: 18 },
+          ],
+        },
+      ],
+    };
+    const tvlAt = (price: number) => mezoVenues(chain, price).venues.find((v) => v.name.includes("MEZO/"))!.tvlUsd;
+    expect(tvlAt(0.005)).toBeCloseTo(10_000, 6);
+    expect(tvlAt(0.006)).toBeCloseTo(11_000, 6);
   });
 });

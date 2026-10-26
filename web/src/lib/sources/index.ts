@@ -3,7 +3,7 @@ import { unavailable, type Venue } from "@/lib/venue";
 import type { Sources } from "@/lib/yields";
 import { fetchEthereum, roundTripCostUsd } from "./ethereum";
 import { fetchMerkl } from "./merkl";
-import { FALLBACK_BORROW_PARAMS, fetchMezo } from "./mezo";
+import { FALLBACK_BORROW_PARAMS, mezoVenues, readMezo } from "./mezo";
 import { fetchSmusdMainnet } from "./smusd";
 import { fixtureSources } from "./fixture";
 
@@ -19,9 +19,10 @@ const settle = <T,>(p: Promise<T>, name: string) =>
 /** Loads every source; a failed source becomes an "unavailable" venue instead of an error page. */
 export async function loadSources(): Promise<Sources> {
   if (process.env.COMPASS_FIXTURES === "1") return fixtureSources();
-  const [merkl, smusd, eth] = await Promise.all([settle(fetchMerkl(), "merkl"), settle(fetchSmusdMainnet(), "smusd"), settle(fetchEthereum(), "ethereum")]);
+  // All four in parallel: the Mezo chain read no longer waits for Merkl's MEZO price.
+  const [merkl, smusd, eth, chain] = await Promise.all([settle(fetchMerkl(), "merkl"), settle(fetchSmusdMainnet(), "smusd"), settle(fetchEthereum(), "ethereum"), settle(readMezo(), "mezo")]);
   const mezoPrice = merkl.ok ? merkl.value.mezoPriceUsd : null;
-  const mezo = await settle(fetchMezo(mezoPrice ?? 0), "mezo");
+  const mezo = chain.ok ? { ok: true as const, value: mezoVenues(chain.value, mezoPrice ?? 0) } : chain;
 
   const venues: Venue[] = [
     smusd.ok

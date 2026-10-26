@@ -36,7 +36,7 @@ test.describe("home (360 px, fixture data)", () => {
 
   test("no serious or critical accessibility issues (light and dark)", async ({ page }) => {
     for (const scheme of ["light", "dark"] as const) {
-      await page.addInitScript((s) => localStorage.setItem("theme", s), scheme); // dark is the default; light is a saved choice
+      await page.addInitScript((s) => localStorage.setItem("theme", s), scheme); // light is the default; dark is a saved choice
       await page.goto("/");
     await page.locator("form[data-hydrated]").waitFor();
       await page.getByRole("article").first().waitFor();
@@ -49,7 +49,7 @@ test.describe("home (360 px, fixture data)", () => {
 });
 
 test("invalid amount shows a readable error that passes contrast in dark", async ({ page }) => {
-  // dark is the default theme
+  await page.addInitScript(() => localStorage.setItem("theme", "dark"));
   await page.goto("/");
   await page.locator("form[data-hydrated]").waitFor();
   await page.getByLabel("Amount (MUSD)").fill("0");
@@ -59,14 +59,14 @@ test("invalid amount shows a readable error that passes contrast in dark", async
   expect(r.violations).toEqual([]);
 });
 
-test("dark by default; the theme button switches to light and remembers it", async ({ page }) => {
+test("light by default; the theme button switches to dark and remembers it", async ({ page }) => {
   await page.goto("/");
-  await expect(page.locator("html")).not.toHaveAttribute("data-theme", "light");
-  await page.getByRole("button", { name: "Switch to light theme" }).click();
-  await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
+  await expect(page.locator("html")).not.toHaveAttribute("data-theme", "dark");
+  await page.getByRole("button", { name: "Switch to dark theme" }).click();
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
   await page.reload();
-  await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
-  await expect(page.getByRole("button", { name: "Switch to dark theme" })).toBeVisible();
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
+  await expect(page.getByRole("button", { name: "Switch to light theme" })).toBeVisible();
 });
 
 test("problem cards start stacked and spread into a swipe row on tap", async ({ page }) => {

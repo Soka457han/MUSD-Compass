@@ -1,25 +1,7 @@
 @import "tailwindcss";
 
-/* Dark creative: near-black page, raised cards, one purple accent, pastel tiles with dark text. Dark is the default; light is opt-in. */
+/* Light by default: white page, one purple accent, pastel tiles with dark text. Dark is opt-in (a saved choice). */
 :root {
-  --page: #0f1015;
-  --surface: #16171d;
-  --card: #222328;
-  --line: #2e2f36;
-  --ink: #ffffff;
-  --ink-muted: #a8a9b0;
-  --accent: #a370fc;
-  --on-accent: #0f1015;
-  --accent-text: #c4a6fd;
-  --accent-soft: rgb(163 112 252 / 0.2);
-  --locked: #f6d8ff;
-  --on-locked: #16171d;
-  --danger-text: #ff8a8f;
-  --focus: #c4a6fd;
-  color-scheme: dark;
-}
-
-:root[data-theme="light"] {
   --page: #ffffff;
   --surface: #f4f4f7;
   --card: #ffffff;
@@ -30,9 +12,27 @@
   --on-accent: #ffffff;
   --accent-text: #6d28d9;
   --accent-soft: rgb(124 58 237 / 0.12);
+  --locked: #f6d8ff;
+  --on-locked: #16171d;
   --danger-text: #b3141c;
   --focus: #6d28d9;
   color-scheme: light;
+}
+
+:root[data-theme="dark"] {
+  --page: #0f1015;
+  --surface: #16171d;
+  --card: #222328;
+  --line: #2e2f36;
+  --ink: #ffffff;
+  --ink-muted: #a8a9b0;
+  --accent: #a370fc;
+  --on-accent: #0f1015;
+  --accent-text: #c4a6fd;
+  --accent-soft: rgb(163 112 252 / 0.2);
+  --danger-text: #ff8a8f;
+  --focus: #c4a6fd;
+  color-scheme: dark;
 }
 
 @theme inline {

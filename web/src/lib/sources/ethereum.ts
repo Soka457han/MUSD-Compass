@@ -21,7 +21,7 @@ export const INACTIVE_TVL_USD = 1_000;
 
 export async function fetchEthereum(): Promise<{ gasPriceWei: string; morpho: Venue }> {
   "use cache: remote";
-  cacheLife({ revalidate: 300, expire: 3600 });
+  cacheLife({ revalidate: 300, expire: 86_400 }); // after 5 min a visit gets the cached copy at once and refreshes it in the background; only a full day without visits makes one wait
   const [gasPrice, assets] = await Promise.all([
     ethereumClient.getGasPrice(),
     ethereumClient.readContract({ address: ETHEREUM.morphoAlphaMusdCore, abi: erc4626Abi, functionName: "totalAssets" }),

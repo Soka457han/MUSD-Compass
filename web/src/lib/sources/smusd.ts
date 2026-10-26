@@ -87,7 +87,7 @@ export type SmusdData = { venue: Venue; events: YieldEvent[]; aprPct: number; la
 
 export async function fetchSmusdMainnet(): Promise<SmusdData> {
   "use cache: remote";
-  cacheLife({ revalidate: 300, expire: 3600 });
+  cacheLife({ revalidate: 300, expire: 86_400 }); // after 5 min a visit gets the cached copy at once and refreshes it in the background; only a full day without visits makes one wait
   const client = mezoClient as PublicClient;
   const [scan, supply] = await Promise.all([
     scanYieldEvents(client, MAINNET.smusd, APR_WINDOW_DAYS),
@@ -122,7 +122,7 @@ export async function fetchSmusdMainnet(): Promise<SmusdData> {
 /** Testnet: only the last distribution time is needed (for the vault page). */
 export async function fetchSmusdTestnetLastDistribution(): Promise<number | null> {
   "use cache: remote";
-  cacheLife({ revalidate: 300, expire: 3600 });
+  cacheLife({ revalidate: 300, expire: 86_400 }); // after 5 min a visit gets the cached copy at once and refreshes it in the background; only a full day without visits makes one wait
   const scan = await scanYieldEvents(mezoTestnetClient as PublicClient, TESTNET.smusd, APR_WINDOW_DAYS);
   return realisedApr(scan.events, "1", scan.nowTs).lastDistribution;
 }

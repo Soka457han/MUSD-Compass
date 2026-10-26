@@ -32,10 +32,27 @@ async function LiveCompass() {
   );
 }
 
+/** Shown only while the first live read is in flight: the hero's real heading and the shape of the calculator,
+ *  so the page never opens on a bare "loading" line and nothing jumps when the numbers arrive. */
 function Loading() {
+  const box = "rounded-full bg-card";
   return (
-    <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6 md:px-6" aria-busy="true">
-      <p className="text-sm font-semibold">Reading Mezo and Ethereum…</p>
+    <main className="mx-auto w-full max-w-6xl flex-1 px-4 pt-5 md:px-6 md:pt-14" aria-busy="true">
+      <p role="status" className="sr-only">
+        Loading live rates
+      </p>
+      <div className="grid gap-7 md:grid-cols-[1.1fr_1fr] md:items-center md:gap-12" aria-hidden="true">
+        <div className="flex flex-col gap-4 md:gap-5">
+          <p className="text-[30px] leading-[1.15] font-extrabold tracking-tight md:text-[56px] md:leading-[1.06]">Where your MUSD earns most, after costs.</p>
+          <p className="text-ink-muted md:max-w-[520px] md:text-lg">Every Mezo earning spot, ranked by the cash you keep. Live from Mezo and Ethereum.</p>
+          <div className="grid gap-4 rounded-2xl border border-line bg-surface p-4 md:mt-2 md:grid-cols-[minmax(0,1fr)_auto_auto] md:items-end md:gap-3.5 md:border-0 md:bg-transparent md:p-0">
+            <div className={`h-[54px] ${box}`} />
+            <div className={`h-[54px] md:w-[170px] ${box}`} />
+            <div className={`h-[54px] md:w-[184px] ${box}`} />
+          </div>
+        </div>
+        <div className="h-[260px] animate-pulse rounded-[20px] border border-line bg-card md:h-[330px]" />
+      </div>
     </main>
   );
 }

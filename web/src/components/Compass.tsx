@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { flushSync } from "react-dom";
-import { pct, timeUtc, usd } from "@/lib/format";
+import { pct, shortDate, timeUtc, usd } from "@/lib/format";
 import { buildYields, parseQuery, type Query, type Sources, type VenueOut } from "@/lib/yields";
 import { LockIcon } from "./Icons";
 import { SiteFooter } from "./Landing";
@@ -301,7 +301,7 @@ export function Compass({ sources, between, after }: { sources: Sources; between
         notes={
           <>
             <p>
-              <span className="font-semibold text-ink">Mainnet data</span> (Mezo + Ethereum), refreshed every 5 min · data as of {timeUtc(sources.venues[0]?.updatedAt ?? new Date().toISOString())}. Vault actions run on{" "}
+              <span className="font-semibold text-ink">Mainnet data</span> (Mezo + Ethereum), refreshed every 5 min · data as of {shortDate(sources.venues[0]?.updatedAt ?? new Date().toISOString())}, {timeUtc(sources.venues[0]?.updatedAt ?? new Date().toISOString())}. Vault actions run on{" "}
               <span className="font-semibold text-ink">Mezo testnet</span>.
             </p>
             <p>

@@ -78,7 +78,7 @@ async function getJson<T>(url: string): Promise<T> {
 
 export async function fetchMerkl(): Promise<MerklData> {
   "use cache: remote";
-  cacheLife({ revalidate: 300, expire: 3600 });
+  cacheLife({ revalidate: 300, expire: 86_400 }); // after 5 min a visit gets the cached copy at once and refreshes it in the background; only a full day without visits makes one wait
   const [listings, mezo, weth] = await Promise.all([
     getJson<MerklListing[]>(`${API}/opportunities?search=MUSD&status=LIVE&items=50`),
     getJson<{ price: number }[]>(`${API}/tokens?chainId=31612&symbol=MEZO`).catch(() => []),

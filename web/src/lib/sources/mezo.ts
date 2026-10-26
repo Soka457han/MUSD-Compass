@@ -58,9 +58,14 @@ async function readPool(address: Address) {
   );
 }
 
-export async function fetchMezo(mezoPriceUsd: number): Promise<MezoData> {
+export type MezoChain = Awaited<ReturnType<typeof readMezo>>;
+
+/** Everything read from the Mezo chain, cached on its own. It takes no arguments on purpose: a cached function's
+ *  arguments are part of its cache key, and the MEZO price used to be one, so every Merkl price tick forced a fresh
+ *  (slow, blocking) set of chain reads. Prices are applied afterwards in mezoVenues(). */
+export async function readMezo() {
   "use cache: remote";
-  cacheLife({ revalidate: 300, expire: 3600 });
+  cacheLife({ revalidate: 300, expire: 86_400 }); // see the note in merkl.ts
   const now = new Date().toISOString();
   const btcPrice = Number(formatUnits(await mezoClient.readContract({ address: MAINNET.priceFeed, abi: priceFeedAbi, functionName: "fetchPrice" }), 18));
 
@@ -78,9 +83,18 @@ export async function fetchMezo(mezoPriceUsd: number): Promise<MezoData> {
     paramsLive = false;
   }
 
-  const spDeposits = Number(formatUnits(await mezoClient.readContract({ address: MAINNET.stabilityPool, abi: stabilityPoolAbi, functionName: "getTotalMUSDDeposits" }), 18));
+  const [spDeposits, pools, gasPrice] = await Promise.all([
+    mezoClient.readContract({ address: MAINNET.stabilityPool, abi: stabilityPoolAbi, functionName: "getTotalMUSDDeposits" }),
+    Promise.all(POOLS.map(async (p) => ({ ...p, tokens: (await readPool(p.address)).map((t) => ({ ...t, reserve: t.reserve.toString() })) }))),
+    mezoClient.getGasPrice(),
+  ]);
+  return { now, btcPrice, borrow, paramsLive, spDeposits: Number(formatUnits(spDeposits, 18)), pools, gasPriceWei: gasPrice.toString() };
+}
 
-  const pools = await Promise.all(POOLS.map(async (p) => ({ ...p, tvl: poolTvlUsd(await readPool(p.address), { btcUsd: btcPrice, mezoUsd: mezoPriceUsd }) })));
+/** Builds the Mezo venues from the cached chain read and today's MEZO price. */
+export function mezoVenues(chain: MezoChain, mezoPriceUsd: number): MezoData {
+  const { now, btcPrice, borrow, paramsLive, spDeposits } = chain;
+  const pools = chain.pools.map((p) => ({ ...p, tvl: poolTvlUsd(p.tokens.map((t) => ({ ...t, reserve: BigInt(t.reserve) })), { btcUsd: btcPrice, mezoUsd: mezoPriceUsd }) }));
 
   const venues: Venue[] = [
     {
@@ -117,5 +131,5 @@ export async function fetchMezo(mezoPriceUsd: number): Promise<MezoData> {
     ),
   ];
 
-  return { venues, borrow, btcPriceUsd: btcPrice, gasPriceWei: (await mezoClient.getGasPrice()).toString(), paramsLive };
+  return { venues, borrow, btcPriceUsd: btcPrice, gasPriceWei: chain.gasPriceWei, paramsLive };
 }

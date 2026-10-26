@@ -15,8 +15,8 @@ export const metadata: Metadata = {
   description: "Where Mezo MUSD earns the most after costs — cash first, locked veMEZO beside it.",
 };
 
-// Dark is the default; a saved "light" choice is applied before paint so the page never flashes dark first.
-const THEME_SCRIPT = `try{if(localStorage.getItem("theme")==="light")document.documentElement.dataset.theme="light"}catch(e){}`;
+// Light is the default; a saved "dark" choice is applied before paint so the page never flashes white first.
+const THEME_SCRIPT = `try{if(localStorage.getItem("theme")==="dark")document.documentElement.dataset.theme="dark"}catch(e){}`;
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
