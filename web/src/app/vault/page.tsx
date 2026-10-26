@@ -8,7 +8,7 @@ export default function VaultPage() {
   return (
     <>
       <SiteHeader current="/vault" />
-      <p role="note" className="bg-on-yellow px-4 py-2 text-center text-sm font-semibold text-yellow">
+      <p role="note" className="bg-accent-soft px-4 py-2 text-center text-sm font-semibold text-ink">
         Testnet action — real Mezo contracts, test funds. APR on Yields is mainnet.
       </p>
       <main id="main" className="flex flex-1 flex-col">

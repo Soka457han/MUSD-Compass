@@ -36,7 +36,7 @@ test.describe("home (360 px, fixture data)", () => {
 
   test("no serious or critical accessibility issues (light and dark)", async ({ page }) => {
     for (const scheme of ["light", "dark"] as const) {
-      await page.emulateMedia({ colorScheme: scheme });
+      await page.addInitScript((s) => localStorage.setItem("theme", s), scheme); // dark is the default; light is a saved choice
       await page.goto("/");
     await page.locator("form[data-hydrated]").waitFor();
       await page.getByRole("article").first().waitFor();
@@ -49,7 +49,7 @@ test.describe("home (360 px, fixture data)", () => {
 });
 
 test("invalid amount shows a readable error that passes contrast in dark", async ({ page }) => {
-  await page.emulateMedia({ colorScheme: "dark" });
+  // dark is the default theme
   await page.goto("/");
   await page.locator("form[data-hydrated]").waitFor();
   await page.getByLabel("Amount (MUSD)").fill("0");
@@ -57,4 +57,23 @@ test("invalid amount shows a readable error that passes contrast in dark", async
   // @axe-core/playwright ships its own playwright-core types; the runtime Page is the same object.
   const r = await new AxeBuilder({ page: page as unknown as ConstructorParameters<typeof AxeBuilder>[0]["page"] }).withRules(["color-contrast"]).analyze();
   expect(r.violations).toEqual([]);
+});
+
+test("dark by default; the theme button switches to light and remembers it", async ({ page }) => {
+  await page.goto("/");
+  await expect(page.locator("html")).not.toHaveAttribute("data-theme", "light");
+  await page.getByRole("button", { name: "Switch to light theme" }).click();
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
+  await page.reload();
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
+  await expect(page.getByRole("button", { name: "Switch to dark theme" })).toBeVisible();
+});
+
+test("problem cards start stacked and spread into a swipe row on tap", async ({ page }) => {
+  await page.goto("/");
+  await expect(page.getByText("Tap the cards to spread them out")).toBeVisible();
+  await page.getByRole("button", { name: "Spread out" }).click();
+  await expect(page.locator(".deck")).toHaveAttribute("data-spread", "true");
+  await expect(page.getByText("Swipe for more")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Costs eat small amounts" })).toBeAttached();
 });

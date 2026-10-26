@@ -21,7 +21,7 @@ test.describe("vault (360 px, fixture data)", () => {
 
   test("no serious or critical accessibility issues (light and dark)", async ({ page }) => {
     for (const scheme of ["light", "dark"] as const) {
-      await page.emulateMedia({ colorScheme: scheme });
+      await page.addInitScript((s) => localStorage.setItem("theme", s), scheme); // dark is the default; light is a saved choice
       await page.goto("/vault");
       await page.getByRole("button", { name: "Try a sample" }).click();
       await page.getByText("157.31").waitFor();

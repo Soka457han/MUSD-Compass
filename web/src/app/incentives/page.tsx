@@ -17,7 +17,7 @@ async function Board() {
     .sort((a, b) => a.perK - b.perK);
   if (!rows.length) return <p className="mt-4 text-sm">Merkl is unavailable right now — no campaigns to compare.</p>;
   return (
-    <div className="mt-4 border-t-4 border-ink bg-label px-4 py-4">
+    <div className="mt-4 rounded-[20px] border border-line bg-card px-5 py-5">
       <table className="w-full text-left text-sm">
         <caption className="sr-only">Mezo-paid MUSD campaigns, most efficient first</caption>
         <thead>
@@ -51,7 +51,7 @@ export default function IncentivesPage() {
     <>
       <SiteHeader current="/incentives" />
       <main id="main" className="mx-auto w-full max-w-3xl flex-1 px-4 py-5">
-        <h1 className="text-2xl font-extrabold" style={{ fontStretch: "88%" }}>
+        <h1 className="text-[30px] leading-tight font-extrabold tracking-tight md:text-[40px]">
           Incentive efficiency
         </h1>
         <p className="mt-1 max-w-prose text-sm text-ink-muted">What each Mezo-paid MUSD campaign on Ethereum spends per day, against the liquidity it holds. Mainnet data, refreshed every 5 minutes.</p>

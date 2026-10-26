@@ -45,8 +45,8 @@ export function TrovePanel() {
 
   return (
     <div className="mx-auto w-full max-w-3xl flex-1 space-y-5 px-4 py-5">
-      <section aria-labelledby="lookup-h" className="border-t-4 border-ink bg-label px-4 py-4">
-        <h2 id="lookup-h" className="text-base font-bold" style={{ fontStretch: "90%" }}>
+      <section aria-labelledby="lookup-h" className="rounded-[20px] border border-line bg-card px-5 py-5">
+        <h2 id="lookup-h" className="text-base font-bold">
           Your MUSD trove on Mezo
         </h2>
         <p className="mt-1 max-w-prose text-sm text-ink-muted">Read only, Mezo mainnet. Paste the public address that owns the trove.</p>
@@ -61,9 +61,9 @@ export function TrovePanel() {
             <label htmlFor="lookup" className="mb-1 block text-xs font-semibold">
               Address
             </label>
-            <input id="lookup" value={lookup} onChange={(e) => setLookup(e.target.value)} placeholder="0x…" autoComplete="off" spellCheck={false} className="block h-11 w-full rounded-sm border-2 border-ink bg-label px-2 text-sm" />
+            <input id="lookup" value={lookup} onChange={(e) => setLookup(e.target.value)} placeholder="0x…" autoComplete="off" spellCheck={false} className="block h-11 w-full rounded-full border border-line bg-card px-4 text-sm" />
           </div>
-          <button type="submit" disabled={busy} className="min-h-11 rounded-sm border-2 border-ink px-4 text-sm font-bold disabled:opacity-60">
+          <button type="submit" disabled={busy} className="min-h-11 rounded-full border border-line px-4 text-sm font-bold disabled:opacity-60">
             Look up
           </button>
           <button type="button" disabled={busy} onClick={() => load("sample")} className="min-h-11 px-2 text-sm font-semibold underline">
@@ -100,7 +100,7 @@ export function TrovePanel() {
               </div>
             </dl>
             {t.recoveryMode && (
-              <p role="note" className="mt-3 border-l-4 border-sticker pl-3 text-sm font-semibold">
+              <p role="note" className="mt-3 border-l-4 border-locked pl-3 text-sm font-semibold">
                 Mezo is in recovery mode: borrowing rules are stricter until the system ratio recovers.
               </p>
             )}
@@ -109,8 +109,8 @@ export function TrovePanel() {
       </section>
 
       {t?.active && (
-        <section aria-labelledby="plan-h" className="border-t-4 border-ink bg-label px-4 py-4">
-          <h2 id="plan-h" className="text-base font-bold" style={{ fontStretch: "90%" }}>
+        <section aria-labelledby="plan-h" className="rounded-[20px] border border-line bg-card px-5 py-5">
+          <h2 id="plan-h" className="text-base font-bold">
             What you could do
           </h2>
           <dl className="mt-2 space-y-3 text-sm">
@@ -129,7 +129,7 @@ export function TrovePanel() {
               <dd className="mt-1 text-xs text-ink-muted">Redemptions take collateral from the lowest-ratio troves first. A higher ratio puts you further back.</dd>
             </div>
           </dl>
-          <Link href={calculatorHref(t)} className="mt-4 inline-flex min-h-11 items-center rounded-sm bg-ink px-4 text-sm font-bold text-label no-underline">
+          <Link href={calculatorHref(t)} className="mt-4 inline-flex min-h-11 items-center rounded-full bg-accent px-4 text-sm font-bold text-on-accent no-underline">
             Use in calculator
           </Link>
           <p className="mt-2 text-xs text-ink-muted">Opens Yields in borrower mode for an existing trove{t.ratePct >= 1 && t.ratePct <= 5 ? ` at your ${n(t.ratePct, 2)}% rate` : ""}.</p>

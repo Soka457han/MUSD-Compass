@@ -32,7 +32,7 @@ async function TopThree({ searchParams }: { searchParams: PageProps<"/embed">["s
                 {pct(v.carry.total)}
               </span>
             ) : null}
-            <span className="price price-shelf shrink-0 text-2xl">{pct(v.carry.cash)}</span>
+            <span className="price shrink-0 text-2xl">{pct(v.carry.cash)}</span>
           </li>
         ))}
       </ol>
@@ -49,7 +49,7 @@ async function TopThree({ searchParams }: { searchParams: PageProps<"/embed">["s
 
 export default function EmbedPage(props: PageProps<"/embed">) {
   return (
-    <main className="flex-1 bg-label p-3 text-ink">
+    <main className="w-full max-w-md flex-1 bg-card p-3 text-ink">
       <h1 className="flex items-center gap-1.5 text-base font-extrabold">
         <CompassMark className="size-4" />
         MUSD Compass

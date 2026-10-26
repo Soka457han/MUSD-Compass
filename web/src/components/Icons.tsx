@@ -30,8 +30,42 @@ export function ArrowUpRightIcon({ className, title }: P) {
 export function CompassMark({ className }: P) {
   return (
     <svg className={className} viewBox="0 0 24 24" aria-hidden="true">
-      <circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" strokeWidth="2" />
-      <path d="M15.5 8.5 13.4 13.4 8.5 15.5l2.1-4.9z" fill="currentColor" />
+      <circle cx="12" cy="12" r="11" fill="var(--accent)" />
+      <path d="M15.5 8.5 13.4 13.4 8.5 15.5l2.1-4.9z" fill="var(--on-accent)" />
+    </svg>
+  );
+}
+
+export function MoonIcon({ className }: P) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" fill="currentColor" />
+    </svg>
+  );
+}
+
+export function SunIcon({ className, title }: P) {
+  return (
+    <svg className={className} {...base(title)}>
+      <circle cx="12" cy="12" r="4" />
+      <path d="M12 2v2m0 16v2M4.9 4.9l1.4 1.4m11.4 11.4 1.4 1.4M2 12h2m16 0h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" />
+    </svg>
+  );
+}
+
+/** Bottom tab bar glyphs, same stroke family. */
+export const TAB_ICONS: Record<string, string> = {
+  "/": "M4 19V9m6 10V5m6 14v-7m4 7H2",
+  "/vault": "M4 7h16v12H4zM8 7V5h8v2",
+  "/rewards": "M12 3v3m0 12v3M5 12H2m20 0h-3M7 7 5 5m14 14-2-2M7 17l-2 2M19 5l-2 2",
+  "/trove": "M3 21h18M5 21V10l7-6 7 6v11",
+  "/developers": "m8 8-5 4 5 4m8-8 5 4-5 4",
+};
+
+export function TabIcon({ href, className }: { href: string; className?: string }) {
+  return (
+    <svg className={className} {...base()}>
+      <path d={TAB_ICONS[href]} />
     </svg>
   );
 }

@@ -120,6 +120,9 @@ components:
     height: "44px"
 ---
 
+> **Visual language changed on 26 Oct 2026.** The live UI now uses the "dark creative" look chosen from the prototype canvas: page `#0f1015` / card `#222328` / line `#2e2f36`, accent `#a370fc` with dark text (light theme: white page, accent `#7c3aed` with white text), pastel tiles with `#16171d` text, locked veMEZO on a `#f6d8ff` pill, pill-shaped controls, Plus Jakarta Sans. Tokens live in `src/app/globals.css`. The shelf-label sections below describe the earlier look; layout, copy and data rules still apply.
+
+
 # Design System: MUSD Compass
 
 ## Overview

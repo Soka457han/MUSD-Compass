@@ -24,7 +24,7 @@ test("one script tag on another page shows the top 3 by cash carry", async ({ pa
 
 test("widget has no serious or critical accessibility issues (light and dark)", async ({ page }) => {
   for (const scheme of ["light", "dark"] as const) {
-    await page.emulateMedia({ colorScheme: scheme });
+    await page.addInitScript((s) => localStorage.setItem("theme", s), scheme); // dark is the default; light is a saved choice
     await page.goto("/embed");
     await page.getByText("Full table").waitFor();
     const r = await new AxeBuilder({ page: page as unknown as ConstructorParameters<typeof AxeBuilder>[0]["page"] }).analyze();

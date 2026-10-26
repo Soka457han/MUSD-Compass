@@ -1,76 +1,91 @@
 @import "tailwindcss";
 
-/* Shelf-edge label world: steel shelf, white label stock, label-yellow price field, red offer sticker. */
+/* Dark creative: near-black page, raised cards, one purple accent, pastel tiles with dark text. Dark is the default; light is opt-in. */
 :root {
-  --shelf: #e6e9ed;
-  --label: #ffffff;
-  --ink: #111214;
-  --ink-muted: #474c54;
-  --line: #c3c9d0;
-  --yellow: #ffd200;
-  --on-yellow: #111214;
-  --sticker: #c8202a;
-  --on-sticker: #ffffff;
+  --page: #0f1015;
+  --surface: #16171d;
+  --card: #222328;
+  --line: #2e2f36;
+  --ink: #ffffff;
+  --ink-muted: #a8a9b0;
+  --accent: #a370fc;
+  --on-accent: #0f1015;
+  --accent-text: #c4a6fd;
+  --accent-soft: rgb(163 112 252 / 0.2);
+  --locked: #f6d8ff;
+  --on-locked: #16171d;
+  --danger-text: #ff8a8f;
+  --focus: #c4a6fd;
+  color-scheme: dark;
+}
+
+:root[data-theme="light"] {
+  --page: #ffffff;
+  --surface: #f4f4f7;
+  --card: #ffffff;
+  --line: #e3e4e8;
+  --ink: #0e1318;
+  --ink-muted: #5b616b;
+  --accent: #7c3aed;
+  --on-accent: #ffffff;
+  --accent-text: #6d28d9;
+  --accent-soft: rgb(124 58 237 / 0.12);
   --danger-text: #b3141c;
-  --focus: #111214;
+  --focus: #6d28d9;
   color-scheme: light;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --shelf: #15171a;
-    --label: #22252a;
-    --ink: #f1f2f0;
-    --ink-muted: #b2b8bf;
-    --line: #3b4048;
-    --yellow: #ffd200;
-    --on-yellow: #111214;
-    --sticker: #c8202a;
-    --on-sticker: #ffffff;
-    --danger-text: #ff8a8f;
-    --focus: #ffd200;
-    color-scheme: dark;
-  }
-}
-
 @theme inline {
-  --color-shelf: var(--shelf);
-  --color-label: var(--label);
+  --color-page: var(--page);
+  --color-surface: var(--surface);
+  --color-card: var(--card);
+  --color-line: var(--line);
   --color-ink: var(--ink);
   --color-ink-muted: var(--ink-muted);
-  --color-line: var(--line);
-  --color-yellow: var(--yellow);
-  --color-on-yellow: var(--on-yellow);
-  --color-sticker: var(--sticker);
-  --color-on-sticker: var(--on-sticker);
+  --color-accent: var(--accent);
+  --color-on-accent: var(--on-accent);
+  --color-accent-text: var(--accent-text);
+  --color-accent-soft: var(--accent-soft);
+  --color-locked: var(--locked);
+  --color-on-locked: var(--on-locked);
   --color-danger-text: var(--danger-text);
-  --font-sans: var(--font-archivo), system-ui, sans-serif;
+  /* Pastel tiles keep dark text in both themes. */
+  --color-tile-ink: #16171d;
+  --color-tile-ink-muted: #3a3b44;
+  --color-tile-yellow: #fff1b8;
+  --color-tile-pink: #f6d8ff;
+  --color-tile-lilac: #e3d9ff;
+  --color-tile-peach: #ffe0cc;
+  --color-tile-blue: #dce6ff;
+  --color-tile-mint: #d7f5e6;
+  --font-sans: var(--font-jakarta), system-ui, sans-serif;
 }
 
 html {
-  background: var(--shelf);
+  background: var(--page);
   color: var(--ink);
   font-family: var(--font-sans);
   font-variant-numeric: tabular-nums;
   -webkit-text-size-adjust: 100%;
-  accent-color: var(--ink);
+  accent-color: var(--accent);
   caret-color: var(--ink);
 }
 
 ::selection {
-  background: var(--yellow);
-  color: var(--on-yellow);
+  background: var(--accent);
+  color: var(--on-accent);
 }
 
 :focus-visible {
   outline: 3px solid var(--focus);
   outline-offset: 2px;
-  border-radius: 2px;
+  border-radius: 6px;
 }
 
-/* On the yellow band a yellow ring would vanish (dark mode): ring in its ink instead. */
-.bg-yellow :focus-visible {
-  outline-color: var(--on-yellow);
+/* On accent fills the accent-coloured ring would vanish: ring in the page colour's opposite instead. */
+.bg-accent:focus-visible,
+.bg-accent :focus-visible {
+  outline-color: var(--ink);
 }
 
 a {
@@ -78,24 +93,95 @@ a {
   text-decoration-thickness: 1px;
 }
 
-/* Price numerals: the label's condensed, heavy figures. */
+/* Big figures: heavy, tight. */
 .price {
-  font-stretch: 68%;
   font-weight: 800;
-  letter-spacing: -0.01em;
-  line-height: 0.9;
+  letter-spacing: -0.03em;
+  line-height: 0.95;
 }
 
-@media (prefers-color-scheme: dark) {
-  .price-shelf {
-    color: var(--yellow);
-  }
-}
-
-/* The one motion moment: labels slide to their new rank when the calculator changes. */
+/* Labels re-rank with a slide when the calculator changes. */
 ::view-transition-group(*) {
   animation-duration: 260ms;
   animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Problem cards: a stacked hand on phones that spreads into a swipe row on tap; a plain 3-column grid from md up. */
+.deck {
+  --w: 264px;
+  --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+  position: relative;
+  height: 400px;
+  overflow: hidden;
+  transition: height 560ms var(--ease);
+  scrollbar-width: none;
+}
+.deck::-webkit-scrollbar {
+  display: none;
+}
+.deck[data-spread] {
+  height: 300px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+}
+.deck-track {
+  position: relative;
+  height: 100%;
+}
+.deck[data-spread] .deck-track {
+  width: calc(3 * var(--w) + 2 * 12px + 32px);
+}
+.deck-card {
+  position: absolute;
+  width: var(--w);
+  height: 264px;
+  box-sizing: border-box;
+  scroll-snap-align: start;
+  scroll-margin-left: 16px;
+  box-shadow: 0 12px 32px rgb(0 0 0 / 0.28);
+  transition: left 560ms var(--ease), top 560ms var(--ease), transform 560ms var(--ease), box-shadow 560ms ease;
+}
+.deck-card:nth-child(1) { left: calc(50% - var(--w) / 2); top: 120px; z-index: 3; }
+.deck-card:nth-child(2) { left: calc(50% - 173px); top: 20px; z-index: 2; transform: rotate(-5deg); }
+.deck-card:nth-child(3) { left: calc(50% - 89px); top: 24px; z-index: 1; transform: rotate(5deg); }
+/* Stacked, the back cards show only their big label; Gas puts it on the right so 12 weeks can't cover it. */
+.deck-card:nth-child(3) .deck-big { align-self: flex-end; }
+.deck:not([data-spread]) .deck-card:not(:first-child) .deck-more { opacity: 0; }
+.deck-more { transition: opacity 320ms ease 380ms; }
+.deck[data-spread] .deck-card { top: 18px; transform: none; box-shadow: none; }
+.deck[data-spread] .deck-card .deck-big { align-self: flex-start; }
+.deck[data-spread] .deck-card:nth-child(1) { left: 16px; }
+.deck[data-spread] .deck-card:nth-child(2) { left: calc(16px + var(--w) + 12px); }
+.deck[data-spread] .deck-card:nth-child(3) { left: calc(16px + 2 * (var(--w) + 12px)); }
+
+@media (min-width: 768px) {
+  .deck,
+  .deck[data-spread] {
+    height: auto;
+    overflow: visible;
+  }
+  .deck-track,
+  .deck[data-spread] .deck-track {
+    width: auto;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 16px;
+  }
+  .deck .deck-card,
+  .deck[data-spread] .deck-card {
+    position: static;
+    width: auto;
+    height: auto;
+    min-height: 240px;
+    transform: none;
+    box-shadow: none;
+  }
+  .deck .deck-card .deck-big {
+    align-self: flex-start;
+  }
+  .deck:not([data-spread]) .deck-card:not(:first-child) .deck-more {
+    opacity: 1;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -103,6 +189,14 @@ a {
   *::before,
   *::after {
     transition-duration: 0.01ms !important;
+    transition-delay: 0ms !important;
     animation-duration: 0.01ms !important;
+  }
+}
+
+/* Room for the phone tab bar so it never covers the last line of a page. */
+@media (max-width: 767px) {
+  body:has(.tabbar) {
+    padding-bottom: 80px;
   }
 }

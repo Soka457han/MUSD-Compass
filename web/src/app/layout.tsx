@@ -2,14 +2,12 @@ import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
 
-// Fontsource's Archivo latin file (wdth + wght axes), loaded through next/font so it is preloaded:
-// the CSS @import only found it after the stylesheet, which pushed the price figure (the LCP) past 3 s.
-const archivo = localFont({
-  src: "../../node_modules/@fontsource-variable/archivo/files/archivo-latin-wdth-normal.woff2",
-  variable: "--font-archivo",
-  weight: "100 900",
+// Fontsource's Plus Jakarta Sans latin file (wght axis), loaded through next/font so it is preloaded.
+const jakarta = localFont({
+  src: "../../node_modules/@fontsource-variable/plus-jakarta-sans/files/plus-jakarta-sans-latin-wght-normal.woff2",
+  variable: "--font-jakarta",
+  weight: "200 800",
   display: "swap",
-  declarations: [{ prop: "font-stretch", value: "62% 125%" }],
 });
 
 export const metadata: Metadata = {
@@ -17,9 +15,15 @@ export const metadata: Metadata = {
   description: "Where Mezo MUSD earns the most after costs — cash first, locked veMEZO beside it.",
 };
 
+// Dark is the default; a saved "light" choice is applied before paint so the page never flashes dark first.
+const THEME_SCRIPT = `try{if(localStorage.getItem("theme")==="light")document.documentElement.dataset.theme="light"}catch(e){}`;
+
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en" className={`${archivo.variable} h-full antialiased`}>
+    <html lang="en" className={`${jakarta.variable} h-full antialiased`} suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
+      </head>
       <body className="min-h-full flex flex-col">{children}</body>
     </html>
   );

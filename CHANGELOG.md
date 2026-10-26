@@ -1,6 +1,7 @@
 # Changelog
 
 ## 0.1.0 — Wave 1 (25 Oct 2026)
+- Restyle (26 Oct): dark-first look with a purple accent and pastel tiles, light theme behind a saved toggle, Plus Jakarta Sans, phone tab bar; home adds the problem cards (stacked, spread on tap), how it works, where the numbers come from, other channels, FAQ and a full footer. Same data and calculator.
 - Security review: no framing outside `/embed`, CSP and security headers, only https links from Merkl, `/api/health` hides upstream errors and is rate-limited, timing-safe bot key, webhook ignores malformed updates.
 - Fixed: CI typecheck (route types generated first); home page no longer prefetches other pages' code; CSS inlined.
 - Project scaffold: Next.js web app, Python bot webhook skeleton, CI.

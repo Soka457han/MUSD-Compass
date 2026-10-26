@@ -111,8 +111,8 @@ export function VaultPanel() {
 
   return (
     <div className="mx-auto w-full max-w-3xl flex-1 space-y-5 px-4 py-5">
-      <section aria-labelledby="wallet-h" className="border-t-4 border-ink bg-label px-4 py-4">
-        <h2 id="wallet-h" className="text-base font-bold" style={{ fontStretch: "90%" }}>
+      <section aria-labelledby="wallet-h" className="rounded-[20px] border border-line bg-card px-5 py-5">
+        <h2 id="wallet-h" className="text-base font-bold">
           Wallet
         </h2>
         {account ? (
@@ -120,7 +120,7 @@ export function VaultPanel() {
             Connected <span className="font-semibold">{account.slice(0, 6)}…{account.slice(-4)}</span> on Mezo testnet.
           </p>
         ) : hasWallet ? (
-          <button type="button" onClick={onConnect} className="mt-3 inline-flex min-h-11 items-center rounded-sm bg-ink px-4 text-sm font-bold text-label">
+          <button type="button" onClick={onConnect} className="mt-3 inline-flex min-h-11 items-center rounded-full bg-accent px-4 text-sm font-bold text-on-accent">
             Connect wallet
           </button>
         ) : (
@@ -137,8 +137,8 @@ export function VaultPanel() {
         </p>
       </section>
 
-      <section aria-labelledby="lookup-h" className="border-t-4 border-ink bg-label px-4 py-4">
-        <h2 id="lookup-h" className="text-base font-bold" style={{ fontStretch: "90%" }}>
+      <section aria-labelledby="lookup-h" className="rounded-[20px] border border-line bg-card px-5 py-5">
+        <h2 id="lookup-h" className="text-base font-bold">
           Savings Vault position
         </h2>
         <form
@@ -152,9 +152,9 @@ export function VaultPanel() {
             <label htmlFor="lookup" className="mb-1 block text-xs font-semibold">
               Address
             </label>
-            <input id="lookup" value={lookup} onChange={(e) => setLookup(e.target.value)} placeholder="0x…" autoComplete="off" spellCheck={false} className="block h-11 w-full rounded-sm border-2 border-ink bg-label px-2 text-sm" />
+            <input id="lookup" value={lookup} onChange={(e) => setLookup(e.target.value)} placeholder="0x…" autoComplete="off" spellCheck={false} className="block h-11 w-full rounded-full border border-line bg-card px-4 text-sm" />
           </div>
-          <button type="submit" className="min-h-11 rounded-sm border-2 border-ink px-4 text-sm font-bold">
+          <button type="submit" className="min-h-11 rounded-full border border-line px-4 text-sm font-bold">
             Look up
           </button>
           <button
@@ -199,8 +199,8 @@ export function VaultPanel() {
       </section>
 
       {own && (
-        <section aria-labelledby="actions-h" className="border-t-4 border-ink bg-label px-4 py-4">
-          <h2 id="actions-h" className="text-base font-bold" style={{ fontStretch: "90%" }}>
+        <section aria-labelledby="actions-h" className="rounded-[20px] border border-line bg-card px-5 py-5">
+          <h2 id="actions-h" className="text-base font-bold">
             Actions
           </h2>
           <p className="mt-1 max-w-prose text-xs text-ink-muted">Every action is simulated first, sent with a gas limit of the estimate × 1.2, and approvals are for the exact amount only.</p>
@@ -215,9 +215,9 @@ export function VaultPanel() {
               <label htmlFor="dep" className="mb-1 block text-xs font-semibold">
                 Deposit MUSD
               </label>
-              <input id="dep" inputMode="decimal" value={depositAmt} onChange={(e) => setDepositAmt(e.target.value)} placeholder="100" aria-invalid={depositTooBig} className="price block h-11 w-full rounded-sm border-2 border-ink bg-label px-2 text-2xl" />
+              <input id="dep" inputMode="decimal" value={depositAmt} onChange={(e) => setDepositAmt(e.target.value)} placeholder="100" aria-invalid={depositTooBig} className="price block h-11 w-full rounded-full border border-line bg-card px-4 text-2xl" />
               {depositTooBig && <p className="mt-1 text-xs font-semibold text-danger-text">More than your wallet holds ({fmt(state!.musd)} MUSD).</p>}
-              <button type="submit" disabled={busy || !depositWei || depositTooBig} className="mt-2 inline-flex min-h-11 items-center rounded-sm bg-ink px-4 text-sm font-bold text-label disabled:opacity-50">
+              <button type="submit" disabled={busy || !depositWei || depositTooBig} className="mt-2 inline-flex min-h-11 items-center rounded-full bg-accent px-4 text-sm font-bold text-on-accent disabled:opacity-50">
                 Deposit
               </button>
             </form>
@@ -230,22 +230,22 @@ export function VaultPanel() {
               <label htmlFor="wd" className="mb-1 block text-xs font-semibold">
                 Withdraw sMUSD (also pays pending yield)
               </label>
-              <input id="wd" inputMode="decimal" value={withdrawAmt} onChange={(e) => setWithdrawAmt(e.target.value)} placeholder="10" aria-invalid={withdrawTooBig} className="price block h-11 w-full rounded-sm border-2 border-ink bg-label px-2 text-2xl" />
+              <input id="wd" inputMode="decimal" value={withdrawAmt} onChange={(e) => setWithdrawAmt(e.target.value)} placeholder="10" aria-invalid={withdrawTooBig} className="price block h-11 w-full rounded-full border border-line bg-card px-4 text-2xl" />
               {withdrawTooBig && <p className="mt-1 text-xs font-semibold text-danger-text">More than you have in the vault ({fmt(state!.smusd)}).</p>}
-              <button type="submit" disabled={busy || !withdrawWei || withdrawTooBig} className="mt-2 inline-flex min-h-11 items-center rounded-sm border-2 border-ink px-4 text-sm font-bold disabled:opacity-50">
+              <button type="submit" disabled={busy || !withdrawWei || withdrawTooBig} className="mt-2 inline-flex min-h-11 items-center rounded-full border border-line px-4 text-sm font-bold disabled:opacity-50">
                 Withdraw
               </button>
             </form>
           </div>
-          <button type="button" onClick={claim} disabled={busy} className="mt-4 inline-flex min-h-11 items-center rounded-sm border-2 border-ink px-4 text-sm font-bold disabled:opacity-50">
+          <button type="button" onClick={claim} disabled={busy} className="mt-4 inline-flex min-h-11 items-center rounded-full border border-line px-4 text-sm font-bold disabled:opacity-50">
             Claim yield
           </button>
         </section>
       )}
 
       {txs.length > 0 && (
-        <section aria-labelledby="tx-h" className="border-t-4 border-ink bg-label px-4 py-4">
-          <h2 id="tx-h" className="text-base font-bold" style={{ fontStretch: "90%" }}>
+        <section aria-labelledby="tx-h" className="rounded-[20px] border border-line bg-card px-5 py-5">
+          <h2 id="tx-h" className="text-base font-bold">
             Transactions
           </h2>
           <ul aria-live="polite" className="mt-2 divide-y divide-line">

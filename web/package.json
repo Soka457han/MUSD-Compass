@@ -12,7 +12,7 @@
     "e2e": "playwright test"
   },
   "dependencies": {
-    "@fontsource-variable/archivo": "5.3.0",
+    "@fontsource-variable/plus-jakarta-sans": "5.3.0",
     "@x402/core": "2.28.0",
     "@x402/evm": "2.28.0",
     "@x402/extensions": "2.28.0",

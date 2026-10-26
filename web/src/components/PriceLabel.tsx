@@ -3,7 +3,7 @@ import { musd, pct, shortDate, usd } from "@/lib/format";
 import type { VenueOut } from "@/lib/yields";
 import { ArrowUpRightIcon, ChevronIcon, LockIcon } from "./Icons";
 
-/** Shelf-tag lettering: whole number full size, decimals and % raised and smaller. */
+/** Big figure: whole number full size, decimals and % raised and smaller. */
 function PriceFigure({ value }: { value: number }) {
   // Below 1% the differing digits are the decimals, so keep them full size.
   if (Math.abs(value) < 1) return <>{pct(value)}</>;
@@ -23,38 +23,38 @@ function rangeText(r: Range): string {
   return `${musd(Math.ceil(r.min))} – ${musd(Math.floor(r.max))}`;
 }
 
-/** One venue as a shelf-edge price label: the big figure is cash carry; the boxed line is its unit price. */
+/** One venue as a card: the big figure is cash carry; the line under it is how it was worked out. */
 export function PriceLabel({ v, days, lead }: { v: VenueOut; days: number; lead?: boolean }) {
   const { carry } = v;
   const hasCash = carry.cash !== null;
   const locked = carry.locked ?? 0;
   const external = v.action.url.startsWith("http");
   const titleId = `venue-${v.id}`;
+  const chip = lead ? "bg-surface" : "bg-card";
 
   return (
-    <article aria-labelledby={titleId} className="relative border-t-4 border-ink bg-label shadow-[0_1px_2px_rgb(0_0_0/0.08),0_8px_20px_-12px_rgb(0_0_0/0.25)]">
-      <div className="flex items-start justify-between gap-3 px-4 pt-3">
-        <h3 id={titleId} className="text-base leading-snug font-bold" style={{ fontStretch: "90%" }}>
+    <article aria-labelledby={titleId} className={`relative flex h-full flex-col rounded-[18px] border border-line md:rounded-[20px] ${lead ? "bg-card" : "bg-surface"}`}>
+      <div className="flex items-start justify-between gap-3 px-5 pt-5">
+        <h3 id={titleId} className="text-base leading-snug font-bold">
           {v.name}
         </h3>
-        <span className="shrink-0 rounded-sm border border-ink px-1.5 py-0.5 text-xs font-semibold">{v.chain}</span>
+        <span className={`shrink-0 rounded-full px-2.5 py-0.5 text-xs font-semibold text-ink-muted ${chip}`}>{v.chain}</span>
       </div>
 
-      <div className={lead ? "md:flex md:flex-wrap md:items-center md:gap-x-2" : undefined}>
-      <div className={`mt-2 flex items-end gap-3 px-4 ${lead ? "bg-yellow py-3 text-on-yellow md:mx-4 md:w-fit md:pr-8" : "pb-1"}`}>
+      <div className="mt-3 flex items-end gap-3 px-5">
         {v.status === "unavailable" ? (
           <p className="py-2 text-sm font-semibold">Source unavailable right now</p>
         ) : hasCash ? (
-          <p className={`price ${lead ? "text-[3.5rem]" : "price-shelf text-[2.5rem]"}`}>
+          <p className={`price ${lead ? "text-[56px]" : "text-[40px]"}`}>
             <PriceFigure value={carry.cash!} />
             <span className="sr-only"> cash carry per year</span>
           </p>
         ) : (
-          <p className={`price ${lead ? "text-[3.5rem]" : "text-[2.5rem]"}`} aria-label="No steady APR">
+          <p className={`price ${lead ? "text-[56px]" : "text-[40px]"}`} aria-label="No steady APR">
             —
           </p>
         )}
-        <p className={`mb-0.5 text-xs leading-tight font-semibold ${lead ? "" : "text-ink-muted"}`}>
+        <p className="mb-1 text-xs leading-tight font-semibold text-ink-muted">
           {hasCash ? (
             <>
               cash / yr
@@ -68,21 +68,20 @@ export function PriceLabel({ v, days, lead }: { v: VenueOut; days: number; lead?
       </div>
 
       {hasCash && (
-        <p className="mx-4 mt-2 border border-ink px-2 py-1 text-xs leading-snug md:max-w-md">
-          <span className="font-semibold">Unit price:</span> {pct(carry.liquid)} yield − {pct(carry.costs)} costs · assumes {days}-day hold
+        <p className="mx-5 mt-3 text-xs leading-snug text-ink-muted md:max-w-md">
+          <span className="font-semibold text-ink">How:</span> {pct(carry.liquid)} yield − {pct(carry.costs)} costs · assumes {days}-day hold
         </p>
       )}
 
       {locked > 0 && carry.total !== null && (
-        <p className="mx-4 mt-2 inline-flex -rotate-1 items-center gap-1.5 rounded-sm bg-sticker px-2 py-1 text-sm font-bold text-on-sticker">
+        <p className="mx-5 mt-3 inline-flex items-center gap-1.5 self-start rounded-full bg-locked px-3 py-1 text-[13px] font-bold text-on-locked">
           <LockIcon className="size-4" />
           +{pct(locked)} locked veMEZO
           <span className="font-semibold">· total {pct(carry.total)}</span>
         </p>
       )}
-      </div>
 
-      <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-1 px-4 text-xs">
+      <dl className="mt-4 grid grid-cols-2 gap-x-4 gap-y-1.5 px-5 text-xs">
         <div>
           <dt className="text-ink-muted">Size</dt>
           <dd className="font-semibold">{usd(v.tvlUsd)}</dd>
@@ -104,9 +103,9 @@ export function PriceLabel({ v, days, lead }: { v: VenueOut; days: number; lead?
       </dl>
 
       {v.tags.length > 0 && (
-        <ul className="mt-3 flex flex-wrap gap-1.5 px-4" aria-label="Risk and context">
+        <ul className="mt-3 flex flex-wrap gap-1.5 px-5" aria-label="Risk and context">
           {v.tags.map((t) => (
-            <li key={t} className="rounded-sm bg-shelf px-1.5 py-0.5 text-xs">
+            <li key={t} className={`rounded-full px-2.5 py-0.5 text-xs ${chip}`}>
               {t}
             </li>
           ))}
@@ -114,12 +113,12 @@ export function PriceLabel({ v, days, lead }: { v: VenueOut; days: number; lead?
       )}
 
       {v.routes.length > 0 && (
-        <p className="mt-2 px-4 text-xs text-ink-muted">
+        <p className="mt-2 px-5 text-xs text-ink-muted">
           Also via{" "}
           {v.routes.map((r, i) => (
             <span key={r.name + i}>
               {i > 0 && ", "}
-              <a href={r.url} className="underline" target="_blank" rel="noreferrer">
+              <a href={r.url} className="text-accent-text underline" target="_blank" rel="noreferrer">
                 {r.name}
               </a>
             </span>
@@ -128,13 +127,12 @@ export function PriceLabel({ v, days, lead }: { v: VenueOut; days: number; lead?
         </p>
       )}
 
-      <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-line px-4 py-3">
+      <div className="min-h-4 flex-1" />
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-line px-5 py-3">
         <a
           href={v.action.url}
           {...(external ? { target: "_blank", rel: "noreferrer" } : {})}
-          className={`inline-flex min-h-11 items-center gap-1.5 rounded-sm px-4 text-sm font-bold ${
-            lead ? "bg-ink text-label" : "border-2 border-ink"
-          }`}
+          className={`inline-flex h-11 items-center gap-1.5 rounded-full px-5 text-sm font-bold no-underline ${lead ? "bg-accent text-on-accent" : "border border-line"}`}
         >
           {v.action.label}
           {external && <ArrowUpRightIcon className="size-4" />}
@@ -144,13 +142,13 @@ export function PriceLabel({ v, days, lead }: { v: VenueOut; days: number; lead?
             <ChevronIcon className="size-4 transition-transform duration-200 [details[open]_&]:rotate-90" />
             Why this number
           </summary>
-          <ul className="mt-1 max-w-prose list-disc space-y-1 pl-4">
+          <ul className="mt-1 max-w-prose list-disc space-y-1 pl-4 text-ink-muted">
             {v.notes.map((n) => (
               <li key={n}>{n}</li>
             ))}
             <li>
               Source:{" "}
-              <a href={v.source.url} className="underline" target="_blank" rel="noreferrer">
+              <a href={v.source.url} className="text-accent-text underline" target="_blank" rel="noreferrer">
                 {v.source.label}
               </a>
             </li>

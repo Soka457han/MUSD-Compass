@@ -74,7 +74,7 @@ test("incentives: Mezo-paid campaigns, most efficient first, nested Curve listin
 for (const path of ["/get-test-musd", "/developers", "/rewards", "/trove", "/incentives"]) {
   test(`${path}: no serious or critical accessibility issues (light and dark)`, async ({ page }) => {
     for (const scheme of ["light", "dark"] as const) {
-      await page.emulateMedia({ colorScheme: scheme });
+      await page.addInitScript((s) => localStorage.setItem("theme", s), scheme); // dark is the default; light is a saved choice
       await page.goto(path);
       if (path === "/rewards" || path === "/trove") {
         await page.getByRole("button", { name: "Try a sample" }).click();

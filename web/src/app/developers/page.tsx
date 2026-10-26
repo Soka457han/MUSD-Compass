@@ -6,13 +6,13 @@ import { SAMPLES } from "@/lib/chain/addresses";
 export const metadata: Metadata = { title: "API and widget · MUSD Compass" };
 
 const BASE = "https://musd-compass.vercel.app";
-const SECTION = "border-t-4 border-ink bg-label px-4 py-4";
+const SECTION = "rounded-[20px] border border-line bg-card px-5 py-5";
 const H2 = "text-base font-bold";
-const CODE = "mt-2 rounded-sm bg-shelf p-3 text-xs leading-relaxed whitespace-pre-wrap break-all";
+const CODE = "mt-2 rounded-xl bg-surface p-3 text-xs leading-relaxed whitespace-pre-wrap break-all";
 
 function H({ id, children }: { id: string; children: React.ReactNode }) {
   return (
-    <h2 id={id} className={H2} style={{ fontStretch: "90%" }}>
+    <h2 id={id} className={H2}>
       {children}
     </h2>
   );
@@ -51,7 +51,7 @@ export default function DevelopersPage() {
       <SiteHeader current="/developers" />
       <main id="main" className="mx-auto w-full max-w-3xl flex-1 space-y-5 px-4 py-5">
         <div>
-          <h1 className="text-2xl font-extrabold" style={{ fontStretch: "88%" }}>
+          <h1 className="text-[30px] leading-tight font-extrabold tracking-tight md:text-[40px]">
             API and widget
           </h1>
           <p className="mt-1 max-w-prose text-sm text-ink-muted">

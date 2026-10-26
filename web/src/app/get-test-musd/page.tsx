@@ -5,7 +5,7 @@ import { SiteHeader } from "@/components/SiteHeader";
 
 export const metadata: Metadata = { title: "Get test MUSD · MUSD Compass" };
 
-const SECTION = "border-t-4 border-ink bg-label px-4 py-4";
+const SECTION = "rounded-[20px] border border-line bg-card px-5 py-5";
 const H2 = "flex items-baseline gap-2 text-base font-bold";
 const OUT = "inline-flex items-center gap-1 font-semibold underline";
 
@@ -21,7 +21,7 @@ function Out({ href, children }: { href: string; children: React.ReactNode }) {
 function Step({ n, title, children }: { n: number; title: string; children: React.ReactNode }) {
   return (
     <li className={SECTION}>
-      <h2 className={H2} style={{ fontStretch: "90%" }}>
+      <h2 className={H2}>
         <span className="price text-3xl" aria-hidden="true">{n}</span>
         <span>
           <span className="sr-only">Step {n}: </span>
@@ -37,11 +37,11 @@ export default function GetTestMusdPage() {
   return (
     <>
       <SiteHeader current="/get-test-musd" />
-      <p role="note" className="bg-on-yellow px-4 py-2 text-center text-sm font-semibold text-yellow">
+      <p role="note" className="bg-accent-soft px-4 py-2 text-center text-sm font-semibold text-ink">
         Testnet only — these tokens have no value. Compass never asks for keys or seed phrases.
       </p>
       <main id="main" className="mx-auto w-full max-w-3xl flex-1 px-4 py-5">
-        <h1 className="text-2xl font-extrabold" style={{ fontStretch: "88%" }}>
+        <h1 className="text-[30px] leading-tight font-extrabold tracking-tight md:text-[40px]">
           Get test MUSD in 3 steps
         </h1>
         <p className="mt-1 max-w-prose text-sm text-ink-muted">About 5 minutes with any EVM wallet (MetaMask, Rabby, a phone wallet&apos;s browser).</p>
@@ -76,7 +76,7 @@ export default function GetTestMusdPage() {
         </ol>
         <p className="mt-5 text-sm">
           Then{" "}
-          <Link href="/vault?action=deposit&amount=100" className="inline-flex min-h-11 items-center rounded-sm bg-ink px-4 font-bold text-label no-underline">
+          <Link href="/vault?action=deposit&amount=100" className="inline-flex min-h-11 items-center rounded-full bg-accent px-4 font-bold text-on-accent no-underline">
             Deposit 100 MUSD in the Savings Vault
           </Link>
         </p>

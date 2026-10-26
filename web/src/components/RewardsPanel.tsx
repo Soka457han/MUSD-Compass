@@ -44,8 +44,8 @@ export function RewardsPanel() {
 
   return (
     <div className="mx-auto w-full max-w-3xl flex-1 space-y-5 px-4 py-5">
-      <section aria-labelledby="lookup-h" className="border-t-4 border-ink bg-label px-4 py-4">
-        <h2 id="lookup-h" className="text-base font-bold" style={{ fontStretch: "90%" }}>
+      <section aria-labelledby="lookup-h" className="rounded-[20px] border border-line bg-card px-5 py-5">
+        <h2 id="lookup-h" className="text-base font-bold">
           Unclaimed veMEZO from Merkl
         </h2>
         <p className="mt-1 max-w-prose text-sm text-ink-muted">For MUSD liquidity on Ethereum paid by Mezo. Read only — paste any public address.</p>
@@ -60,9 +60,9 @@ export function RewardsPanel() {
             <label htmlFor="lookup" className="mb-1 block text-xs font-semibold">
               Address
             </label>
-            <input id="lookup" value={lookup} onChange={(e) => setLookup(e.target.value)} placeholder="0x…" autoComplete="off" spellCheck={false} className="block h-11 w-full rounded-sm border-2 border-ink bg-label px-2 text-sm" />
+            <input id="lookup" value={lookup} onChange={(e) => setLookup(e.target.value)} placeholder="0x…" autoComplete="off" spellCheck={false} className="block h-11 w-full rounded-full border border-line bg-card px-4 text-sm" />
           </div>
-          <button type="submit" disabled={busy} className="min-h-11 rounded-sm border-2 border-ink px-4 text-sm font-bold disabled:opacity-60">
+          <button type="submit" disabled={busy} className="min-h-11 rounded-full border border-line px-4 text-sm font-bold disabled:opacity-60">
             Look up
           </button>
           <button
@@ -102,12 +102,12 @@ export function RewardsPanel() {
               </div>
             </dl>
             {data.unclaimed > 0 ? (
-              <div className="mt-4 border-l-4 border-sticker pl-3 text-sm">
+              <div className="mt-4 border-l-4 border-locked pl-3 text-sm">
                 <p className="font-semibold">{data.warning}</p>
                 <p className="mt-1">
                   Current Mezo campaigns end {data.campaignEnds ? shortDate(data.campaignEnds) : "—"} and usually renew weekly. {data.gas}
                 </p>
-                <a href={data.claimUrl} target="_blank" rel="noreferrer" className="mt-3 inline-flex min-h-11 items-center gap-1 rounded-sm bg-ink px-4 font-bold text-label no-underline">
+                <a href={data.claimUrl} target="_blank" rel="noreferrer" className="mt-3 inline-flex min-h-11 items-center gap-1 rounded-full bg-accent px-4 font-bold text-on-accent no-underline">
                   Claim on Merkl
                   <ArrowUpRightIcon className="size-4" title="(opens in a new tab)" />
                 </a>
@@ -120,8 +120,8 @@ export function RewardsPanel() {
       </section>
 
       {data && (
-        <section aria-labelledby="path-h" className="border-t-4 border-ink bg-label px-4 py-4">
-          <h2 id="path-h" className="text-base font-bold" style={{ fontStretch: "90%" }}>
+        <section aria-labelledby="path-h" className="rounded-[20px] border border-line bg-card px-5 py-5">
+          <h2 id="path-h" className="text-base font-bold">
             Where this reward goes
           </h2>
           <ol className="mt-2 list-decimal space-y-1 pl-5 text-sm">

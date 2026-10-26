@@ -54,7 +54,7 @@ export function PayAndFetch() {
         Pays <strong>0.001 test MUSD</strong> on Mezo testnet. Your wallet signs an exact-amount permit (never unlimited) and the payment; the facilitator pays the gas. Compass checks the request before you sign: only testnet MUSD, at most 0.001, to{" "}
         <code className="font-mono text-xs break-all">{PAY_TO}</code>.
       </p>
-      <button type="button" onClick={run} disabled={busy} className="mt-3 inline-flex min-h-11 items-center rounded-sm bg-ink px-4 text-sm font-bold text-label disabled:opacity-60">
+      <button type="button" onClick={run} disabled={busy} className="mt-3 inline-flex min-h-11 items-center rounded-full bg-accent px-4 text-sm font-bold text-on-accent disabled:opacity-60">
         {busy ? "Waiting for your wallet…" : "Pay 0.001 MUSD & fetch"}
       </button>
       {error && (
