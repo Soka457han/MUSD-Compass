@@ -10,14 +10,11 @@ Every on-chain action Compass has taken, in one place. All writes are on Mezo te
 | 2 | Deposit into the Savings Vault | 100 MUSD → 100 sMUSD | dev wallet | [`0x1f4ddeb6…8f3c`](https://explorer.test.mezo.org/tx/0x1f4ddeb61396464e32ee63806a35a3e5cf8cb9218613880e24a5324293458f3c) |
 | 3 | Withdraw (also pays any pending yield) | 10 MUSD | dev wallet | [`0x3045fba8…77cf`](https://explorer.test.mezo.org/tx/0x3045fba85e8551ca6a465567911f96b68ded7a336f99640c51b3104525f777cf) |
 | 4 | x402 payment for `/api/premium/yields` (facilitator sent it and paid gas; Permit2 approval exactly 0.001) | 0.001 MUSD | dev wallet (payer = payee) | [`0x0454c620…4997`](https://explorer.test.mezo.org/tx/0x0454c620d5b02fa6dd9ba0fb3f6665894498d15b825cf8730ff47a0683fa4997) |
-| 5 | x402 payment from a second wallet (payer ≠ payee) | 0.001 MUSD | TODO | TODO |
-| 6 | Open a trove, then deposit the borrowed MUSD (Borrow → Earn on `/vault`) | TODO | TODO | TODO |
+| 5 | x402 payment from a second wallet (payer ≠ payee) | 0.001 MUSD | `0xC20F…9C4C` → dev wallet | [`0x3a63cdf8…bc5a`](https://explorer.test.mezo.org/tx/0x3a63cdf86569c3787867fcc9ddb3ebf8c91eb8dec1a2a206c716457f8c30bc5a) |
+| 6a | Borrow → Earn: `openTrove` with test BTC | 1,800 MUSD borrowed | dev wallet | [`0x82f0ddf6…1fe0`](https://explorer.test.mezo.org/tx/0x82f0ddf6fd1598a1a89eaf3652f69323e5fdc69151ef08209e6c5a5e8ed81fe0) |
+| 6b | Borrow → Earn: exact approval | 1,800 MUSD | dev wallet | [`0xafbff33a…641d`](https://explorer.test.mezo.org/tx/0xafbff33ad670be5565928aaf481e6e6159d55a9d510cca06627d43ccc1fd641d) |
+| 6c | Borrow → Earn: deposit into the Savings Vault | 1,800 MUSD → 1,800 sMUSD | dev wallet | [`0x53da2a83…a135`](https://explorer.test.mezo.org/tx/0x53da2a8307efecc5d71eaeda40dfd172f43be82a05ef7f3c55168917c34ea135) |
 | 7 | Claim yield after a distribution (26 Oct) | 0.1031 MUSD | dev wallet | [`0xe79ae272…7734`](https://explorer.test.mezo.org/tx/0xe79ae272024d2fe8998a1891ad07166d9a72c8093e17fdf7d6cee8007d6f7734) |
-
-## How to add the missing rows
-
-- **Row 5:** in a second wallet, get test MUSD ([`/get-test-musd`](https://musd-compass.vercel.app/get-test-musd)), open [`/developers`](https://musd-compass.vercel.app/developers) and press *Pay 0.001 MUSD & fetch*. The payee is the dev wallet, so the payer is now someone else.
-- **Row 6:** on [`/vault`](https://musd-compass.vercel.app/vault), connect a wallet with test BTC and press *Borrow … MUSD and deposit it*. Three prompts: `openTrove` (locks BTC for a 200% ratio), an exact approval, the deposit. 1,800 MUSD needs about 0.0499 BTC at the testnet price on 26 Oct.
 
 ## Safety, checkable without a wallet
 
