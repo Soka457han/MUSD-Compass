@@ -55,7 +55,7 @@ Every number re-checked on the live site against its primary source (chain or Me
 - [x] Cached `/api/yields` from a browser: p50 50 ms, p95 54 ms (20 requests; target < 1.5 s).
 - [x] Telegram bot: `/yield`, `/carry 2000 borrow`, `/vault` match the API (checked 24 Oct from a phone).
 - [ ] Telegram bot: `/rewards 0xeaC6A75e19beB1283352d24c0311De865a867DAB` and `/trove sample` (added after that check).
-- [x] Tests (26 Oct): 90 unit, 39 end-to-end (axe on every page, light and dark), 25 bot.
+- [x] Tests (26 Oct): 88 unit, 39 end-to-end (axe on every page, light and dark), 25 bot.
 - [x] Lighthouse mobile, production build: performance 0.92–0.98, accessibility 1, best practices 1, CLS 0; LCP median 3.1 s simulated (0.1–0.5 s observed).
 - [x] PageSpeed Insights on the live URL (25 Oct, before the fixes below): mobile 92 / 100 / 100 / 100 (LCP 3.0 s), desktop 100 / 100 / 100 / 100.
 - [x] After the fixes below (production build, Lighthouse mobile ×3): performance 0.96, LCP 2.6 s, FCP 0.8 s, Speed Index 1.2 s, no render-blocking requests.

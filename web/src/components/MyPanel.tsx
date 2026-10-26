@@ -202,7 +202,7 @@ export function MyPanel({ sources }: { sources: Sources }) {
             })}
           </ul>
           <p className="mt-3 text-xs text-ink-muted">
-            Compared with every ranked place for that same amount: the Savings Vault, Mezo&apos;s stable pools (MEZO paid to staked LP) and Mezo-paid pools on Ethereum, holding 90 days, after costs. Locked veMEZO is not counted as cash. Rates and reward campaigns change week to week.
+            Compared with every ranked place for that same amount: the Savings Vault and Mezo-paid pools on Ethereum, holding 90 days, after costs. Mezo&apos;s own pools show their rates in the Mezo app. Locked veMEZO is not counted as cash. Rates and reward campaigns change week to week.
           </p>
         </section>
       )}

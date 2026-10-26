@@ -25,7 +25,7 @@
 - Live: musd-compass.vercel.app · @musd_compass_bot · /developers.
 - Testnet proof: approve 100 MUSD (exact) · deposit 100 · withdraw 10 — explorer links in the README.
 - Safety: allowlisted contracts, simulate before sign, gas × 1.2, no custody, no keys, no mainnet writes.
-- Quality: 90 unit + 39 e2e + 25 bot tests, axe on every page, CI.
+- Quality: 88 unit + 39 e2e + 25 bot tests, axe on every page, CI.
 
 ## 5. Roadmap (Wave 2+)
 - WalletConnect for phone wallets.
