@@ -60,7 +60,8 @@ export function buildYields(s: Sources, q: Query) {
   });
 
   return {
-    updatedAt: new Date().toISOString(),
+    // When the data was read (newest source), not when this was computed: no clock read, so the page can be prerendered.
+    updatedAt: s.venues.reduce((m, v) => (v.updatedAt > m ? v.updatedAt : m), ""),
     assumptions: {
       amount: q.amount,
       mode: q.mode,

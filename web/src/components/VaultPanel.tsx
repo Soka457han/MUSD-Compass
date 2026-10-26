@@ -2,14 +2,14 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
-import { parseUnits, type Address, type EIP1193Provider, type WalletClient } from "viem";
+import { parseUnits, type Address, type WalletClient } from "viem";
 import { erc20Abi, smusdAbi } from "@/lib/chain/abis";
 import { SAMPLES, TESTNET } from "@/lib/chain/addresses";
 import { sendSafely } from "@/lib/sendSafely";
 import type { VaultState } from "@/lib/vault";
 import { connect, explorerTx, humanError, injected, testnetPublic } from "@/lib/wallet";
 import { ArrowUpRightIcon } from "./Icons";
-import { WalletModal } from "./WalletModal";
+import { WalletModal, type Picked } from "./WalletModal";
 
 type Tx = { label: string; hash?: string; state: "pending" | "done" | "error"; note?: string };
 
@@ -39,17 +39,27 @@ export function VaultPanel() {
   const [txs, setTxs] = useState<Tx[]>([]);
   const [busy, setBusy] = useState(false);
   const [picking, setPicking] = useState(false);
+  const [picked, setPicked] = useState<Picked | null>(null);
+  const [pickError, setPickError] = useState<string | null>(null);
 
+  const [loading, setLoading] = useState(false);
   const load = useCallback(async (addr: string) => {
     setLoadError(null);
-    const r = await fetch(`/api/vault/${addr}`);
-    const j = await r.json();
-    if (!r.ok) {
-      setState(null);
-      setLoadError(j.error ?? "Could not read the vault.");
-      return;
+    setLoading(true);
+    try {
+      const r = await fetch(`/api/vault/${addr}`);
+      const j = await r.json();
+      if (!r.ok) {
+        setState(null);
+        setLoadError(j.error ?? "Could not read the vault.");
+        return;
+      }
+      setState(j);
+    } catch {
+      setLoadError("Could not reach Compass. Check your connection and try again.");
+    } finally {
+      setLoading(false);
     }
-    setState(j);
   }, []);
 
   useEffect(() => {
@@ -60,17 +70,23 @@ export function VaultPanel() {
     if (sp.get("action") === "deposit" && amt && toWei(amt)) setDepositAmt(amt);
   }, []);
 
-  const onConnect = async (provider: EIP1193Provider) => {
-    setPicking(false);
+  // The picker stays open while the wallet asks; it closes on success and shows the reason on failure.
+  const onConnect = async (w: Picked) => {
+    setPicked(w);
+    setPickError(null);
+    let c: Awaited<ReturnType<typeof connect>>;
     try {
-      const c = await connect(provider);
-      setWallet(c.wallet);
-      setAccount(c.account);
-      setLookup(c.account);
-      await load(c.account);
+      c = await connect(w.provider);
     } catch (e) {
-      setLoadError(humanError(e));
+      setPickError(humanError(e));
+      return;
     }
+    setPicking(false);
+    setPicked(null);
+    setWallet(c.wallet);
+    setAccount(c.account);
+    setLookup(c.account);
+    await load(c.account);
   };
 
   const run = async (label: string, steps: { label: string; address: Address; abi: typeof erc20Abi | typeof smusdAbi; functionName: string; args: readonly unknown[] }[]) => {
@@ -134,7 +150,16 @@ export function VaultPanel() {
             )}
           </>
         )}
-        <WalletModal open={picking} onClose={() => setPicking(false)} onPick={onConnect} />
+        <WalletModal
+          open={picking}
+          onClose={() => {
+            setPicking(false);
+            setPicked(null);
+          }}
+          onPick={onConnect}
+          picked={picked}
+          error={pickError}
+        />
         <p className="mt-3 text-xs text-ink-muted">
           Need test funds?{" "}
           <Link href="/get-test-musd" className="font-semibold text-ink underline">
@@ -179,6 +204,16 @@ export function VaultPanel() {
           <p role="alert" className="mt-2 text-sm font-semibold text-danger-text">
             {loadError}
           </p>
+        )}
+        {loading && !state && (
+          <div role="status" aria-label="Reading the vault" className="mt-4 grid grid-cols-2 gap-x-4 gap-y-3 sm:grid-cols-4">
+            {[0, 1, 2, 3].map((i) => (
+              <div key={i} className="flex flex-col gap-2">
+                <span className="h-3 w-20 animate-pulse rounded-full bg-surface" />
+                <span className="h-8 w-24 animate-pulse rounded-xl bg-surface" />
+              </div>
+            ))}
+          </div>
         )}
         {state && (
           <dl className="mt-4 grid grid-cols-2 gap-x-4 gap-y-3 sm:grid-cols-4">

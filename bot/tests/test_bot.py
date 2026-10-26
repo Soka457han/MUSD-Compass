@@ -140,3 +140,57 @@ def test_trove_shows_ratio_rate_queue_and_safe_borrow(api):
     assert "≈ 812 of 1,204 troves are redeemed before yours" in text
     assert "Borrow up to <b>20,068 MUSD</b> more and stay at or above 200%" in text
     assert "Usage: /trove" in say("/trove 0x12")
+
+
+# ---- buttons ----
+
+def send(text, reply_to=None, chat_id=1):
+    message = {"chat": {"id": chat_id}, "text": text}
+    if reply_to is not None:
+        message["reply_to_message"] = {"text": reply_to}
+    return handle_update({"update_id": 1, "message": message})
+
+
+def test_every_answer_carries_the_buttons(api):
+    rows = send("/start")["reply_markup"]["keyboard"]
+    labels = [b["text"] for row in rows for b in row]
+    assert labels == list(compass_bot.ASK) + [compass_bot.B_HELP]
+
+
+def test_a_button_that_needs_an_address_asks_for_it_then_answers_the_reply(api):
+    ask = send(compass_bot.B_VAULT)
+    assert ask["reply_markup"]["force_reply"] is True
+    assert api.calls == []  # asking costs no API call
+    out = send(SAMPLE, reply_to=ask["text"])
+    assert api.calls[0]["url"].endswith(f"/api/vault/{SAMPLE}")
+    assert "Savings Vault" in out["text"]
+    assert "keyboard" in out["reply_markup"]
+
+
+def test_sample_works_for_each_address_button(api):
+    for button, path in [(compass_bot.B_VAULT, "/api/vault/"), (compass_bot.B_REWARDS, "/api/rewards/"), (compass_bot.B_TROVE, "/api/trove/sample")]:
+        api.calls.clear()
+        send("sample", reply_to=send(button)["text"])
+        assert path in api.calls[0]["url"]
+
+
+def test_amount_buttons_and_bare_numbers(api):
+    send("5,000", reply_to=send(compass_bot.B_YIELD)["text"])
+    assert api.calls[-1]["params"] == {"amount": "5000"}
+    send("2000", reply_to=send(compass_bot.B_CARRY)["text"])
+    assert api.calls[-1]["params"] == {"amount": "2000", "mode": "borrower"}
+    send("3000")  # a number with no question asked: best places for that much
+    assert api.calls[-1]["params"] == {"amount": "3000"}
+
+
+def test_a_bad_reply_gets_the_usage_line_and_no_api_call(api):
+    out = send("0x123", reply_to=send(compass_bot.B_REWARDS)["text"])
+    assert "Usage: /rewards" in out["text"]
+    assert api.calls == []
+
+
+def test_help_button_shows_the_faq_and_the_key_warning(api):
+    text = send(compass_bot.B_HELP)["text"]
+    assert "What does 🔒 mean?" in text
+    assert "Never send a seed phrase" in text
+    assert api.calls == []

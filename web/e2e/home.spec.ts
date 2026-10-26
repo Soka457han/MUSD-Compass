@@ -125,3 +125,9 @@ test("the app icon, manifest and status bar use the purple logo, not the old yel
   await page.getByRole("button", { name: "Switch to dark theme" }).click();
   await expect(page.locator('meta[name="theme-color"]')).toHaveAttribute("content", "#0f1015");
 });
+
+test("the ranking is in the first HTML response, so the page never waits on a loading state", async ({ request }) => {
+  const html = await (await request.get("/")).text();
+  expect(html).toContain("Venues ranked by cash carry");
+  expect(html).toContain("4.01%");
+});

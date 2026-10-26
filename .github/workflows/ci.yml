@@ -21,6 +21,8 @@ jobs:
       - run: npm run typecheck
       - run: npm test
       - run: npm run build
+        env:
+          COMPASS_FIXTURES: "1"
       - run: npx playwright install --with-deps chromium
       - run: npm run e2e
 

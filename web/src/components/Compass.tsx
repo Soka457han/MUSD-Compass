@@ -301,7 +301,7 @@ export function Compass({ sources, between, after }: { sources: Sources; between
         notes={
           <>
             <p>
-              <span className="font-semibold text-ink">Mainnet data</span> (Mezo + Ethereum), kept for 5 min then refreshed in the background · data as of {shortDate(sources.venues[0]?.updatedAt ?? new Date().toISOString())}, {timeUtc(sources.venues[0]?.updatedAt ?? new Date().toISOString())}. Vault actions run on{" "}
+              <span className="font-semibold text-ink">Mainnet data</span> (Mezo + Ethereum), kept for 5 min then refreshed in the background · data as of {result?.updatedAt ? `${shortDate(result.updatedAt)}, ${timeUtc(result.updatedAt)}` : "unknown"}. Vault actions run on{" "}
               <span className="font-semibold text-ink">Mezo testnet</span>.
             </p>
             <p>

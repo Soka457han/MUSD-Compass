@@ -33,8 +33,10 @@ def test_command_gets_a_send_message_reply():
     assert "MUSD Compass" in reply["text"]
 
 
-def test_plain_text_and_non_messages_are_ignored():
-    assert handle_update(update("hello")) is None
+def test_plain_text_gets_a_nudge_with_the_buttons_and_non_messages_are_ignored():
+    reply = handle_update(update("hello"))
+    assert "Tap a button" in reply["text"]
+    assert reply["reply_markup"]["keyboard"]
     assert handle_update({"update_id": 2, "edited_message": {}}) is None
 
 

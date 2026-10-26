@@ -1,6 +1,7 @@
 # Changelog
 
 ## 0.1.0 — Wave 1 (25 Oct 2026)
+- Bot buttons (26 Oct): six buttons under the message box (Best yields, Borrow carry, My vault, My rewards, My trove, Help & FAQ). A button that needs an amount or address asks for it and answers the reply; a bare number gives the best places for that amount. Commands still work.
 - Restyle (26 Oct): white (light) by default with a purple accent and pastel tiles, dark theme behind a saved toggle, Plus Jakarta Sans, phone tab bar; home adds the problem cards (stacked, spread on tap), how it works, where the numbers come from, other channels, FAQ and a full footer. Same data and calculator.
 - Security review: no framing outside `/embed`, CSP and security headers, only https links from Merkl, `/api/health` hides upstream errors and is rate-limited, timing-safe bot key, webhook ignores malformed updates.
 - Fixed: CI typecheck (route types generated first); home page no longer prefetches other pages' code; CSS inlined.
