@@ -48,7 +48,7 @@ function Segmented<T extends string>(props: { legend: string; name: string; valu
 
 const vt = (id: string) => `v-${id.replace(/[^a-z0-9-]/gi, "-")}`;
 
-const FIELD = "block h-[54px] w-full rounded-full border border-line bg-card px-5 text-ink";
+const FIELD = "block h-[54px] w-full rounded-full border border-field bg-card px-5 text-ink";
 
 function SizeOnly({ venues }: { venues: VenueOut[] }) {
   return (
@@ -173,8 +173,8 @@ export function Compass({ sources, between, after }: { sources: Sources; between
   const tiles = result
     ? [
         { label: "Savings Vault", value: pct(vault?.carry.cash ?? null), href: "/vault", bg: "bg-tile-yellow" },
-        { label: "Ethereum pools", value: String(result.venues.filter((v) => v.chain === "Ethereum").length), href: "#venues", bg: "bg-tile-pink" },
-        { label: "Mezo pools", value: String(result.venues.filter((v) => v.chain === "Mezo" && v !== vault && v !== stability).length), href: "#size-only", bg: "bg-tile-lilac" },
+        { label: "Ethereum pools", value: String(result.venues.filter((v) => v.chain === "Ethereum" && v.status === "ok").length), href: "#venues", bg: "bg-tile-pink" },
+        { label: "Mezo pools", value: String(result.venues.filter((v) => v.chain === "Mezo" && v.status === "ok" && v !== vault && v !== stability).length), href: "#size-only", bg: "bg-tile-lilac" },
         { label: "Stability Pool", value: usd(stability?.tvlUsd ?? null), href: "#size-only", bg: "bg-tile-peach" },
         { label: "My rewards", value: "Check", href: "/rewards", bg: "bg-tile-blue" },
         { label: "My trove", value: "Plan", href: "/trove", bg: "bg-tile-mint" },
@@ -184,13 +184,13 @@ export function Compass({ sources, between, after }: { sources: Sources; between
   return (
     <>
       <main id="main" className="mx-auto w-full max-w-6xl flex-1 px-4 pt-5 md:px-6 md:pt-14">
-        <section aria-label="Calculator" className="grid gap-7 md:grid-cols-[1.1fr_1fr] md:items-center md:gap-12">
+        <section aria-label="Calculator" className="grid gap-7 lg:grid-cols-[1.1fr_1fr] lg:items-center lg:gap-12">
           <div className="flex min-w-0 flex-col gap-4 md:gap-5">
             <h1 className="text-[30px] leading-[1.15] font-extrabold tracking-tight md:text-[56px] md:leading-[1.06]">Where your MUSD earns most, after costs.</h1>
             <p className="text-ink-muted md:max-w-[520px] md:text-lg">Every Mezo earning spot, ranked by the cash you keep. Live from Mezo and Ethereum.</p>
             <form
               data-hydrated={hydrated || undefined}
-              className="grid grid-cols-1 gap-4 rounded-2xl border border-line bg-surface p-4 md:mt-2 md:grid-cols-[minmax(0,1fr)_auto_auto] md:items-end md:gap-3.5 md:border-0 md:bg-transparent md:p-0"
+              className="grid grid-cols-1 gap-4 rounded-2xl border border-line bg-surface p-4 md:mt-2 xl:grid-cols-[minmax(0,1fr)_auto_auto] xl:items-end xl:gap-3.5 xl:border-0 xl:bg-transparent xl:p-0"
               onSubmit={(e) => e.preventDefault()}
             >
               <div className="min-w-0">
@@ -227,7 +227,7 @@ export function Compass({ sources, between, after }: { sources: Sources; between
                   </div>
                   <Segmented legend="Trove" name="trove" value={form.trove} onChange={(trove) => update({ trove })} options={[{ value: "new", label: "New" }, { value: "existing", label: "Mine" }]} />
                   {form.trove === "existing" && (
-                    <p className="text-sm md:col-span-3">
+                    <p className="text-sm xl:col-span-3">
                       <Link href="/trove" className="font-semibold text-accent-text underline">
                         Read your trove&apos;s rate and safe extra borrow
                       </Link>
@@ -236,12 +236,12 @@ export function Compass({ sources, between, after }: { sources: Sources; between
                 </>
               ) : null}
               {!parsed.ok && (
-                <p id="amount-error" role="alert" className="text-sm font-semibold text-danger-text md:col-span-3">
+                <p id="amount-error" role="alert" className="text-sm font-semibold text-danger-text xl:col-span-3">
                   {parsed.error}
                 </p>
               )}
               {result?.notice && (
-                <p role="status" className="rounded-2xl bg-tile-yellow px-4 py-2.5 text-sm font-semibold text-tile-ink md:col-span-3">
+                <p role="status" className="rounded-2xl bg-tile-yellow px-4 py-2.5 text-sm font-semibold text-tile-ink xl:col-span-3">
                   {result.notice}
                 </p>
               )}
@@ -301,7 +301,7 @@ export function Compass({ sources, between, after }: { sources: Sources; between
         notes={
           <>
             <p>
-              <span className="font-semibold text-ink">Mainnet data</span> (Mezo + Ethereum), refreshed every 5 min · data as of {shortDate(sources.venues[0]?.updatedAt ?? new Date().toISOString())}, {timeUtc(sources.venues[0]?.updatedAt ?? new Date().toISOString())}. Vault actions run on{" "}
+              <span className="font-semibold text-ink">Mainnet data</span> (Mezo + Ethereum), kept for 5 min then refreshed in the background · data as of {shortDate(sources.venues[0]?.updatedAt ?? new Date().toISOString())}, {timeUtc(sources.venues[0]?.updatedAt ?? new Date().toISOString())}. Vault actions run on{" "}
               <span className="font-semibold text-ink">Mezo testnet</span>.
             </p>
             <p>

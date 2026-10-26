@@ -69,11 +69,39 @@ test("light by default; the theme button switches to dark and remembers it", asy
   await expect(page.getByRole("button", { name: "Switch to light theme" })).toBeVisible();
 });
 
-test("problem cards start stacked and spread into a swipe row on tap", async ({ page }) => {
+test("problem cards start stacked and spread into a swipe row on tap; the row then takes focus", async ({ page }) => {
   await page.goto("/");
   await expect(page.getByText("Tap the cards to spread them out")).toBeVisible();
   await page.getByRole("button", { name: "Spread out" }).click();
   await expect(page.locator(".deck")).toHaveAttribute("data-spread", "true");
   await expect(page.getByText("Swipe for more")).toBeVisible();
+  await expect(page.getByRole("region", { name: "Problem cards" })).toBeFocused();
   await expect(page.getByRole("heading", { name: "Costs eat small amounts" })).toBeAttached();
+});
+
+
+test("links to the page you are on jump within it; the bot link opens Telegram", async ({ page }) => {
+  await page.goto("/");
+  const main = page.getByRole("navigation", { name: "Main" });
+  await expect(page.getByRole("navigation", { name: "Product" }).getByRole("link", { name: "Yields" })).toHaveAttribute("href", "#main");
+  await expect(main.getByRole("link", { name: "Yields" })).toHaveAttribute("href", "#");
+  await expect(main.getByRole("link", { name: "Vault" })).toHaveAttribute("href", "/vault");
+  await expect(main.getByRole("link", { name: "Bot" })).toHaveAttribute("href", "https://t.me/musd_compass_bot");
+  expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBe(0);
+});
+
+test("tablet and small laptop widths: no sideways scroll, calculator fields keep their size", async ({ page }) => {
+  for (const width of [768, 820, 1024, 1280]) {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto("/");
+    await page.locator("form[data-hydrated]").waitFor();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth), `overflow at ${width}`).toBe(0);
+    expect((await page.getByLabel("Amount (MUSD)").boundingBox())!.width, `amount width at ${width}`).toBeGreaterThan(140);
+  }
+});
+
+test("phone header fits on one line at 360 px", async ({ page }) => {
+  await page.goto("/");
+  const h = await page.locator("header").first().boundingBox();
+  expect(h!.height).toBeLessThanOrEqual(65);
 });

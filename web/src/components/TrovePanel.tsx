@@ -61,7 +61,7 @@ export function TrovePanel() {
             <label htmlFor="lookup" className="mb-1 block text-xs font-semibold">
               Address
             </label>
-            <input id="lookup" value={lookup} onChange={(e) => setLookup(e.target.value)} placeholder="0x…" autoComplete="off" spellCheck={false} className="block h-11 w-full rounded-full border border-line bg-card px-4 text-sm" />
+            <input id="lookup" value={lookup} onChange={(e) => setLookup(e.target.value)} placeholder="0x…" autoComplete="off" spellCheck={false} className="block h-11 w-full rounded-full border border-field bg-card px-4 text-sm" />
           </div>
           <button type="submit" disabled={busy} className="min-h-11 rounded-full border border-line px-4 text-sm font-bold disabled:opacity-60">
             Look up

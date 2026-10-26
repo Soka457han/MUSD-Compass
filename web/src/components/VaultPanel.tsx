@@ -152,7 +152,7 @@ export function VaultPanel() {
             <label htmlFor="lookup" className="mb-1 block text-xs font-semibold">
               Address
             </label>
-            <input id="lookup" value={lookup} onChange={(e) => setLookup(e.target.value)} placeholder="0x…" autoComplete="off" spellCheck={false} className="block h-11 w-full rounded-full border border-line bg-card px-4 text-sm" />
+            <input id="lookup" value={lookup} onChange={(e) => setLookup(e.target.value)} placeholder="0x…" autoComplete="off" spellCheck={false} className="block h-11 w-full rounded-full border border-field bg-card px-4 text-sm" />
           </div>
           <button type="submit" className="min-h-11 rounded-full border border-line px-4 text-sm font-bold">
             Look up
@@ -215,7 +215,7 @@ export function VaultPanel() {
               <label htmlFor="dep" className="mb-1 block text-xs font-semibold">
                 Deposit MUSD
               </label>
-              <input id="dep" inputMode="decimal" value={depositAmt} onChange={(e) => setDepositAmt(e.target.value)} placeholder="100" aria-invalid={depositTooBig} className="price block h-11 w-full rounded-full border border-line bg-card px-4 text-2xl" />
+              <input id="dep" inputMode="decimal" value={depositAmt} onChange={(e) => setDepositAmt(e.target.value)} placeholder="100" aria-invalid={depositTooBig} className="price block h-11 w-full rounded-full border border-field bg-card px-4 text-2xl" />
               {depositTooBig && <p className="mt-1 text-xs font-semibold text-danger-text">More than your wallet holds ({fmt(state!.musd)} MUSD).</p>}
               <button type="submit" disabled={busy || !depositWei || depositTooBig} className="mt-2 inline-flex min-h-11 items-center rounded-full bg-accent px-4 text-sm font-bold text-on-accent disabled:opacity-50">
                 Deposit
@@ -230,7 +230,7 @@ export function VaultPanel() {
               <label htmlFor="wd" className="mb-1 block text-xs font-semibold">
                 Withdraw sMUSD (also pays pending yield)
               </label>
-              <input id="wd" inputMode="decimal" value={withdrawAmt} onChange={(e) => setWithdrawAmt(e.target.value)} placeholder="10" aria-invalid={withdrawTooBig} className="price block h-11 w-full rounded-full border border-line bg-card px-4 text-2xl" />
+              <input id="wd" inputMode="decimal" value={withdrawAmt} onChange={(e) => setWithdrawAmt(e.target.value)} placeholder="10" aria-invalid={withdrawTooBig} className="price block h-11 w-full rounded-full border border-field bg-card px-4 text-2xl" />
               {withdrawTooBig && <p className="mt-1 text-xs font-semibold text-danger-text">More than you have in the vault ({fmt(state!.smusd)}).</p>}
               <button type="submit" disabled={busy || !withdrawWei || withdrawTooBig} className="mt-2 inline-flex min-h-11 items-center rounded-full border border-line px-4 text-sm font-bold disabled:opacity-50">
                 Withdraw

@@ -6,6 +6,7 @@
   --surface: #f4f4f7;
   --card: #ffffff;
   --line: #e3e4e8;
+  --field: #8a8f98; /* text-field edges: 3:1 against the page (WCAG 1.4.11); --line is for dividers */
   --ink: #0e1318;
   --ink-muted: #5b616b;
   --accent: #7c3aed;
@@ -24,6 +25,7 @@
   --surface: #16171d;
   --card: #222328;
   --line: #2e2f36;
+  --field: #6b6d75;
   --ink: #ffffff;
   --ink-muted: #a8a9b0;
   --accent: #a370fc;
@@ -40,6 +42,7 @@
   --color-surface: var(--surface);
   --color-card: var(--card);
   --color-line: var(--line);
+  --color-field: var(--field);
   --color-ink: var(--ink);
   --color-ink-muted: var(--ink-muted);
   --color-accent: var(--accent);
@@ -111,7 +114,7 @@ a {
   --w: 264px;
   --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
   position: relative;
-  height: 400px;
+  height: 424px; /* room below the front card for its shadow */
   overflow: hidden;
   transition: height 560ms var(--ease);
   scrollbar-width: none;
@@ -195,8 +198,11 @@ a {
 }
 
 /* Room for the phone tab bar so it never covers the last line of a page. */
-@media (max-width: 767px) {
+@media (max-width: 1023px) {
   body:has(.tabbar) {
     padding-bottom: 80px;
+  }
+  html:has(.tabbar) {
+    scroll-padding-bottom: 88px; /* a focused control never hides behind the tab bar */
   }
 }

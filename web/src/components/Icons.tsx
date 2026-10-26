@@ -60,12 +60,13 @@ export const TAB_ICONS: Record<string, string> = {
   "/rewards": "M12 3v3m0 12v3M5 12H2m20 0h-3M7 7 5 5m14 14-2-2M7 17l-2 2M19 5l-2 2",
   "/trove": "M3 21h18M5 21V10l7-6 7 6v11",
   "/developers": "m8 8-5 4 5 4m8-8 5 4-5 4",
+  bot: "M21 12a8 8 0 0 1-11.6 7.1L4 20l.9-4.6A8 8 0 1 1 21 12z",
 };
 
-export function TabIcon({ href, className }: { href: string; className?: string }) {
+export function TabIcon({ name, className }: { name: string; className?: string }) {
   return (
     <svg className={className} {...base()}>
-      <path d={TAB_ICONS[href]} />
+      <path d={TAB_ICONS[name]} />
     </svg>
   );
 }

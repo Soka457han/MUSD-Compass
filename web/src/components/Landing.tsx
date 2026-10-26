@@ -37,7 +37,7 @@ const TRUST = [
   { title: "Vault yield from its own payouts", body: "The Savings Vault rate is worked out from the vault's payout events over the last 14 days." },
   { title: "Rewards from Merkl", body: "Pool reward rates come from the Merkl campaigns that pay them." },
   { title: "Locked stays separate", body: "veMEZO sits next to the cash figure and is never added to it." },
-  { title: "A failed source says so", body: 'If a source does not load, that venue reads "unavailable" instead of showing a stale number.' },
+  { title: "Every number has a time", body: 'The footer shows when the data was read. If a source cannot be read and there is no recent copy, that venue reads "unavailable".' },
   { title: "Your funds stay with you", body: "Compass holds no funds and no keys. Approvals are for the exact amount you deposit." },
 ];
 
@@ -58,7 +58,7 @@ export function Trust() {
           Where the numbers come from
         </h2>
         <p className="text-ink-muted md:text-lg">Every figure has a source link and the assumption behind it.</p>
-        <a href={`${REPO}#readme`} className="mt-2 hidden h-12 items-center self-start rounded-full border border-line px-[22px] font-semibold no-underline md:inline-flex">
+        <a href={`${REPO}#testnet-proof-mezo-testnet-chain-31611`} className="mt-2 hidden h-12 items-center self-start rounded-full border border-line px-[22px] font-semibold no-underline md:inline-flex">
           See the testnet transactions
         </a>
       </div>
@@ -73,7 +73,7 @@ export function Trust() {
           </li>
         ))}
       </ul>
-      <a href={`${REPO}#readme`} className="mt-3 flex h-12 items-center justify-center rounded-full border border-line font-semibold no-underline md:hidden">
+      <a href={`${REPO}#testnet-proof-mezo-testnet-chain-31611`} className="mt-3 flex h-12 items-center justify-center rounded-full border border-line font-semibold no-underline md:hidden">
         See the testnet transactions
       </a>
     </section>
@@ -112,7 +112,7 @@ export function Channels() {
 const FAQ = [
   { q: "What is veMEZO?", a: "Mezo's vote-escrowed token. Rewards paid in it are locked for 12 weeks, so Compass shows them beside the cash figure." },
   { q: "Why can I only deposit on testnet?", a: "Wave 1 sends transactions to Mezo testnet only. The rates you see come from mainnet. Mainnet deposits come after a review." },
-  { q: "Does it work with a phone wallet?", a: "Reading the ranking works on any phone. Connecting a phone wallet needs WalletConnect, which is planned for Wave 2. Until then, use a browser wallet." },
+  { q: "Does it work with a phone wallet?", a: "Reading the ranking works in any phone browser. To deposit from a phone, open Compass in your wallet app's built-in browser. WalletConnect for other phone wallets is planned for Wave 2." },
   { q: "Is this financial advice?", a: "No. It is arithmetic on public data. Check the source link on a number before you move money." },
 ];
 
@@ -151,8 +151,11 @@ export function SiteFooter({ notes }: { notes?: React.ReactNode }) {
         </div>
         <nav aria-label="Product" className="flex flex-col gap-1">
           <span className="text-[13px] font-semibold text-ink-muted">Product</span>
+          {/* The footer lives on the Yields page itself, so this link jumps up instead of reloading the page. */}
+          <a href="#main" className="flex min-h-10 items-center no-underline hover:underline">
+            Yields
+          </a>
           {[
-            ["/", "Yields"],
             ["/vault", "Savings Vault"],
             ["/rewards", "Rewards"],
             ["/trove", "Trove planner"],

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 const CARDS = (count: number) => [
   {
@@ -26,12 +26,26 @@ const CARDS = (count: number) => [
 /** Phones: a stacked hand that spreads into a swipe row on tap. From md up the CSS lays it out as a 3-column grid. */
 export function ProblemDeck({ count }: { count: number }) {
   const [spread, setSpread] = useState(false);
+  const deck = useRef<HTMLDivElement>(null);
+  // The button goes away once spread, so focus moves to the row (scrollable with the arrow keys) instead of falling to the page.
+  const open = (moveFocus: boolean) => {
+    setSpread(true);
+    if (moveFocus) deck.current?.focus();
+  };
   return (
     <section aria-labelledby="problem-h">
       <h2 id="problem-h" className="px-4 text-2xl leading-tight font-extrabold tracking-tight md:px-0 md:text-[32px]">
         Why picking a spot for MUSD is hard
       </h2>
-      <div className="deck mt-4 md:mt-6" data-spread={spread || undefined} onClick={() => setSpread(true)}>
+      <div
+        ref={deck}
+        className="deck mt-4 md:mt-6"
+        data-spread={spread || undefined}
+        onClick={() => open(false)}
+        tabIndex={spread ? 0 : -1}
+        role="region"
+        aria-label="Problem cards"
+      >
         <div className="deck-track">
           {CARDS(count).map((c) => (
             <article key={c.title} className={`deck-card flex flex-col gap-2 rounded-[18px] p-[22px] text-tile-ink md:rounded-[20px] md:p-7 ${c.bg}`}>
@@ -47,7 +61,7 @@ export function ProblemDeck({ count }: { count: number }) {
       <div className="mt-2 flex min-h-11 items-center justify-between gap-3 px-4 md:hidden">
         <p className="text-[13px] text-ink-muted">{spread ? "Swipe for more" : "Tap the cards to spread them out"}</p>
         {!spread && (
-          <button type="button" onClick={() => setSpread(true)} className="min-h-11 rounded-full border border-line px-[18px] text-sm font-semibold">
+          <button type="button" onClick={() => open(true)} className="min-h-11 rounded-full border border-line px-[18px] text-sm font-semibold">
             Spread out
           </button>
         )}
