@@ -43,4 +43,5 @@ export const ETHEREUM = {
 export const SAMPLES = {
   devWallet: "0xfe21B2782B35BE770DD4a7b05f81cE43790D676C",
   rewards: "0xeaC6A75e19beB1283352d24c0311De865a867DAB",
+  positions: "0x292356A36c9eDe4b3DBDadd4B7A6837257fB169b", // public sMUSD holder: idle MUSD, vault and gauge-staked sMUSD (explorer, 26 Oct)
 } as const;

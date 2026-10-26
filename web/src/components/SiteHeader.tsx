@@ -6,7 +6,7 @@ const BOT = process.env.NEXT_PUBLIC_BOT_URL ?? "https://t.me/musd_compass_bot";
 const NAV = [
   { href: "/", label: "Yields", icon: "/" },
   { href: "/vault", label: "Vault", icon: "/vault" },
-  { href: "/rewards", label: "Rewards", icon: "/rewards" },
+  { href: "/my", label: "My MUSD", icon: "/rewards" }, // holdings, plus trove and unclaimed veMEZO (links to /rewards)
   { href: "/trove", label: "Trove", icon: "/trove" },
   { href: "/developers", label: "API", icon: "/developers" },
   { href: BOT, label: "Bot", icon: "bot" },

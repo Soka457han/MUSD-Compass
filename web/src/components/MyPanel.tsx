@@ -94,8 +94,8 @@ export function MyPanel({ sources }: { sources: Sources }) {
             type="button"
             disabled={busy}
             onClick={() => {
-              setLookup(SAMPLES.rewards);
-              load(SAMPLES.rewards);
+              setLookup(SAMPLES.positions);
+              load(SAMPLES.positions);
             }}
             className="min-h-11 px-2 text-sm font-semibold underline"
           >
