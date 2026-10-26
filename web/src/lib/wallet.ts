@@ -16,9 +16,22 @@ export function injected(): EIP1193Provider | null {
   return typeof window !== "undefined" && window.ethereum ? window.ethereum : null;
 }
 
+/** A wallet extension that announced itself (EIP-6963), so several installed wallets can be told apart. */
+export type FoundWallet = { uuid: string; name: string; icon: string; rdns: string; provider: EIP1193Provider };
+
+/** Collects EIP-6963 announcements; returns a stop function. Spec: https://eips.ethereum.org/EIPS/eip-6963 */
+export function discoverWallets(onFound: (w: FoundWallet) => void): () => void {
+  const on = (e: Event) => {
+    const d = (e as CustomEvent<{ info: Omit<FoundWallet, "provider">; provider: EIP1193Provider }>).detail;
+    if (d?.info?.uuid && d.provider) onFound({ ...d.info, provider: d.provider });
+  };
+  window.addEventListener("eip6963:announceProvider", on);
+  window.dispatchEvent(new Event("eip6963:requestProvider"));
+  return () => window.removeEventListener("eip6963:announceProvider", on);
+}
+
 /** Ask the wallet for an account and make sure it is on Mezo testnet (adds the network if the wallet lacks it). */
-export async function connect(): Promise<{ wallet: WalletClient; account: Address }> {
-  const provider = injected();
+export async function connect(provider: EIP1193Provider | null = injected()): Promise<{ wallet: WalletClient; account: Address }> {
   if (!provider) throw new Error("No wallet found in this browser.");
   const wallet = createWalletClient({ chain: mezoTestnet, transport: custom(provider) });
   const [account] = await wallet.requestAddresses();

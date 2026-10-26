@@ -2,13 +2,14 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
-import { parseUnits, type Address, type WalletClient } from "viem";
+import { parseUnits, type Address, type EIP1193Provider, type WalletClient } from "viem";
 import { erc20Abi, smusdAbi } from "@/lib/chain/abis";
 import { SAMPLES, TESTNET } from "@/lib/chain/addresses";
 import { sendSafely } from "@/lib/sendSafely";
 import type { VaultState } from "@/lib/vault";
 import { connect, explorerTx, humanError, injected, testnetPublic } from "@/lib/wallet";
 import { ArrowUpRightIcon } from "./Icons";
+import { WalletModal } from "./WalletModal";
 
 type Tx = { label: string; hash?: string; state: "pending" | "done" | "error"; note?: string };
 
@@ -37,6 +38,7 @@ export function VaultPanel() {
   const [withdrawAmt, setWithdrawAmt] = useState("");
   const [txs, setTxs] = useState<Tx[]>([]);
   const [busy, setBusy] = useState(false);
+  const [picking, setPicking] = useState(false);
 
   const load = useCallback(async (addr: string) => {
     setLoadError(null);
@@ -58,9 +60,10 @@ export function VaultPanel() {
     if (sp.get("action") === "deposit" && amt && toWei(amt)) setDepositAmt(amt);
   }, []);
 
-  const onConnect = async () => {
+  const onConnect = async (provider: EIP1193Provider) => {
+    setPicking(false);
     try {
-      const c = await connect();
+      const c = await connect(provider);
       setWallet(c.wallet);
       setAccount(c.account);
       setLookup(c.account);
@@ -119,15 +122,19 @@ export function VaultPanel() {
           <p className="mt-1 text-sm">
             Connected <span className="font-semibold">{account.slice(0, 6)}…{account.slice(-4)}</span> on Mezo testnet.
           </p>
-        ) : hasWallet ? (
-          <button type="button" onClick={onConnect} className="mt-3 inline-flex min-h-11 items-center rounded-full bg-accent px-4 text-sm font-bold text-on-accent">
-            Connect wallet
-          </button>
         ) : (
-          <p className="mt-1 max-w-prose text-sm">
-            No wallet in this browser. Open this page inside MetaMask, Rabby or another wallet&apos;s browser to deposit. You can still look up any address below.
-          </p>
+          <>
+            <button type="button" onClick={() => setPicking(true)} className="mt-3 inline-flex min-h-11 items-center rounded-full bg-accent px-5 text-sm font-bold text-on-accent">
+              Connect wallet
+            </button>
+            {!hasWallet && (
+              <p className="mt-3 max-w-prose text-sm">
+                No wallet in this browser. Open this page inside MetaMask, Rabby or another wallet&apos;s browser to deposit. You can still look up any address below.
+              </p>
+            )}
+          </>
         )}
+        <WalletModal open={picking} onClose={() => setPicking(false)} onPick={onConnect} />
         <p className="mt-3 text-xs text-ink-muted">
           Need test funds?{" "}
           <Link href="/get-test-musd" className="font-semibold text-ink underline">
