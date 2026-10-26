@@ -105,3 +105,23 @@ test("phone header fits on one line at 360 px", async ({ page }) => {
   const h = await page.locator("header").first().boundingBox();
   expect(h!.height).toBeLessThanOrEqual(65);
 });
+
+test("the app icon, manifest and status bar use the purple logo, not the old yellow", async ({ page, request }) => {
+  await page.goto("/");
+  const icons = await page.locator('link[rel="icon"]').evaluateAll((ls) => ls.map((l) => l.getAttribute("href")!));
+  expect(icons.some((h) => /\/icon\.png/.test(h))).toBe(true);
+  for (const h of icons) {
+    const r = await request.get(h);
+    expect(r.status()).toBe(200);
+    expect((await r.body()).toString("latin1")).not.toContain("ffd200"); // the old yellow tile
+  }
+  await expect(page.locator('link[rel="apple-touch-icon"]')).toHaveAttribute("href", /\/apple-icon\.png/);
+  await expect(page.locator('meta[name="theme-color"]')).toHaveAttribute("content", "#ffffff");
+  const m = await (await request.get("/manifest.webmanifest")).json();
+  expect(m.theme_color).toBe("#ffffff");
+  expect(m.icons.map((i: { src: string }) => i.src)).toEqual(["/icon-192.png", "/icon-512.png", "/icon-maskable-512.png"]);
+  for (const i of m.icons) expect((await request.get(i.src)).status()).toBe(200);
+  await expect(page.locator("header img").first()).toHaveAttribute("src", "/logo-mark.png");
+  await page.getByRole("button", { name: "Switch to dark theme" }).click();
+  await expect(page.locator('meta[name="theme-color"]')).toHaveAttribute("content", "#0f1015");
+});

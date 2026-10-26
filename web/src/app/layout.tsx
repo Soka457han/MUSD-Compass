@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
 
@@ -14,6 +14,9 @@ export const metadata: Metadata = {
   title: "MUSD Compass",
   description: "Where Mezo MUSD earns the most after costs — cash first, locked veMEZO beside it.",
 };
+
+// Phone status bar and installed-app bar follow the page (white by default), not the old yellow.
+export const viewport: Viewport = { themeColor: "#ffffff" };
 
 // Light is the default; a saved "dark" choice is applied before paint so the page never flashes white first.
 const THEME_SCRIPT = `try{if(localStorage.getItem("theme")==="dark")document.documentElement.dataset.theme="dark"}catch(e){}`;

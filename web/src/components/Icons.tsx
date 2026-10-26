@@ -27,13 +27,11 @@ export function ArrowUpRightIcon({ className, title }: P) {
   );
 }
 
+/** The MUSD Compass logo mark (the S-needle compass), drawn on a white disc so it reads on both themes. */
 export function CompassMark({ className }: P) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" aria-hidden="true">
-      <circle cx="12" cy="12" r="11" fill="var(--accent)" />
-      <path d="M15.5 8.5 13.4 13.4 8.5 15.5l2.1-4.9z" fill="var(--on-accent)" />
-    </svg>
-  );
+  // A plain img: 96 px PNG from /public, already the right size, so the image optimizer adds nothing.
+  // eslint-disable-next-line @next/next/no-img-element
+  return <img src="/logo-mark.png" alt="" aria-hidden="true" width={48} height={48} className={className} />;
 }
 
 export function MoonIcon({ className }: P) {

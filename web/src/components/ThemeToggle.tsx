@@ -3,16 +3,24 @@
 import { useEffect, useState } from "react";
 import { MoonIcon, SunIcon } from "./Icons";
 
+/** The phone status bar / installed-app bar colour follows the theme. */
+const paintBar = (dark: boolean) => document.querySelector('meta[name="theme-color"]')?.setAttribute("content", dark ? "#0f1015" : "#ffffff");
+
 /** Light is the default; the choice is kept per browser (the layout applies it before paint). */
 export function ThemeToggle() {
   const [dark, setDark] = useState(false);
-  useEffect(() => setDark(document.documentElement.dataset.theme === "dark"), []); // eslint-disable-line react-hooks/set-state-in-effect
+  useEffect(() => {
+    const saved = document.documentElement.dataset.theme === "dark";
+    setDark(saved); // eslint-disable-line react-hooks/set-state-in-effect
+    paintBar(saved);
+  }, []);
 
   const toggle = () => {
     const next = !dark;
     setDark(next);
     if (next) document.documentElement.dataset.theme = "dark";
     else delete document.documentElement.dataset.theme;
+    paintBar(next);
     try {
       localStorage.setItem("theme", next ? "dark" : "light");
     } catch {
