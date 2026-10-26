@@ -3,6 +3,8 @@ import { erc20Abi, smusdAbi } from "@/lib/chain/abis";
 import { TESTNET } from "@/lib/chain/addresses";
 
 export type VaultState = {
+  /** True when the 14-day distribution scan was still running; lastDistribution is then null, not "none". */
+  lastDistributionPending?: boolean;
   address: Address;
   musd: string; // wallet MUSD, decimal string
   allowance: string; // MUSD the vault may pull

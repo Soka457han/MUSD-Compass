@@ -131,3 +131,10 @@ test("the ranking is in the first HTML response, so the page never waits on a lo
   expect(html).toContain("Venues ranked by cash carry");
   expect(html).toContain("4.01%");
 });
+
+test("favicon.ico is the logo too, not the framework's default", async ({ request }) => {
+  const ico = await request.get("/favicon.ico");
+  expect(ico.status()).toBe(200);
+  // Next's starter favicon is 25,931 bytes; ours is built from the logo.
+  expect((await ico.body()).length).not.toBe(25931);
+});

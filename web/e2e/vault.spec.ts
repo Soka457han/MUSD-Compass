@@ -50,13 +50,34 @@ test("Connect wallet opens the wallet picker: detected EVM wallets, what is not 
   await expect(dialog.getByText("Unisat")).toBeVisible();
   await expect(dialog.getByRole("button", { name: /Unisat|WalletConnect/ })).toHaveCount(0); // listed, not clickable
   await expect(dialog.getByRole("heading", { name: "What is a wallet?" })).toBeVisible();
-  // Picking the wallet asks it to connect; a refusal comes back as a readable error.
+  // Picking the wallet keeps the picker open while the wallet asks; a refusal is explained there, with a retry.
   await dialog.getByRole("button", { name: /Test Wallet/ }).click();
-  await expect(dialog).toBeHidden();
-  await expect(page.getByRole("alert").filter({ hasText: "You cancelled in your wallet" })).toBeVisible();
-  await page.getByRole("button", { name: "Connect wallet" }).click();
+  await expect(dialog).toBeVisible();
+  await expect(dialog.getByRole("button", { name: /Test Wallet/ })).toHaveAttribute("aria-pressed", "true");
+  await expect(dialog.getByText("Test Wallet did not connect")).toBeVisible();
+  await expect(dialog.getByText("You cancelled in your wallet. Nothing was sent.")).toBeVisible();
+  await expect(dialog.getByRole("button", { name: "Try again" })).toBeVisible();
   await page.keyboard.press("Escape");
   await expect(dialog).toBeHidden();
+  // Opening it again starts fresh: the explainer, not the old error.
+  await page.getByRole("button", { name: "Connect wallet" }).click();
+  await expect(dialog.getByRole("heading", { name: "What is a wallet?" })).toBeVisible();
+  await page.keyboard.press("Escape");
   const r = await new AxeBuilder({ page: page as unknown as ConstructorParameters<typeof AxeBuilder>[0]["page"] }).analyze();
   expect(r.violations.filter((v) => v.impact === "serious" || v.impact === "critical").map((v) => v.id)).toEqual([]);
+});
+
+test("while the wallet is asking, the picker says so and waits", async ({ page }) => {
+  await page.addInitScript(() => {
+    const provider = { request: () => new Promise(() => {}) }; // never answers, like an open extension popup
+    window.addEventListener("eip6963:requestProvider", () =>
+      window.dispatchEvent(new CustomEvent("eip6963:announceProvider", { detail: Object.freeze({ info: { uuid: "t2", name: "Slow Wallet", icon: "", rdns: "slow.wallet" }, provider }) })),
+    );
+  });
+  await page.goto("/vault");
+  await page.getByRole("button", { name: "Connect wallet" }).click();
+  const dialog = page.getByRole("dialog", { name: "Connect a wallet" });
+  await dialog.getByRole("button", { name: /Slow Wallet/ }).click();
+  await expect(dialog.getByText("Opening Slow Wallet…")).toBeVisible();
+  await expect(dialog.getByText(/Confirm the connection in your wallet/)).toBeVisible();
 });

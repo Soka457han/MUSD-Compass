@@ -54,8 +54,11 @@ def api_get(path: str, params: dict | None = None) -> dict:
         r = httpx.get(f"{API_URL}{path}", params=params, headers=headers, timeout=25)
     except httpx.HTTPError as e:
         raise ApiError(DOWN) from e
-    if r.status_code == 400:
-        raise ApiError(r.json().get("error", DOWN))
+    if r.status_code in (400, 429, 503):  # the API explains these in words; pass them on
+        try:
+            raise ApiError(r.json().get("error", DOWN))
+        except ValueError:
+            raise ApiError(DOWN) from None
     if r.status_code != 200:
         raise ApiError(DOWN)
     return r.json()
@@ -131,7 +134,7 @@ def format_vault(d: dict) -> str:
         f"In vault: {float(d['smusd']):,.2f} sMUSD",
         f"Pending yield: {float(d['pendingYield']):,.4f} MUSD",
         f"Wallet: {float(d['musd']):,.2f} MUSD",
-        f"Last distribution: {_ago(d.get('lastDistribution'))}",
+        "Last distribution: " + ("still being read, ask again in a minute" if d.get("lastDistributionPending") else _ago(d.get("lastDistribution"))),
         "",
         f"Deposit, claim or withdraw: {WEB_URL}/vault",
     ])

@@ -194,3 +194,10 @@ def test_help_button_shows_the_faq_and_the_key_warning(api):
     assert "What does 🔒 mean?" in text
     assert "Never send a seed phrase" in text
     assert api.calls == []
+
+
+def test_api_busy_messages_are_passed_on_and_a_pending_scan_is_not_called_none(api):
+    api.status, api.body = 503, {"error": "Mezo testnet did not answer — try again in a minute."}
+    assert "Mezo testnet did not answer" in say(f"/vault {SAMPLE}")
+    api.status, api.body = 200, {**json.loads((FIX / "vault.json").read_text()), "lastDistribution": None, "lastDistributionPending": True}
+    assert "still being read" in say(f"/vault {SAMPLE}")

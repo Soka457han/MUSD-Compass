@@ -231,7 +231,7 @@ export function VaultPanel() {
             </div>
             <div>
               <dt className="text-xs text-ink-muted">Last distribution</dt>
-              <dd className="text-base font-semibold">{ago(state.lastDistribution)}</dd>
+              <dd className="text-base font-semibold">{state.lastDistributionPending ? "still being read, check again in a minute" : ago(state.lastDistribution)}</dd>
             </div>
           </dl>
         )}
