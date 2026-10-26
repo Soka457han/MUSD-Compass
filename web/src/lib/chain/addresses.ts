@@ -12,6 +12,7 @@ export const MAINNET = {
   btc: "0x7b7C000000000000000000000000000000000000",
   mezo: "0x7B7c000000000000000000000000000000000001",
   merklVeMezo: "0x089A6af90041c3ac734cbdeFa84832Aa7fBF67C8",
+  voter: "0x48233cCC97B87Ba93bCA212cbEe48e3210211f03", // VaultGauge.voter(), read 26 Oct
   // MUSD pools listed in the Mezo app (24 Oct). CL addresses from CLFactory.getPool, basic from PoolFactory.getPool.
   pools: {
     musdcMusdCl10: "0xcc372b7e15535ab225fe17c1075831d38ef7ac1a",

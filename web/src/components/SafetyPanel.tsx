@@ -5,7 +5,7 @@ import { BaseError, ContractFunctionRevertedError, maxUint256, parseUnits } from
 import { smusdAbi } from "@/lib/chain/abis";
 import { SAMPLES, TESTNET } from "@/lib/chain/addresses";
 import { guard } from "@/lib/sendSafely";
-import { testnetPublic } from "@/lib/wallet";
+import { humanError, testnetPublic } from "@/lib/wallet";
 
 type Result = { ok: boolean; text: string };
 
@@ -57,7 +57,7 @@ export function SafetyPanel() {
         t.id !== "balance"
           ? { ok: true, text: `Refused before any wallet is asked: ${short(e)}` }
           : reverted
-            ? { ok: true, text: `Mezo testnet refused it in simulation: ${short(e)}` }
+            ? { ok: true, text: `Mezo testnet refused it in simulation: ${humanError(e)}` }
             : { ok: false, text: `Could not reach Mezo testnet, try again: ${short(e)}` };
     }
     setResults((r) => ({ ...r, [t.id]: res }));

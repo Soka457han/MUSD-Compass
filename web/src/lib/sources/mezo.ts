@@ -1,7 +1,7 @@
 import { cacheLife } from "next/cache";
-import { formatUnits, getAddress, type Address } from "viem";
+import { formatUnits, getAddress, zeroAddress, type Address } from "viem";
 import type { BorrowParams } from "@/lib/carry/carry";
-import { borrowerOperationsAbi, erc20Abi, interestRateManagerAbi, poolAbi, priceFeedAbi, stabilityPoolAbi, vaultGaugeAbi } from "@/lib/chain/abis";
+import { borrowerOperationsAbi, erc20Abi, interestRateManagerAbi, poolAbi, priceFeedAbi, stabilityPoolAbi, vaultGaugeAbi, voterAbi } from "@/lib/chain/abis";
 import { MAINNET } from "@/lib/chain/addresses";
 import { mezoClient } from "@/lib/chain/clients";
 import { gaugeAprPct } from "@/lib/gauge";
@@ -36,14 +36,13 @@ export function poolTvlUsd(
 
 export type MezoData = { venues: Venue[]; borrow: ReturnType<typeof toBorrowParams>; btcPriceUsd: number; gasPriceWei: string; paramsLive: boolean };
 
-// Gauges from the Mezo app (26 Oct); each is used only if its stakingToken() is the pool, so a wrong address is ignored.
-const POOLS: { address: Address; name: string; kind: string; gauge: Address }[] = [
-  { address: MAINNET.pools.musdcMusdCl10, name: "Mezo pool mUSDC/MUSD-10", kind: "Concentrated stable", gauge: "0x6d446E27505c71EE39D632488cE849fEF6aFFc57" as Address },
-  { address: MAINNET.pools.btcMusd, name: "Mezo pool BTC/MUSD", kind: "Basic volatile", gauge: "0x8Be20a5fF57E381025aE5E3A121B697269569AaF" as Address },
-  { address: MAINNET.pools.btcMusdCl200, name: "Mezo pool BTC/MUSD-200", kind: "Concentrated volatile", gauge: "0x21d7AcB0D128fA039064B6aCe8Db88c0aDe0209E" as Address },
-  { address: MAINNET.pools.musdMusdt, name: "Mezo pool MUSD/mUSDT", kind: "Basic stable", gauge: "0x4887Fa1C88f8927932e5e1545b3b29A1a29656E7" as Address },
-  { address: MAINNET.pools.musdcMusd, name: "Mezo pool mUSDC/MUSD", kind: "Basic stable", gauge: "0x2945401F5E015A122b482de0EA5Bf92C005C3C75" as Address },
-  { address: MAINNET.pools.mezoMusdCl200, name: "Mezo pool MEZO/MUSD-200", kind: "Concentrated volatile", gauge: "0xa763cEE0cBE643e2381CE2B0C457b4451d59C40D" as Address },
+const POOLS: { address: Address; name: string; kind: string }[] = [
+  { address: MAINNET.pools.musdcMusdCl10, name: "Mezo pool mUSDC/MUSD-10", kind: "Concentrated stable" },
+  { address: MAINNET.pools.btcMusd, name: "Mezo pool BTC/MUSD", kind: "Basic volatile" },
+  { address: MAINNET.pools.btcMusdCl200, name: "Mezo pool BTC/MUSD-200", kind: "Concentrated volatile" },
+  { address: MAINNET.pools.musdMusdt, name: "Mezo pool MUSD/mUSDT", kind: "Basic stable" },
+  { address: MAINNET.pools.musdcMusd, name: "Mezo pool mUSDC/MUSD", kind: "Basic stable" },
+  { address: MAINNET.pools.mezoMusdCl200, name: "Mezo pool MEZO/MUSD-200", kind: "Concentrated volatile" },
 ];
 
 async function readPool(address: Address) {
@@ -62,23 +61,28 @@ async function readPool(address: Address) {
 
 export type MezoChain = Awaited<ReturnType<typeof readMezo>>;
 
-/** A gauge's MEZO stream and how much LP is staked in it, as strings for the cache. Null if it is not this pool's gauge. */
-async function readGauge(gauge: Address, pool: Address, concentrated: boolean) {
+/** A pool's gauge, as Mezo's Voter registers it, with its MEZO stream and how much LP is staked; strings for the cache.
+ *  Null when the pool has no live gauge or a read fails (logged, so it shows in the function logs). */
+async function readGauge(pool: Address, concentrated: boolean) {
   try {
-    const g = { address: gauge, abi: vaultGaugeAbi } as const;
-    const reads = Promise.all([
-      mezoClient.readContract({ ...g, functionName: "stakingToken" }),
-      mezoClient.readContract({ ...g, functionName: "rewardRate" }),
-      mezoClient.readContract({ ...g, functionName: "totalSupply" }),
-      mezoClient.readContract({ ...g, functionName: "periodFinish" }),
-      concentrated ? Promise.resolve(0n) : mezoClient.readContract({ address: pool, abi: erc20Abi, functionName: "totalSupply" }), // concentrated pools have no LP token
-    ]);
-    // A call that reverts is retried by the transport; never let that hold up the page build (Vercel stops a slow cached read).
-    const timeout = new Promise<never>((_, reject) => setTimeout(() => reject(new Error("gauge read timed out")), 4000));
-    const [stakingToken, rewardRate, staked, periodFinish, poolSupply] = await Promise.race([reads, timeout]);
-    if (stakingToken.toLowerCase() !== pool.toLowerCase()) return null;
-    return { rewardRate: rewardRate.toString(), staked: staked.toString(), periodFinish: periodFinish.toString(), poolSupply: poolSupply.toString() };
-  } catch {
+    const reads = (async () => {
+      const voter = { address: MAINNET.voter, abi: voterAbi } as const;
+      const gauge = await mezoClient.readContract({ ...voter, functionName: "gauges", args: [pool] });
+      if (gauge === zeroAddress || !(await mezoClient.readContract({ ...voter, functionName: "isAlive", args: [gauge] }))) return null;
+      const g = { address: gauge, abi: vaultGaugeAbi } as const;
+      const [rewardRate, staked, periodFinish, poolSupply] = await Promise.all([
+        mezoClient.readContract({ ...g, functionName: "rewardRate" }),
+        mezoClient.readContract({ ...g, functionName: "totalSupply" }),
+        mezoClient.readContract({ ...g, functionName: "periodFinish" }),
+        concentrated ? Promise.resolve(0n) : mezoClient.readContract({ address: pool, abi: erc20Abi, functionName: "totalSupply" }), // concentrated pools have no LP token
+      ]);
+      return { gauge, rewardRate: rewardRate.toString(), staked: staked.toString(), periodFinish: periodFinish.toString(), poolSupply: poolSupply.toString() };
+    })();
+    // A failing call is retried by the transport; never let that hold up the page build (Vercel stops a slow cached read).
+    const timeout = new Promise<never>((_, reject) => setTimeout(() => reject(new Error("timed out after 8 s")), 8000));
+    return await Promise.race([reads, timeout]);
+  } catch (e) {
+    console.error(`[sources] gauge for pool ${pool} unavailable:`, e instanceof Error ? e.message.split("\n")[0] : e);
     return null;
   }
 }
@@ -108,7 +112,7 @@ export async function readMezo() {
 
   const [spDeposits, pools, gasPrice] = await Promise.all([
     mezoClient.readContract({ address: MAINNET.stabilityPool, abi: stabilityPoolAbi, functionName: "getTotalMUSDDeposits" }),
-    Promise.all(POOLS.map(async (p) => ({ ...p, tokens: (await readPool(p.address)).map((t) => ({ ...t, reserve: t.reserve.toString() })), gaugeRead: await readGauge(p.gauge, p.address, p.kind.startsWith("Concentrated")) }))),
+    Promise.all(POOLS.map(async (p) => ({ ...p, tokens: (await readPool(p.address)).map((t) => ({ ...t, reserve: t.reserve.toString() })), gaugeRead: await readGauge(p.address, p.kind.startsWith("Concentrated")) }))),
     mezoClient.getGasPrice(),
   ]);
   return { now, btcPrice, borrow, paramsLive, spDeposits: Number(formatUnits(spDeposits, 18)), pools, gasPriceWei: gasPrice.toString() };
@@ -156,7 +160,7 @@ export function mezoVenues(chain: MezoChain, mezoPriceUsd: number): MezoData {
         tvlUsd: p.tvl,
         ends: null,
         action: { label: ranked ? "Add liquidity in the Mezo app" : "See APR in the Mezo app", url: "https://mezo.org/earn/pools" },
-        source: { label: g ? "Mezo chain — pool reserves and gauge" : "Mezo chain — pool reserves", url: `https://explorer.mezo.org/address/${g ? p.gauge : p.address}` },
+        source: { label: g ? "Mezo chain — pool reserves and gauge" : "Mezo chain — pool reserves", url: `https://explorer.mezo.org/address/${g ? g.gauge : p.address}` },
         routes: [],
         tags: [
           "Mezo-native",

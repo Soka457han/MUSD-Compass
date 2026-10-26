@@ -54,6 +54,9 @@ export const vaultGaugeAbi = parseAbi([
   "function stakingToken() view returns (address)",
 ]);
 
+// Mezo's Voter (verified proxy on explorer.mezo.org, read 26 Oct): the gauge registered for each pool.
+export const voterAbi = parseAbi(["function gauges(address pool) view returns (address)", "function isAlive(address gauge) view returns (bool)"]);
+
 export const erc4626Abi = parseAbi(["function totalAssets() view returns (uint256)"]);
 
 // TroveManager / SortedTroves (mezo-org/musd solidity/contracts, interfaces/ITroveManager.sol, ISortedTroves.sol).

@@ -88,7 +88,6 @@ describe("Mezo source caching", () => {
           address: "0x0000000000000000000000000000000000000001",
           name: "Mezo pool MEZO/MUSD-200",
           kind: "Concentrated volatile",
-          gauge: "0x00000000000000000000000000000000000000ff",
           gaugeRead: null,
           tokens: [
             { address: MAINNET.mezo, reserve: parseUnits("1000000", 18).toString(), decimals: 18 },
@@ -105,9 +104,9 @@ describe("Mezo source caching", () => {
 
 describe("Mezo pools with their gauge's MEZO rate", () => {
   // 1 MEZO/s at $0.01 is $315,360 a year.
-  const gaugeRead = (staked: bigint, poolSupply: bigint) => ({ rewardRate: (10n ** 18n).toString(), staked: staked.toString(), periodFinish: "9999999999", poolSupply: poolSupply.toString() });
+  const gaugeRead = (staked: bigint, poolSupply: bigint) => ({ gauge: "0x00000000000000000000000000000000000000ff" as const, rewardRate: (10n ** 18n).toString(), staked: staked.toString(), periodFinish: "9999999999", poolSupply: poolSupply.toString() });
   const pool = (address: string, name: string, kind: string, g: ReturnType<typeof gaugeRead> | null) => ({
-    address, name, kind, gauge: "0x00000000000000000000000000000000000000ff", gaugeRead: g,
+    address, name, kind, gaugeRead: g,
     tokens: [{ address: MAINNET.musd, reserve: (10n ** 24n).toString(), decimals: 18 }], // $1,000,000 of MUSD
   });
   const chain = (pools: ReturnType<typeof pool>[]): MezoChain => ({

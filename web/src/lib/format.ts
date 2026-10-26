@@ -1,7 +1,7 @@
 export function pct(n: number | null, digits = 2): string {
   if (n === null || !Number.isFinite(n)) return "—";
   const s = Math.abs(n).toFixed(digits);
-  return `${n < 0 ? "−" : ""}${s}%`;
+  return `${n < 0 && Number(s) !== 0 ? "−" : ""}${s}%`; // −0.004 rounds to 0.00%, not −0.00%
 }
 
 // minimumFractionDigits is explicit: Node and Chromium default it differently for compact currency
