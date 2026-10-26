@@ -1,3 +1,4 @@
+import { cacheLife } from "next/cache";
 import { MAINNET } from "@/lib/chain/addresses";
 import { unavailable, type Venue } from "@/lib/venue";
 import type { Sources } from "@/lib/yields";
@@ -16,8 +17,17 @@ const settle = <T,>(p: Promise<T>, name: string) =>
     },
   );
 
-/** Loads every source; a failed source becomes an "unavailable" venue instead of an error page. */
+/** Every source, cached as one value for the page, the API, the bot and the widget alike: built ahead of time
+ *  with the home page, served at once, refreshed in the background after 5 minutes. Before, each API call
+ *  assembled it again and, right after a deploy, waited on every cold source (the bot gave up). */
 export async function loadSources(): Promise<Sources> {
+  "use cache";
+  cacheLife({ revalidate: 300, expire: 86_400 });
+  return readSources();
+}
+
+/** Loads every source; a failed source becomes an "unavailable" venue instead of an error page. */
+async function readSources(): Promise<Sources> {
   if (process.env.COMPASS_FIXTURES === "1") return fixtureSources();
   // All four in parallel: the Mezo chain read no longer waits for Merkl's MEZO price.
   const [merkl, smusd, eth, chain] = await Promise.all([settle(fetchMerkl(), "merkl"), settle(fetchSmusdMainnet(), "smusd"), settle(fetchEthereum(), "ethereum"), settle(readMezo(), "mezo")]);

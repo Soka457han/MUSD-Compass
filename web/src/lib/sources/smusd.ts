@@ -22,7 +22,7 @@ export function realisedApr(events: YieldEvent[], totalSupplyWei: string, nowTs:
 }
 
 const MAX_SPAN = 10_000n; // Mezo RPCs reject wider eth_getLogs ranges ("maximum [from, to] blocks distance: 10000")
-const CONCURRENCY = 4; // Boar rate-limits bursts; 4 at a time is gentle
+const CONCURRENCY = 8; // calls made together go out as one JSON-RPC batch (Boar takes 40 per request), so 8 is still one request at a time
 
 async function pool<T>(jobs: (() => Promise<T>)[], size: number): Promise<T[]> {
   const out: T[] = new Array(jobs.length);

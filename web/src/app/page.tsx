@@ -1,4 +1,3 @@
-import { cacheLife } from "next/cache";
 import { Suspense } from "react";
 import { Compass } from "@/components/Compass";
 import { Channels, Faq, HowItWorks, Trust } from "@/components/Landing";
@@ -6,17 +5,8 @@ import { ProblemDeck } from "@/components/ProblemDeck";
 import { SiteHeader } from "@/components/SiteHeader";
 import { loadSources } from "@/lib/sources";
 
-/** The whole ranking is cached with the page: it is built ahead of time and served at once, and after 5 minutes the
- *  next visit gets it immediately while a fresh copy is built in the background (it used to be read on every
- *  request, so each visit waited 0.5–1 s, longer when a function was cold). */
-async function cachedSources() {
-  "use cache";
-  cacheLife({ revalidate: 300, expire: 86_400 });
-  return loadSources();
-}
-
 async function LiveCompass() {
-  const sources = await cachedSources();
+  const sources = await loadSources(); // cached with the page: prerendered, refreshed in the background
   return (
     <Compass
       sources={sources}

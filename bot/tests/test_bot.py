@@ -45,6 +45,7 @@ def api(monkeypatch):
     fake = FakeApi()
     monkeypatch.setattr(compass_bot.httpx, "get", fake)
     monkeypatch.setenv("BOT_API_KEY", "k")
+    monkeypatch.setattr(compass_bot.time, "sleep", lambda s: None)  # the retry pause
     compass_bot._seen.clear()
     return fake
 
@@ -201,3 +202,19 @@ def test_api_busy_messages_are_passed_on_and_a_pending_scan_is_not_called_none(a
     assert "Mezo testnet did not answer" in say(f"/vault {SAMPLE}")
     api.status, api.body = 200, {**json.loads((FIX / "vault.json").read_text()), "lastDistribution": None, "lastDistributionPending": True}
     assert "still being read" in say(f"/vault {SAMPLE}")
+
+
+def test_one_retry_after_a_server_error_or_timeout(api, monkeypatch):
+    monkeypatch.setattr(compass_bot.time, "sleep", lambda s: None)
+    real = api.__call__
+    state = {"n": 0}
+
+    def flaky(url, params=None, headers=None, timeout=None):
+        state["n"] += 1
+        if state["n"] == 1:
+            raise httpx.ReadTimeout("slow")
+        return real(url, params=params, headers=headers, timeout=timeout)
+
+    monkeypatch.setattr(compass_bot.httpx, "get", flaky)
+    assert "Savings Vault" in say("/yield")
+    assert state["n"] == 2

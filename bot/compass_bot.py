@@ -50,10 +50,18 @@ class ApiError(Exception):
 
 def api_get(path: str, params: dict | None = None) -> dict:
     headers = {"x-compass-bot": os.environ.get("BOT_API_KEY", "")}
-    try:
-        r = httpx.get(f"{API_URL}{path}", params=params, headers=headers, timeout=25)
-    except httpx.HTTPError as e:
-        raise ApiError(DOWN) from e
+    # One retry: a fresh deploy or a cold function can miss once and answer fine a second later.
+    for attempt in (1, 2):
+        try:
+            r = httpx.get(f"{API_URL}{path}", params=params, headers=headers, timeout=20)
+        except httpx.HTTPError as e:
+            if attempt == 2:
+                raise ApiError(DOWN) from e
+            time.sleep(1)
+            continue
+        if r.status_code < 500 or attempt == 2:
+            break
+        time.sleep(1)
     if r.status_code in (400, 429, 503):  # the API explains these in words; pass them on
         try:
             raise ApiError(r.json().get("error", DOWN))
