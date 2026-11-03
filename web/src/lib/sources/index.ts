@@ -8,14 +8,23 @@ import { FALLBACK_BORROW_PARAMS, mezoVenues, readMezo } from "./mezo";
 import { fetchSmusdMainnet } from "./smusd";
 import { fixtureSources } from "./fixture";
 
-const settle = <T,>(p: Promise<T>, name: string) =>
-  p.then(
+/** Next.js stops a build when a cached function runs past 50 s; a source that hangs that long would break the deploy
+ *  (it did on 3 Nov 2026 while Mezo was slow). After this, a slow source counts as failed and shows as unavailable. */
+export const SOURCE_TIMEOUT_MS = 20_000;
+
+export const settle = <T,>(p: Promise<T>, name: string, ms = SOURCE_TIMEOUT_MS) => {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const late = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => reject(new Error(`timed out after ${ms / 1000} s`)), ms);
+  });
+  return Promise.race([p, late]).finally(() => clearTimeout(timer)).then(
     (value) => ({ ok: true as const, value }),
     (error: unknown) => {
       console.error(`[sources] ${name} failed:`, error); // visible in Vercel function logs
       return { ok: false as const, error };
     },
   );
+};
 
 /** Every source, cached as one value for the page, the API, the bot and the widget alike: built ahead of time
  *  with the home page, served at once, refreshed in the background after 5 minutes. Before, each API call

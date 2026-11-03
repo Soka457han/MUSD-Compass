@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { settle } from "@/lib/sources";
 import { parseUnits } from "viem";
 import { mezoVenues, poolTvlUsd, readMezo, toBorrowParams, type MezoChain } from "@/lib/sources/mezo";
 import { roundTripCostUsd } from "@/lib/sources/ethereum";
@@ -98,5 +99,16 @@ describe("Mezo source caching", () => {
     const tvlAt = (price: number) => mezoVenues(chain, price).venues.find((v) => v.name.includes("MEZO/"))!.tvlUsd;
     expect(tvlAt(0.005)).toBeCloseTo(10_000, 6);
     expect(tvlAt(0.006)).toBeCloseTo(11_000, 6);
+  });
+});
+
+describe("settle", () => {
+  it("turns a source that never answers into a failure instead of hanging the build", async () => {
+    const r = await settle(new Promise(() => {}), "stuck", 20);
+    expect(r.ok).toBe(false);
+  });
+
+  it("passes a quick answer through", async () => {
+    expect(await settle(Promise.resolve(7), "quick", 1000)).toEqual({ ok: true, value: 7 });
   });
 });
