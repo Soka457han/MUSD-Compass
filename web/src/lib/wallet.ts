@@ -1,6 +1,7 @@
 "use client";
 import { createPublicClient, createWalletClient, custom, http, type Address, type EIP1193Provider, type WalletClient } from "viem";
-import { mezoTestnet } from "viem/chains";
+import { mezo, mezoTestnet } from "viem/chains";
+import type { NetworkId } from "@/lib/chain/addresses";
 
 declare global {
   interface Window {
@@ -10,7 +11,13 @@ declare global {
 
 export const testnetPublic = createPublicClient({ chain: mezoTestnet, transport: http("https://rpc.test.mezo.org", { batch: { wait: 16 }, retryCount: 5 }) });
 
-export const explorerTx = (hash: string) => `${mezoTestnet.blockExplorers.default.url}/tx/${hash}`;
+// Boar answers browser requests from any origin (CORS preflight checked 3 Nov 2026) and takes JSON-RPC batches.
+export const mainnetPublic = createPublicClient({ chain: mezo, transport: http("https://rpc-http.mezo.boar.network", { batch: { wait: 16 }, retryCount: 5 }) });
+
+const chainFor = (network: NetworkId) => (network === "mainnet" ? mezo : mezoTestnet);
+export const publicFor = (network: NetworkId) => (network === "mainnet" ? mainnetPublic : testnetPublic);
+
+export const explorerTx = (hash: string, network: NetworkId = "testnet") => `${chainFor(network).blockExplorers.default.url}/tx/${hash}`;
 
 export function injected(): EIP1193Provider | null {
   return typeof window !== "undefined" && window.ethereum ? window.ethereum : null;
@@ -30,16 +37,20 @@ export function discoverWallets(onFound: (w: FoundWallet) => void): () => void {
   return () => window.removeEventListener("eip6963:announceProvider", on);
 }
 
-/** Ask the wallet for an account and make sure it is on Mezo testnet (adds the network if the wallet lacks it). */
-export async function connect(provider: EIP1193Provider | null = injected()): Promise<{ wallet: WalletClient; account: Address }> {
+/** Ask the wallet for an account and make sure it is on the Mezo network of the action (adds the network if the wallet lacks it). */
+export async function connect(
+  provider: EIP1193Provider | null = injected(),
+  network: NetworkId = "testnet",
+): Promise<{ wallet: WalletClient; account: Address }> {
   if (!provider) throw new Error("No wallet found in this browser.");
-  const wallet = createWalletClient({ chain: mezoTestnet, transport: custom(provider) });
+  const chain = chainFor(network);
+  const wallet = createWalletClient({ chain, transport: custom(provider) });
   const [account] = await wallet.requestAddresses();
-  if ((await wallet.getChainId()) !== mezoTestnet.id) {
+  if ((await wallet.getChainId()) !== chain.id) {
     try {
-      await wallet.switchChain({ id: mezoTestnet.id });
+      await wallet.switchChain({ id: chain.id });
     } catch {
-      await wallet.addChain({ chain: mezoTestnet }); // wallets switch to a chain they just added
+      await wallet.addChain({ chain }); // wallets switch to a chain they just added
     }
   }
   return { wallet, account };

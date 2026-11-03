@@ -6,9 +6,11 @@ const csp = (frameAncestors: string) =>
     "default-src 'self'",
     "script-src 'self' 'unsafe-inline'",
     "style-src 'self' 'unsafe-inline'",
-    "img-src 'self' data:",
-    "font-src 'self'",
-    "connect-src 'self' https://rpc.test.mezo.org", // the vault reads and simulates on Mezo testnet from the browser
+    "img-src 'self' data: blob: https://api.web3modal.org https://explorer-api.walletconnect.com",
+    "font-src 'self' https://fonts.reown.com", // WalletConnect's QR window uses this font
+    // WalletConnect (phone wallets): its relay, verify, RPC and wallet-list hosts. Loaded only when someone taps WalletConnect.
+    "connect-src 'self' https://rpc.test.mezo.org https://rpc-http.mezo.boar.network wss://relay.walletconnect.org https://rpc.walletconnect.org https://verify.walletconnect.org https://pulse.walletconnect.org https://api.web3modal.org https://explorer-api.walletconnect.com", // the vault reads and simulates on Mezo testnet, and Borrow → Earn re-checks the price on mainnet, from the browser
+    "frame-src 'self' https://verify.walletconnect.org https://verify.walletconnect.com",
     "object-src 'none'",
     "base-uri 'self'",
     "form-action 'self'",

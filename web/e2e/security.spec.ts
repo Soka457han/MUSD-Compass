@@ -8,6 +8,9 @@ test("every page sends the security headers and refuses to be framed", async ({ 
     expect(h["content-security-policy"], path).toContain("frame-ancestors 'none'");
     expect(h["content-security-policy"], path).toContain("object-src 'none'");
     expect(h["content-security-policy"], path).toContain("connect-src 'self' https://rpc.test.mezo.org");
+    expect(h["content-security-policy"], path).toContain("https://rpc-http.mezo.boar.network"); // Borrow → Earn re-checks the mainnet price from the browser
+    expect(h["content-security-policy"], path).toContain("wss://relay.walletconnect.org"); // WalletConnect's relay, for phone wallets
+    expect(h["content-security-policy"], path).toMatch(/frame-src 'self' https:\/\/verify\.walletconnect\.org/);
     expect(h["x-content-type-options"], path).toBe("nosniff");
     expect(h["referrer-policy"], path).toBe("strict-origin-when-cross-origin");
     expect(h["permissions-policy"], path).toContain("camera=()");

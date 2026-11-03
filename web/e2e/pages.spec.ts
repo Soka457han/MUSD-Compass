@@ -50,9 +50,11 @@ test("trove planner: sample → ratio, safe borrow, queue; 'Use in calculator' o
   await page.getByRole("link", { name: "Read your trove's rate and safe extra borrow" }).click();
   await expect(page).toHaveURL(/\/trove$/);
   await page.getByRole("button", { name: "Try a sample" }).click();
-  await expect(page.getByText("333%")).toBeVisible();
+  await expect(page.getByText("333%", { exact: true })).toBeVisible(); // exact: the advice sentence also says "At 333%"
   await expect(page.getByText("20,068 MUSD")).toBeVisible();
   await expect(page.getByText("≈ 812 of 1,204 troves are redeemed before yours")).toBeVisible();
+  await expect(page.getByRole("list", { name: "What to do about this trove" }).getByText("BTC would have to fall about 67%")).toBeVisible();
+  await expect(page.getByText("Your ratio is comfortable")).toBeVisible();
   await page.getByRole("link", { name: "Use in calculator" }).click();
   await expect(page).toHaveURL(/mode=borrower/);
   const url = new URL(page.url());
@@ -78,7 +80,7 @@ for (const path of ["/get-test-musd", "/developers", "/rewards", "/trove", "/inc
       await page.goto(path);
       if (path === "/rewards" || path === "/trove") {
         await page.getByRole("button", { name: "Try a sample" }).click();
-        await page.getByText(path === "/rewards" ? "239.28" : "333%").waitFor();
+        await page.getByText(path === "/rewards" ? "239.28" : "333%", { exact: true }).waitFor();
       }
       const bad = (await axe(page)).violations.filter((v) => v.impact === "serious" || v.impact === "critical");
       expect(bad.map((v) => `${v.id}: ${v.nodes[0]?.target}`)).toEqual([]);

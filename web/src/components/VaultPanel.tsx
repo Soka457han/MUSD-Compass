@@ -2,17 +2,26 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
-import { formatEther, parseUnits, zeroAddress, type Abi, type Address, type WalletClient } from "viem";
-import { borrowerOperationsAbi, erc20Abi, smusdAbi } from "@/lib/chain/abis";
+import { formatEther, parseUnits, type Abi, type Address, type EIP1193Provider } from "viem";
+import { erc20Abi, smusdAbi } from "@/lib/chain/abis";
 import { collateralFor, readBorrowSetup, type BorrowSetup } from "@/lib/borrow";
-import { SAMPLES, TESTNET } from "@/lib/chain/addresses";
-import { sendSafely } from "@/lib/sendSafely";
+import { assertSafeAtSend, buildBorrowEarnSteps, icrAfterOpen } from "@/lib/borrowEarn";
+import { troveAdvice, type Action } from "@/lib/safety";
+import { buildRepayStep, buildTopUpStep } from "@/lib/troveActions";
+import { readTrove, type TroveView } from "@/lib/trove";
+import { NETWORKS, SAMPLES, TESTNET, type NetworkId } from "@/lib/chain/addresses";
+import { mainnetWritesEnabled, sendSafely } from "@/lib/sendSafely";
 import type { VaultState } from "@/lib/vault";
-import { connect, explorerTx, humanError, injected, testnetPublic } from "@/lib/wallet";
+import { connect, explorerTx, humanError, injected, publicFor } from "@/lib/wallet";
+import { walletConnectProjectId, walletConnectProvider } from "@/lib/walletconnect";
+import { AdviceList } from "./AdviceList";
 import { ArrowUpRightIcon } from "./Icons";
+import { MainnetConfirm, type MainnetPlan } from "./MainnetConfirm";
 import { WalletModal, type Picked } from "./WalletModal";
 
-type Tx = { label: string; hash?: string; state: "pending" | "done" | "error"; note?: string };
+type Tx = { label: string; hash?: string; state: "pending" | "done" | "error"; note?: string; network?: NetworkId };
+// On mainnet an action waits behind the typed-amount dialog; `go` is what runs once it is confirmed.
+type Pending = { view: MainnetPlan; go: () => void };
 
 const fmt = (s: string) => Number(s).toLocaleString("en-US", { maximumFractionDigits: 4 });
 
@@ -30,7 +39,7 @@ function toWei(amount: string): bigint | null {
 
 export function VaultPanel() {
   const [hasWallet, setHasWallet] = useState(true);
-  const [wallet, setWallet] = useState<WalletClient | null>(null);
+  const [provider, setProvider] = useState<EIP1193Provider | null>(null);
   const [account, setAccount] = useState<Address | null>(null);
   const [lookup, setLookup] = useState("");
   const [state, setState] = useState<VaultState | null>(null);
@@ -44,6 +53,11 @@ export function VaultPanel() {
   const [pickError, setPickError] = useState<string | null>(null);
   const [setup, setSetup] = useState<BorrowSetup | null>(null);
   const [borrowAmt, setBorrowAmt] = useState("2000");
+  const [net, setNet] = useState<NetworkId>("testnet"); // mainnet is only offered when a deploy switches it on
+  const [pending, setPending] = useState<Pending | null>(null);
+  const [trove, setTrove] = useState<TroveView | null>(null);
+  const [topUpAmt, setTopUpAmt] = useState("");
+  const [repayAmt, setRepayAmt] = useState("");
 
   const [loading, setLoading] = useState(false);
   const load = useCallback(async (addr: string) => {
@@ -78,15 +92,21 @@ export function VaultPanel() {
     setPicked(w);
     setPickError(null);
     let c: Awaited<ReturnType<typeof connect>>;
+    let p: EIP1193Provider;
     try {
-      c = await connect(w.provider);
+      if (w.walletConnect) {
+        // WalletConnect draws its own QR window, which a modal <dialog> would cover, so the picker steps aside first.
+        setPicking(false);
+        p = await walletConnectProvider(walletConnectProjectId());
+      } else p = w.provider!;
+      c = await connect(p);
     } catch (e) {
       setPickError(humanError(e));
       return;
     }
     setPicking(false);
     setPicked(null);
-    setWallet(c.wallet);
+    setProvider(p);
     setAccount(c.account);
     setLookup(c.account);
     await load(c.account);
@@ -94,20 +114,35 @@ export function VaultPanel() {
 
   // Re-read the trove inputs whenever the vault position is re-read (after connecting and after every transaction).
   useEffect(() => {
-    if (account) readBorrowSetup(testnetPublic as never, account).then(setSetup, () => setSetup(null));
-  }, [account, state]);
+    if (account) readBorrowSetup(publicFor(net) as never, account, net).then(setSetup, () => setSetup(null));
+  }, [account, state, net]);
 
-  const run = async (label: string, steps: { label: string; address: Address; abi: Abi; functionName: string; args: readonly unknown[]; value?: bigint }[]) => {
-    if (!wallet || !account) return;
+  // The caller's own trove on the chosen network, re-read with the borrow setup (after connecting and after every transaction).
+  useEffect(() => {
+    if (account && setup?.hasTrove) readTrove(publicFor(net) as never, account, setup.feePct, null, net).then(setTrove, () => setTrove(null));
+    else setTrove(null);
+  }, [account, setup, net]);
+
+  const run = async (
+    label: string,
+    steps: { label: string; address: Address; abi: Abi; functionName: string; args: readonly unknown[]; value?: bigint }[],
+    network: NetworkId = "testnet",
+    before?: (step: { functionName: string }) => Promise<void>,
+  ) => {
+    if (!provider || !account) return;
     setBusy(true);
     try {
+      // Re-ask the wallet for this action's Mezo network (a no-op when it is already there), and make sure the account did not change.
+      const c = await connect(provider, network);
+      if (c.account.toLowerCase() !== account.toLowerCase()) throw new Error("Your wallet switched accounts. Reconnect and try again.");
       for (const s of steps) {
-        setTxs((t) => [{ label: s.label, state: "pending" }, ...t]);
-        const { hash } = await sendSafely({ publicClient: testnetPublic as never, walletClient: wallet as never, account, ...s });
-        setTxs((t) => [{ label: s.label, hash, state: "done" }, ...t.slice(1)]);
+        setTxs((t) => [{ label: s.label, state: "pending", network }, ...t]);
+        await before?.(s);
+        const { hash } = await sendSafely({ publicClient: publicFor(network) as never, walletClient: c.wallet as never, account, network, walletChainId: await c.wallet.getChainId(), ...s });
+        setTxs((t) => [{ label: s.label, hash, state: "done", network }, ...t.slice(1)]);
       }
     } catch (e) {
-      setTxs((t) => [{ label, state: "error", note: humanError(e) }, ...t.slice(1)]);
+      setTxs((t) => [{ label, state: "error", note: humanError(e), network }, ...(t[0]?.state === "pending" ? t.slice(1) : t)]);
     } finally {
       setBusy(false);
       await load(account);
@@ -132,16 +167,79 @@ export function VaultPanel() {
   const minBorrow = setup ? Math.ceil(setup.minNetDebt / (1 + setup.feePct / 100)) : 0;
   const coll = setup && borrowWei ? collateralFor(Number(borrowAmt), setup) : null;
   const shortBtc = Boolean(setup && coll !== null && Number(formatEther(coll)) + 0.0001 > setup.btcBalance); // keep a little BTC for gas
-  const borrowEarn = () => {
-    if (!borrowWei || !coll || !state) return;
-    const allowance = parseUnits(state.allowance, 18);
-    run("Borrow → Earn", [
-      // shortcut: zero hints make SortedTroves search from the top; fine for testnet's short list, use HintHelpers on mainnet.
-      { label: `Open a trove: lock ${formatEther(coll)} BTC, borrow ${borrowAmt} MUSD`, address: TESTNET.borrowerOperations, abi: borrowerOperationsAbi, functionName: "openTrove", args: [borrowWei, zeroAddress, zeroAddress], value: coll },
-      ...(allowance < borrowWei ? [{ label: `Approve exactly ${borrowAmt} MUSD`, address: TESTNET.musd, abi: erc20Abi, functionName: "approve", args: [TESTNET.smusd, borrowWei] }] : []),
-      { label: `Deposit ${borrowAmt} MUSD`, address: TESTNET.smusd, abi: smusdAbi, functionName: "deposit", args: [borrowWei] },
-    ]);
+  const sendBorrow = (built: Awaited<ReturnType<typeof buildBorrowEarnSteps>>) =>
+    run("Borrow → Earn", built.steps, net, async (step) => {
+      if (step.functionName === "openTrove") await assertSafeAtSend(publicFor(net) as never, net, built.plan); // BTC may have moved since the quote
+      if (step.functionName === "deposit") {
+        const held = await publicFor(net).readContract({ address: NETWORKS[net].musd, abi: erc20Abi, functionName: "balanceOf", args: [account!] });
+        if (held < built.plan.debt) throw new Error("The borrowed MUSD is not in this wallet yet, so nothing more was sent. Deposit it above once it shows.");
+      }
+    });
+  /** Testnet runs straight away; mainnet asks once more, on screen, with the amount typed in. */
+  const gate = (view: MainnetPlan, go: () => void) => (net === "mainnet" ? setPending({ view, go }) : go());
+  const failed = (label: string, e: unknown) => setTxs((t) => [{ label, state: "error", note: humanError(e), network: net }, ...t]);
+  const borrowEarn = async () => {
+    if (!account || !borrowWei) return;
+    setBusy(true);
+    try {
+      const built = await buildBorrowEarnSteps(publicFor(net) as never, net, account, Number(borrowAmt));
+      const debt = Number(borrowAmt);
+      const btc = formatEther(built.plan.collateral);
+      const icrPct = setup ? icrAfterOpen(Number(btc), debt, setup.feePct, setup.gasComp, setup.btcUsd) : 0;
+      const fee = setup ? (debt * setup.feePct) / 100 : 0;
+      gate(
+        {
+          title: "Mezo mainnet: real funds",
+          amount: debt,
+          button: "Open on mainnet",
+          lines: [
+            `Locks ${btc} BTC as collateral in a new trove.`,
+            `Borrows ${debt.toLocaleString("en-US")} MUSD, plus a ${fee.toFixed(2)} MUSD fee and the 200 MUSD gas deposit added to the debt.`,
+            `The trove starts at ${icrPct.toFixed(1)}%. Below 110% it can be liquidated, and any trove can be redeemed against at face value.`,
+            "Deposits the borrowed MUSD in the Mezo Savings Vault. Three wallet prompts, each simulated first.",
+          ],
+        },
+        () => void sendBorrow(built),
+      );
+    } catch (e) {
+      failed("Borrow → Earn", e);
+    } finally {
+      setBusy(false);
+    }
   };
+  const topUp = async () => {
+    const btc = Number(topUpAmt);
+    if (!account) return;
+    setBusy(true);
+    try {
+      const step = await buildTopUpStep(publicFor(net) as never, net, account, btc);
+      gate(
+        { title: "Mezo mainnet: real funds", amount: btc, button: "Add on mainnet", lines: [`Adds ${btc} BTC to your trove as collateral.`, "One wallet prompt, simulated first. The ratio goes up; the BTC stays in the trove until it is closed."] },
+        () => void run("Add BTC", [step], net),
+      );
+    } catch (e) {
+      failed("Add BTC", e);
+    } finally {
+      setBusy(false);
+    }
+  };
+  const repay = async () => {
+    const musd = Number(repayAmt);
+    if (!account) return;
+    setBusy(true);
+    try {
+      const step = await buildRepayStep(publicFor(net) as never, net, account, musd);
+      gate(
+        { title: "Mezo mainnet: real funds", amount: musd, button: "Repay on mainnet", lines: [`Repays ${musd.toLocaleString("en-US")} MUSD of this trove's debt from your wallet.`, "One wallet prompt, simulated first. The MUSD is burned, and the debt and your ratio improve."] },
+        () => void run("Repay MUSD", [step], net),
+      );
+    } catch (e) {
+      failed("Repay MUSD", e);
+    } finally {
+      setBusy(false);
+    }
+  };
+  const suggestion = (a: Action) => (a.kind === "addColl" ? setTopUpAmt(String(a.btc)) : setRepayAmt(String(a.musd)));
   const claim = () => run("Claim yield", [{ label: "Claim yield", address: TESTNET.smusd, abi: smusdAbi, functionName: "claimYield", args: [] }]);
 
   const own = Boolean(account && state && state.address.toLowerCase() === account.toLowerCase());
@@ -165,6 +263,11 @@ export function VaultPanel() {
             <button type="button" onClick={() => setPicking(true)} className="mt-3 inline-flex min-h-11 items-center rounded-full bg-accent px-5 text-sm font-bold text-on-accent">
               Connect wallet
             </button>
+            {!picking && pickError && (
+              <p role="alert" className="mt-3 text-sm font-semibold text-danger-text">
+                {pickError}
+              </p>
+            )}
             {!hasWallet && (
               <p className="mt-3 max-w-prose text-sm">
                 No wallet in this browser. Open this page inside MetaMask, Rabby or another wallet&apos;s browser to deposit. You can still look up any address below.
@@ -312,11 +415,27 @@ export function VaultPanel() {
           <h2 id="borrow-h" className="text-base font-bold">
             Borrow MUSD against BTC, then earn
           </h2>
+          {mainnetWritesEnabled() && (
+            <fieldset className="mt-2 flex flex-wrap gap-x-5 gap-y-1 text-sm">
+              <legend className="sr-only">Network</legend>
+              {(["testnet", "mainnet"] as const).map((n) => (
+                <label key={n} className="flex min-h-11 items-center gap-2 font-semibold">
+                  <input type="radio" name="net" value={n} checked={net === n} onChange={() => setNet(n)} />
+                  {n === "testnet" ? "Mezo testnet (test funds)" : "Mezo mainnet (real funds)"}
+                </label>
+              ))}
+            </fieldset>
+          )}
+          {net === "mainnet" && (
+            <p role="note" className="mt-2 rounded-2xl border-2 border-danger-text px-4 py-2 text-sm font-semibold">
+              Mezo mainnet: this opens a real trove with real BTC. You confirm once more on screen before any wallet prompt.
+            </p>
+          )}
           <p className="mt-1 max-w-prose text-sm text-ink-muted">
-            Opens a trove on Mezo testnet&apos;s BorrowerOperations with your test BTC, then approves exactly that amount and deposits it in the Savings Vault. Three wallet prompts, each simulated first.
+            Opens a trove on Mezo {net}&apos;s BorrowerOperations with your {net === "mainnet" ? "BTC" : "test BTC"}, then approves exactly that amount and deposits it in the Savings Vault. Three wallet prompts, each simulated first.
           </p>
           {setup.hasTrove ? (
-            <p className="mt-3 text-sm">This wallet already has a testnet trove. Deposit its MUSD above; adjust or close the trove in the Mezo app.</p>
+            <p className="mt-3 text-sm">This wallet already has a {net} trove. Deposit its MUSD above; adjust or close the trove in the Mezo app.</p>
           ) : (
             <form
               className="mt-3 space-y-2"
@@ -331,12 +450,12 @@ export function VaultPanel() {
               <input id="borrow-amt" inputMode="decimal" value={borrowAmt} onChange={(e) => setBorrowAmt(e.target.value)} className="block h-11 w-full max-w-xs rounded-full border border-field bg-card px-4 text-sm" />
               {coll !== null && (
                 <p className="text-sm text-ink-muted">
-                  Locks <span className="font-semibold text-ink">{formatEther(coll)} BTC</span> (testnet price ${setup.btcUsd.toLocaleString("en-US", { maximumFractionDigits: 0 })}) for a 200% ratio · fee {(Number(borrowAmt) * setup.feePct / 100).toFixed(2)} MUSD · {setup.gasComp} MUSD gas deposit, returned when the trove closes · you have {setup.btcBalance.toFixed(5)} BTC
+                  Locks <span className="font-semibold text-ink">{formatEther(coll)} BTC</span> ({net} price ${setup.btcUsd.toLocaleString("en-US", { maximumFractionDigits: 0 })}) for a 200% ratio · fee {(Number(borrowAmt) * setup.feePct / 100).toFixed(2)} MUSD · {setup.gasComp} MUSD gas deposit, returned when the trove closes · you have {setup.btcBalance.toFixed(5)} BTC
                 </p>
               )}
               {shortBtc && (
                 <p role="alert" className="text-sm font-semibold text-danger-text">
-                  Not enough test BTC for this trove. <Link href="/get-test-musd" className="underline">Get test BTC</Link> or borrow less.
+                  Not enough {net === "mainnet" ? "BTC" : "test BTC"} for this trove. {net === "testnet" && <><Link href="/get-test-musd" className="underline">Get test BTC</Link> or </>}{net === "testnet" ? "borrow less." : "Borrow less."}
                 </p>
               )}
               <button type="submit" disabled={busy || !borrowWei || Number(borrowAmt) < minBorrow || shortBtc} className="inline-flex min-h-11 items-center rounded-full bg-accent px-5 text-sm font-bold text-on-accent disabled:opacity-50">
@@ -344,6 +463,75 @@ export function VaultPanel() {
               </button>
             </form>
           )}
+        </section>
+      )}
+
+      {own && setup?.hasTrove && trove?.active && (
+        <section aria-labelledby="trove-h" className="rounded-[20px] border border-line bg-card px-5 py-5">
+          <h2 id="trove-h" className="text-base font-bold">
+            Your {net} trove
+          </h2>
+          <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-3 sm:grid-cols-4">
+            <div>
+              <dt className="text-xs text-ink-muted">Collateral ratio</dt>
+              <dd className="price text-[2rem]">{trove.icrPct.toLocaleString("en-US", { maximumFractionDigits: 0 })}%</dd>
+            </div>
+            <div>
+              <dt className="text-xs text-ink-muted">Debt</dt>
+              <dd className="text-base font-semibold">{trove.debt.toLocaleString("en-US", { maximumFractionDigits: 2 })} MUSD</dd>
+            </div>
+            <div>
+              <dt className="text-xs text-ink-muted">Collateral</dt>
+              <dd className="text-base font-semibold">{trove.collateralBtc.toLocaleString("en-US", { maximumFractionDigits: 6 })} BTC</dd>
+            </div>
+            <div>
+              <dt className="text-xs text-ink-muted">Interest rate</dt>
+              <dd className="text-base font-semibold">{trove.ratePct.toLocaleString("en-US", { maximumFractionDigits: 2 })}%</dd>
+            </div>
+          </dl>
+          <AdviceList advice={troveAdvice(trove)} targetPct={200} footer="Use the boxes below." />
+          {troveAdvice(trove).flatMap((a) => a.actions ?? []).length > 0 && (
+            <p className="mt-2 text-xs">
+              {troveAdvice(trove)
+                .flatMap((a) => a.actions ?? [])
+                .map((a) => (
+                  <button key={a.kind} type="button" onClick={() => suggestion(a)} className="mr-3 min-h-11 font-semibold underline">
+                    Use the suggested {a.kind === "addColl" ? "BTC" : "MUSD"} amount
+                  </button>
+                ))}
+            </p>
+          )}
+          <div className="mt-4 grid gap-5 sm:grid-cols-2">
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                void topUp();
+              }}
+            >
+              <label htmlFor="topup" className="mb-1 block text-xs font-semibold">
+                Add BTC to the trove
+              </label>
+              <input id="topup" inputMode="decimal" value={topUpAmt} onChange={(e) => setTopUpAmt(e.target.value)} placeholder="0.01" className="block h-11 w-full rounded-full border border-field bg-card px-4 text-sm" />
+              <button type="submit" disabled={busy || !(Number(topUpAmt) > 0)} className="mt-2 inline-flex min-h-11 items-center rounded-full bg-accent px-4 text-sm font-bold text-on-accent disabled:opacity-50">
+                Add BTC
+              </button>
+            </form>
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                void repay();
+              }}
+            >
+              <label htmlFor="repay" className="mb-1 block text-xs font-semibold">
+                Repay MUSD
+              </label>
+              <input id="repay" inputMode="decimal" value={repayAmt} onChange={(e) => setRepayAmt(e.target.value)} placeholder="100" className="block h-11 w-full rounded-full border border-field bg-card px-4 text-sm" />
+              <button type="submit" disabled={busy || !(Number(repayAmt) > 0)} className="mt-2 inline-flex min-h-11 items-center rounded-full border border-line px-4 text-sm font-bold disabled:opacity-50">
+                Repay
+              </button>
+            </form>
+          </div>
+          <p className="mt-3 max-w-prose text-xs text-ink-muted">Compass can add BTC and repay MUSD. Closing the trove or taking collateral out is done in the Mezo app.</p>
         </section>
       )}
 
@@ -360,7 +548,7 @@ export function VaultPanel() {
                   {t.state === "pending" ? "Waiting for wallet and network…" : t.state === "done" ? "Confirmed" : t.note}
                 </span>
                 {t.hash && (
-                  <a href={explorerTx(t.hash)} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 underline">
+                  <a href={explorerTx(t.hash, t.network)} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 underline">
                     View on explorer
                     <ArrowUpRightIcon className="size-4" />
                   </a>
@@ -370,6 +558,15 @@ export function VaultPanel() {
           </ul>
         </section>
       )}
+      <MainnetConfirm
+        plan={pending?.view ?? null}
+        onConfirm={() => {
+          const p = pending;
+          setPending(null);
+          p?.go();
+        }}
+        onCancel={() => setPending(null)}
+      />
     </div>
   );
 }

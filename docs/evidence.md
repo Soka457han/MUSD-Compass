@@ -24,7 +24,18 @@ Every on-chain action Compass has taken, in one place. All writes are on Mezo te
 - a transaction to a contract that is not on the allowlist: refused the same way;
 - depositing 1,000,000 MUSD from the sample wallet: Mezo testnet refuses it in simulation, the same simulation every real deposit goes through.
 
-Guard code: [`web/src/lib/sendSafely.ts`](../web/src/lib/sendSafely.ts). The allowlist is testnet MUSD, sMUSD and BorrowerOperations (`openTrove` only); approvals go only to the vault and never for an unlimited amount.
+Guard code: [`web/src/lib/sendSafely.ts`](../web/src/lib/sendSafely.ts). The allowlist is MUSD, sMUSD and BorrowerOperations on each network, and per contract only the functions Compass uses: MUSD `approve`; vault `deposit`, `withdraw`, `claimYield`; BorrowerOperations `openTrove`, `addColl`, `repayMUSD`. Approvals go only to the vault and never for an unlimited amount.
+
+## Mezo mainnet dry run (simulated, not executed), 3 Nov 2026
+
+No mainnet transaction has been sent. The dry run exercises Compass's own Borrow → Earn code against Mezo mainnet with read-only calls and `eth_call` simulation. Run it with `LIVE_MAINNET=1 npx vitest run tests/live` (it is skipped otherwise). It uses a dummy address with no funds and lends it 1 BTC inside the simulation only.
+
+- For 2,000 MUSD of debt Compass computed 0.05707053 BTC of collateral (a 200% start at the BTC price read from PriceFeed that moment) and real HintHelpers hints: `0x593c…5bb5` and `0x467F…3Fb4`.
+- The three steps (`openTrove`, an exact `approve`, `deposit`) pass Compass's guard on mainnet, and the price re-check before sending passes.
+- `openTrove` with those hints and that collateral simulates successfully on mainnet.
+- The same call with a third of the collateral is refused by the contract, so the simulation can fail.
+- An exact approval of 1 MUSD to the mainnet vault simulates from a public MUSD holder (466.60 MUSD at the time).
+- Not covered: the `deposit` step on mainnet (it needs MUSD the dummy does not have), and signing. The deposit function is the one used on testnet in the proof above.
 
 ## Live numbers checked against their source (26 Oct 2026)
 

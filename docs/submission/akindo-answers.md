@@ -35,7 +35,7 @@ MUSD Compass ranks every place Mezo's MUSD can earn by cash you keep after costs
 
 **Why it matters even when one venue leads.** The answer changes: overnight on 24→25 Oct the Uniswap V4 veMEZO APR went from 49.8% to 79.9% and MEZO rose 60%. Today the Savings Vault (4.01%) wins on cash, but for a holder who accepts the 12-week lock the Ethereum pools win on total (up to 75.6% for 2,000 MUSD) — and borrowers get a different answer again. Campaigns renew weekly, so the ranking is worth checking every week, and My MUSD shows what that change means for your own address; Wave 2 adds alerts so users don't have to look.
 
-**Business model.** Free for people. Agents and apps that want everything in one call — every mode × holding period, plus an address's trove and rewards — pay 0.001 MUSD per call over x402. Distribution: the Telegram bot, the widget inside other sites, and the API inside other apps.
+**Business model.** Free for people. Agents and apps that want everything in one call (every mode × holding period, plus an address's trove and rewards) pay 0.001 test MUSD per call over x402, instead of reading Mezo mainnet, Merkl and Ethereum themselves. Both payments on record are ours, so there are no outside buyers yet; a mainnet price of 0.01 MUSD per call is offered in the 402 response once a payee is set. Distribution: the Telegram bot, the widget inside other sites, and the API inside other apps.
 
 **Proof (Mezo testnet):** exact approve 100 MUSD, deposit 100, withdraw 10, a yield claim, a trove that borrowed 1,800 MUSD and deposited it in the Savings Vault, and two x402 payments (one from a second wallet) — explorer links in the README.
 
@@ -74,5 +74,5 @@ Solo builder — product, design, web app, on-chain integration, Telegram bot. X
 - GitHub: https://github.com/Soka457han/MUSD-Compass
 - Telegram bot: https://t.me/musd_compass_bot
 - API and widget: https://musd-compass.vercel.app/developers
-- Deck: (the PDF you download from the deck)
-- 2-minute video: TODO — paste after recording
+- Deck: https://musd-compass.vercel.app/musd-compass-deck.pdf
+- 2-minute video: https://www.youtube.com/watch?v=MzgrWvwby00

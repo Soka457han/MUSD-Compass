@@ -1,6 +1,6 @@
 import { formatUnits, type Address, type PublicClient } from "viem";
 import { priceFeedAbi, sortedTrovesAbi, troveManagerAbi } from "@/lib/chain/abis";
-import { MAINNET } from "@/lib/chain/addresses";
+import { MAINNET, NETWORKS, type NetworkId } from "@/lib/chain/addresses";
 
 export const SAFE_ICR = 2; // 200 %: the planner's floor, well above Mezo's 110 % minimum
 
@@ -45,9 +45,10 @@ export async function sampleTrove(client: PublicClient): Promise<Address> {
   return client.readContract({ address: MAINNET.sortedTroves, abi: sortedTrovesAbi, functionName: "getFirst" });
 }
 
-export async function readTrove(client: PublicClient, address: Address, feePct: number, nicrs: bigint[] | null): Promise<TroveView> {
-  const tm = { address: MAINNET.troveManager, abi: troveManagerAbi } as const;
-  const price = await client.readContract({ address: MAINNET.priceFeed, abi: priceFeedAbi, functionName: "fetchPrice" });
+export async function readTrove(client: PublicClient, address: Address, feePct: number, nicrs: bigint[] | null, network: NetworkId = "mainnet"): Promise<TroveView> {
+  const net = NETWORKS[network];
+  const tm = { address: net.troveManager, abi: troveManagerAbi } as const;
+  const price = await client.readContract({ address: net.priceFeed, abi: priceFeedAbi, functionName: "fetchPrice" });
   const [status, all, icr, rate, nicr, recovery] = await Promise.all([
     client.readContract({ ...tm, functionName: "getTroveStatus", args: [address] }),
     client.readContract({ ...tm, functionName: "getEntireDebtAndColl", args: [address] }),

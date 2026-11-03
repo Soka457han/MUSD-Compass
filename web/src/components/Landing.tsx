@@ -111,7 +111,7 @@ export function Channels() {
 
 const FAQ = [
   { q: "What is veMEZO?", a: "Mezo's vote-escrowed token. Rewards paid in it are locked for 12 weeks, so Compass shows them beside the cash figure." },
-  { q: "Why can I only deposit on testnet?", a: "Wave 1 sends transactions to Mezo testnet only. The rates you see come from mainnet. Mainnet deposits come after a review." },
+  { q: "Why can I only deposit on testnet?", a: "This site sends transactions to Mezo testnet only for now. The rates you see come from mainnet. Mainnet actions are built behind a switch that stays off until they have been reviewed and tried once with real funds." },
   { q: "Does it work with a phone wallet?", a: "Reading the ranking works in any phone browser. To deposit from a phone, open Compass in your wallet app's built-in browser. WalletConnect for other phone wallets is planned for Wave 2." },
   { q: "Is this financial advice?", a: "No. It is arithmetic on public data. Check the source link on a number before you move money." },
 ];

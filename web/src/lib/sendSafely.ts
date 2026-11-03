@@ -1,8 +1,15 @@
-import { maxUint256, type Abi, type Address, type Hash } from "viem";
-import { TESTNET } from "@/lib/chain/addresses";
+import { isAddress, maxUint256, type Abi, type Address, type Hash } from "viem";
+import { NETWORKS, type NetworkId } from "@/lib/chain/addresses";
 
-// Compass writes only to these testnet contracts (design §8: refuse unknown contracts). BorrowerOperations only to open a trove.
-const ALLOWED = new Set([TESTNET.musd, TESTNET.smusd, TESTNET.borrowerOperations].map((a) => a.toLowerCase()));
+// Compass writes only to these contracts, per network (design §8: refuse unknown contracts). BorrowerOperations only to open a trove.
+const allowed = (n: NetworkId) => new Set([NETWORKS[n].musd, NETWORKS[n].smusd, NETWORKS[n].borrowerOperations].map((a) => a.toLowerCase()));
+
+// What Compass may call on BorrowerOperations. Closing, adjusting and withdrawing stay in the Mezo app.
+const TROVE_CALLS = new Set(["openTrove", "addColl", "repayMUSD"]);
+const VAULT_CALLS = new Set(["deposit", "withdraw", "claimYield"]);
+
+/** Mainnet writes stay off until a deploy sets NEXT_PUBLIC_MAINNET_WRITES=1; testnet is always allowed. */
+export const mainnetWritesEnabled = () => process.env.NEXT_PUBLIC_MAINNET_WRITES === "1";
 
 /** Mezo charges at least half the gas limit, so the buffer stays small: estimate × 1.2, rounded up. */
 export const gasWithBuffer = (estimate: bigint) => (estimate * 12n + 9n) / 10n;
@@ -23,16 +30,37 @@ export type SafeWrite = {
   functionName: string;
   args: readonly unknown[];
   value?: bigint; // BTC sent with the call (trove collateral)
+  network: NetworkId;
+  walletChainId: number; // the chain the wallet is on right now; must be the network's chain
 };
 
-/** The rules every write passes before a wallet is asked: known contracts only, and an approval only to the vault, never unlimited. */
-export function guard(w: Pick<SafeWrite, "address" | "functionName" | "args">): void {
-  if (!ALLOWED.has(w.address.toLowerCase())) throw new Error("Compass only sends to testnet MUSD, sMUSD and BorrowerOperations.");
-  if (w.address.toLowerCase() === TESTNET.borrowerOperations.toLowerCase() && w.functionName !== "openTrove")
-    throw new Error("Compass only opens a trove on BorrowerOperations; adjusting or closing it is done in the Mezo app.");
+/**
+ * The rules every write passes before a wallet is asked: the right chain, known contracts only, and an approval only to the vault, never unlimited.
+ * walletChainId is optional here only so the "Try to break it" demos can call guard without a wallet; sendSafely always passes it.
+ */
+export function guard(
+  w: Pick<SafeWrite, "address" | "functionName" | "args"> & Partial<Pick<SafeWrite, "network" | "walletChainId">>,
+  opts: { mainnetEnabled: boolean } = { mainnetEnabled: mainnetWritesEnabled() },
+): void {
+  const network = w.network ?? "testnet";
+  const net = NETWORKS[network];
+  if (network === "mainnet" && !opts.mainnetEnabled) throw new Error("Mainnet writes are switched off in this deployment. Use Mezo testnet.");
+  if (w.walletChainId !== undefined && w.walletChainId !== net.chainId)
+    throw new Error(`Your wallet is on chain ${w.walletChainId} but this action needs ${net.chainId} (Mezo ${network}). Switch networks and try again.`);
+  if (!allowed(network).has(w.address.toLowerCase())) throw new Error(`Compass only sends to ${network} MUSD, sMUSD and BorrowerOperations.`);
+  // Contract by contract, the only functions Compass ever calls. A transfer or a mint on an allowed contract is refused like an unknown contract.
+  const to = w.address.toLowerCase();
+  if (to === net.musd.toLowerCase() && w.functionName !== "approve") throw new Error("Compass only approves MUSD, and only for the Savings Vault.");
+  if (to === net.smusd.toLowerCase() && !VAULT_CALLS.has(w.functionName)) throw new Error("Compass only deposits, withdraws and claims yield on the Savings Vault.");
+  if (w.address.toLowerCase() === net.borrowerOperations.toLowerCase()) {
+    if (!TROVE_CALLS.has(w.functionName)) throw new Error("Compass only opens a trove, tops it up or repays it on BorrowerOperations; closing or adjusting it is done in the Mezo app.");
+    const hints = w.functionName === "openTrove" || w.functionName === "repayMUSD" ? w.args.slice(1) : w.args;
+    if (w.functionName === "repayMUSD" && !(typeof w.args[0] === "bigint" && w.args[0] > 0n)) throw new Error("Compass can only repay more than zero MUSD.");
+    if (!hints.every((h) => typeof h === "string" && isAddress(h, { strict: false }))) throw new Error("The trove hints must be addresses.");
+  }
   if (w.functionName === "approve") {
     const [spender, amount] = w.args as [string, bigint];
-    if (String(spender).toLowerCase() !== TESTNET.smusd.toLowerCase()) throw new Error("Compass only approves the Savings Vault to spend MUSD.");
+    if (String(spender).toLowerCase() !== net.smusd.toLowerCase()) throw new Error("Compass only approves the Savings Vault to spend MUSD.");
     if (amount >= maxUint256 / 2n) throw new Error("Compass never asks for an unlimited approval, only the exact amount you deposit.");
   }
 }

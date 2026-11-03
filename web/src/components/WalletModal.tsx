@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { EIP1193Provider } from "viem";
 import { discoverWallets, injected, type FoundWallet } from "@/lib/wallet";
+import { walletConnectEnabled } from "@/lib/walletconnect";
 
 // Only wallet-supplied inline images are shown (EIP-6963 icons are data URIs); anything else gets the initial.
 const safeIcon = (icon: string) => (/^data:image\/(png|svg\+xml|webp|jpeg|gif);/.test(icon) ? icon : null);
@@ -32,7 +33,8 @@ function Unavailable({ name, note }: { name: string; note: string }) {
 }
 
 /** "Connect a wallet": every EVM wallet this browser has, plus the ones the vault can't use yet, said plainly. */
-export type Picked = { name: string; icon: string | null; provider: EIP1193Provider };
+/** provider is null for WalletConnect: it is created after the pick, once the QR window has been scanned. */
+export type Picked = { name: string; icon: string | null; provider: EIP1193Provider | null; walletConnect?: boolean };
 
 export function WalletModal({
   open,
@@ -122,7 +124,24 @@ export function WalletModal({
                 No wallet in this browser. Install MetaMask or Rabby on a computer, or on a phone open this page inside your wallet app&apos;s browser.
               </li>
             )}
-            <Unavailable name="WalletConnect" note="Phone wallets by QR code, planned for Wave 2" />
+            {walletConnectEnabled() ? (
+              <li>
+                <button
+                  type="button"
+                  onClick={() => onPick({ name: "WalletConnect", icon: null, provider: null, walletConnect: true })}
+                  aria-pressed={picked?.walletConnect === true}
+                  className={`${ROW} hover:bg-surface aria-pressed:bg-accent aria-pressed:text-on-accent`}
+                >
+                  <Badge name="WalletConnect" />
+                  <span className="min-w-0 flex-1">
+                    <span className="block font-bold">WalletConnect</span>
+                    <span className="block text-xs">Phone wallets by QR code</span>
+                  </span>
+                </button>
+              </li>
+            ) : (
+              <Unavailable name="WalletConnect" note="Phone wallets by QR code, planned for Wave 2" />
+            )}
           </ul>
 
           <h3 className="mt-6 text-[13px] font-semibold text-ink-muted">Bitcoin wallets · not supported yet</h3>

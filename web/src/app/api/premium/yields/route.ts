@@ -10,16 +10,17 @@ import { loadSources } from "@/lib/sources";
 import { fetchUserRewards } from "@/lib/sources/merkl";
 import { readTrove } from "@/lib/trove";
 import { isWallet } from "@/lib/vault";
-import { PAY_TO, PREMIUM_PRICE, X402_NETWORK } from "@/lib/x402";
+import { premiumAccepts, X402_NETWORKS } from "@/lib/x402";
 import { buildYields, parseQuery } from "@/lib/yields";
 
 export const maxDuration = 60;
 
 // Docs: @x402/next README (withX402 settles only when the handler answers < 400).
-const server = new x402ResourceServer(new HTTPFacilitatorClient({ url: process.env.X402_FACILITATOR_URL ?? "https://facilitator.vativ.io" })).register(
-  X402_NETWORK,
-  new ExactEvmScheme(),
-);
+// Both Mezo networks are registered; the facilitator lists MUSD on eip155:31611 and eip155:31612 (its /supported, 3 Nov 2026).
+// Mainnet is only advertised when X402_MAINNET_PAY_TO names a payee (see premiumAccepts).
+const server = new x402ResourceServer(new HTTPFacilitatorClient({ url: process.env.X402_FACILITATOR_URL ?? "https://facilitator.vativ.io" }))
+  .register(X402_NETWORKS.testnet, new ExactEvmScheme())
+  .register(X402_NETWORKS.mainnet, new ExactEvmScheme());
 
 /** One agent-friendly bundle: every mode × holding period, plus planner and rewards for an address. */
 async function handler(req: NextRequest): Promise<NextResponse<unknown>> {
@@ -39,13 +40,13 @@ async function handler(req: NextRequest): Promise<NextResponse<unknown>> {
         readTrove(mezoClient as PublicClient, address, sources.borrow.feePct, null).catch(() => null),
       ])
     : [null, null];
-  return NextResponse.json({ amount: parsed.query.amount, carry, rewards, trove, paidOn: "Mezo testnet (MUSD via x402)" });
+  return NextResponse.json({ amount: parsed.query.amount, carry, rewards, trove, paidOn: "MUSD via x402 on Mezo" });
 }
 
 const paid = withX402(
   handler,
   {
-    accepts: [{ scheme: "exact", price: PREMIUM_PRICE, network: X402_NETWORK, payTo: PAY_TO }],
+    accepts: premiumAccepts(process.env.X402_MAINNET_PAY_TO),
     description: "MUSD Compass premium bundle: carry for every mode and holding period, plus trove and rewards for an address",
     extensions: { ...declareEip2612GasSponsoringExtension() }, // exact-amount EIP-2612 permit only; never the unlimited ERC-20 approval extension
   },

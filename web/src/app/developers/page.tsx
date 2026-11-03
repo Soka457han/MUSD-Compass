@@ -123,6 +123,47 @@ export default function DevelopersPage() {
           </p>
           <Code label="Example: premium request without payment">{`curl -i "${BASE}/api/premium/yields?amount=2000"   # 402 + PAYMENT-REQUIRED header`}</Code>
           <PayAndFetch />
+          <h3 className="mt-4 text-sm font-bold">Price per call</h3>
+          <table className="mt-1 w-full max-w-prose text-left text-sm">
+            <caption className="sr-only">Price per premium call, by network</caption>
+            <thead>
+              <tr className="text-xs text-ink-muted">
+                <th scope="col" className="py-1 pr-3 font-semibold">Network</th>
+                <th scope="col" className="py-1 pr-3 font-semibold">Price</th>
+                <th scope="col" className="py-1 font-semibold">Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr className="border-t border-line align-top">
+                <td className="py-2 pr-3">Mezo testnet</td>
+                <td className="py-2 pr-3">0.001 test MUSD</td>
+                <td className="py-2">Live. The Pay &amp; fetch button uses it.</td>
+              </tr>
+              <tr className="border-t border-line align-top">
+                <td className="py-2 pr-3">Mezo mainnet</td>
+                <td className="py-2 pr-3">0.01 MUSD</td>
+                <td className="py-2">Listed in the 402 response once the deploy names a payee. The curl above shows which networks are on offer.</td>
+              </tr>
+            </tbody>
+          </table>
+          <p className="mt-1 max-w-prose text-xs text-ink-muted">Both are exact payments in MUSD over x402, and the facilitator sponsors the gas.</p>
+
+          <h3 className="mt-4 text-sm font-bold">Who pays, and why</h3>
+          <p className="mt-1 max-w-prose text-sm">
+            Anyone who needs this answer for many amounts or many addresses from one server, or an agent that cannot sign up for an API key and just pays per call.
+          </p>
+          <ul className="mt-2 max-w-prose list-disc space-y-1 pl-5 text-sm">
+            <li>A wallet or app that shows where to put MUSD reads the <code className="font-mono text-xs">carry</code> list and shows one answer, without running a venue adapter for each of the eleven places.</li>
+            <li>An agent that rebalances compares holding with borrowing at 30, 90 and 365 days in one response, and reads <code className="font-mono text-xs">trove</code> to keep a position above 200% before it acts.</li>
+            <li>An alert or notification bot passes a user&apos;s address and gets <code className="font-mono text-xs">rewards</code> (unclaimed veMEZO) and <code className="font-mono text-xs">trove</code> (the ratio) next to the carry numbers.</li>
+          </ul>
+          <p className="mt-2 max-w-prose text-sm">
+            The paid call replaces eight free requests: six combinations of mode and holding period, plus rewards and trove for an address. The free API allows 60 requests a minute per IP, so one server fits about 7 full lookups a minute on the free tier and 60 with the paid call.
+            Reading the chain yourself is heavier still: 14 days of sMUSD yield events alone take 34 <code className="font-mono text-xs">eth_getLogs</code> requests on Mezo mainnet, because its RPCs cap a request at 10,000 blocks.
+          </p>
+          <p className="mt-2 max-w-prose text-sm">
+            Both payments on record are ours, one of them from a second wallet. There are no outside buyers yet.
+          </p>
         </section>
 
         <section aria-labelledby="inc-h" className={SECTION}>

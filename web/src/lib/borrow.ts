@@ -1,22 +1,23 @@
 import { formatUnits, parseEther, type Address, type PublicClient } from "viem";
 import { borrowerOperationsAbi, priceFeedAbi, troveManagerAbi } from "@/lib/chain/abis";
-import { TESTNET } from "@/lib/chain/addresses";
+import { NETWORKS, type NetworkId } from "@/lib/chain/addresses";
 import { SAFE_ICR } from "@/lib/trove";
 
-/** What opening a testnet trove needs, read for one account. */
+/** What opening a trove needs, read for one account. */
 export type BorrowSetup = { btcUsd: number; minNetDebt: number; feePct: number; gasComp: number; btcBalance: number; hasTrove: boolean };
 
 const f = (v: bigint) => Number(formatUnits(v, 18));
 
-export async function readBorrowSetup(client: PublicClient, account: Address): Promise<BorrowSetup> {
-  const bo = { address: TESTNET.borrowerOperations, abi: borrowerOperationsAbi } as const;
+export async function readBorrowSetup(client: PublicClient, account: Address, network: NetworkId = "testnet"): Promise<BorrowSetup> {
+  const net = NETWORKS[network];
+  const bo = { address: net.borrowerOperations, abi: borrowerOperationsAbi } as const;
   const [price, minNetDebt, rate, gasComp, balance, status] = await Promise.all([
-    client.readContract({ address: TESTNET.priceFeed, abi: priceFeedAbi, functionName: "fetchPrice" }),
+    client.readContract({ address: net.priceFeed, abi: priceFeedAbi, functionName: "fetchPrice" }),
     client.readContract({ ...bo, functionName: "minNetDebt" }),
     client.readContract({ ...bo, functionName: "borrowingRate" }),
     client.readContract({ ...bo, functionName: "MUSD_GAS_COMPENSATION" }),
     client.getBalance({ address: account }),
-    client.readContract({ address: TESTNET.troveManager, abi: troveManagerAbi, functionName: "getTroveStatus", args: [account] }),
+    client.readContract({ address: net.troveManager, abi: troveManagerAbi, functionName: "getTroveStatus", args: [account] }),
   ]);
   return { btcUsd: f(price), minNetDebt: f(minNetDebt), feePct: f(rate) * 100, gasComp: f(gasComp), btcBalance: f(balance), hasTrove: status === 1 };
 }

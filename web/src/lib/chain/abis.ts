@@ -35,6 +35,9 @@ export const borrowerOperationsAbi = parseAbi([
   "function MUSD_GAS_COMPENSATION() view returns (uint256)",
   // mezo-org/musd solidity/contracts/interfaces/IBorrowerOperations.sol: collateral is the BTC sent with the call.
   "function openTrove(uint256 _debtAmount, address _upperHint, address _lowerHint) payable",
+  // IBorrowerOperations.sol (read 3 Nov 2026). repayMUSD burns the MUSD from msg.sender inside BorrowerOperations, so it needs no approval.
+  "function addColl(address _upperHint, address _lowerHint) payable",
+  "function repayMUSD(uint256 _amount, address _upperHint, address _lowerHint)",
 ]);
 
 export const interestRateManagerAbi = parseAbi(["function interestRate() view returns (uint16)"]);
@@ -67,4 +70,14 @@ export const troveManagerAbi = parseAbi([
   "function checkRecoveryMode(uint256 price) view returns (bool)",
 ]);
 // Sorted by nominal ICR, descending; redemptions start at getLast() (the lowest ratio).
-export const sortedTrovesAbi = parseAbi(["function getFirst() view returns (address)", "function getSize() view returns (uint256)"]);
+export const sortedTrovesAbi = parseAbi([
+  "function getFirst() view returns (address)",
+  "function getSize() view returns (uint256)",
+  // Returns (prevId, nextId): the neighbours a trove with this nominal ICR would sit between. mezo-org/musd SortedTroves.sol.
+  "function findInsertPosition(uint256 _NICR, address _prevId, address _nextId) view returns (address, address)",
+]);
+
+// mezo-org/musd solidity/contracts/HintHelpers.sol (read 3 Nov 2026); both calls confirmed against the deployed contracts.
+export const hintHelpersAbi = parseAbi([
+  "function getApproxHint(uint256 _CR, uint256 _numTrials, uint256 _inputRandomSeed) view returns (address hintAddress, uint256 diff, uint256 latestRandomSeed)",
+]);

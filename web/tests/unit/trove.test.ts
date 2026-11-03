@@ -1,5 +1,35 @@
-import { describe, expect, it } from "vitest";
-import { redemptionPosition, safeExtraBorrow } from "@/lib/trove";
+import { describe, expect, it, vi } from "vitest";
+import { NETWORKS } from "@/lib/chain/addresses";
+import { readTrove, redemptionPosition, safeExtraBorrow } from "@/lib/trove";
+
+describe("readTrove by network", () => {
+  const e18 = 10n ** 18n;
+  const client = () => ({
+    readContract: vi.fn(async ({ functionName }: { address: string; functionName: string }) => {
+      switch (functionName) {
+        case "fetchPrice": return 80_000n * e18;
+        case "getTroveStatus": return 1;
+        case "getEntireDebtAndColl": return [1n * e18, 2000n * e18, 0n, 0n, 0n, 0n];
+        case "getCurrentICR": return 4n * e18;
+        case "getTroveInterestRate": return 100;
+        case "getNominalICR": return 5n * 10n ** 16n;
+        case "checkRecoveryMode": return false;
+        default: throw new Error(`unexpected ${functionName}`);
+      }
+    }),
+  });
+  const owner = "0xfe21B2782B35BE770DD4a7b05f81cE43790D676C";
+  const usedBy = (c: ReturnType<typeof client>) => new Set(c.readContract.mock.calls.map(([a]) => (a as { address: string }).address));
+
+  it("reads the contracts of the network it is asked about, and mainnet by default", async () => {
+    const t = client();
+    await readTrove(t as never, owner, 0.1, null, "testnet");
+    expect(usedBy(t)).toEqual(new Set([NETWORKS.testnet.troveManager, NETWORKS.testnet.priceFeed]));
+    const m = client();
+    await readTrove(m as never, owner, 0.1, null);
+    expect(usedBy(m)).toEqual(new Set([NETWORKS.mainnet.troveManager, NETWORKS.mainnet.priceFeed]));
+  });
+});
 
 describe("safeExtraBorrow", () => {
   it("keeps ICR at 200 % after the 0.1 % fee is added to the debt", () => {

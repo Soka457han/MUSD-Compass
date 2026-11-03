@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useState } from "react";
 import { usd } from "@/lib/format";
+import { AdviceList } from "./AdviceList";
+import { troveAdvice } from "@/lib/safety";
 import type { TroveView } from "@/lib/trove";
 
 type Trove = TroveView & { safeIcrPct: number; minIcrPct: number };
@@ -99,11 +101,7 @@ export function TrovePanel() {
                 <dd className="text-base font-semibold">{n(t.debt, 2)} MUSD</dd>
               </div>
             </dl>
-            {t.recoveryMode && (
-              <p role="note" className="mt-3 border-l-4 border-locked pl-3 text-sm font-semibold">
-                Mezo is in recovery mode: borrowing rules are stricter until the system ratio recovers.
-              </p>
-            )}
+            <AdviceList advice={troveAdvice(t)} targetPct={t.safeIcrPct} />
           </>
         )}
       </section>
