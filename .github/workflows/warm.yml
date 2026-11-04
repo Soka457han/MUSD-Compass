@@ -1,13 +1,19 @@
 # After each successful production deploy, call the live API once so the slow first read of Mezo
 # (14 days of sMUSD yield events) fills the cache here instead of making a visitor wait.
 # The daily refresh is a Vercel cron in web/vercel.json; this covers the moment right after a deploy.
+# Vercel reports deploys to this repo as commit statuses ("Vercel – musd-compass"), not GitHub deployments,
+# so this listens for that status. endsWith keeps the bot project ("…-bot") out.
 name: Warm cache after deploy
 
-on: deployment_status
+on: status
 
 jobs:
   warm:
-    if: github.event.deployment_status.state == 'success' && startsWith(github.event.deployment.environment, 'Production')
+    if: >-
+      github.event.state == 'success' &&
+      startsWith(github.event.context, 'Vercel') &&
+      endsWith(github.event.context, 'musd-compass') &&
+      contains(github.event.branches.*.name, 'main')
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
