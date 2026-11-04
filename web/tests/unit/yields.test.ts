@@ -88,6 +88,7 @@ describe("buildYields", () => {
     const r = buildYields({ ...sources, venues: [down, smusd] }, q(""));
     expect(r.venues.at(-1)!.status).toBe("unavailable");
     expect(r.venues.at(-1)!.carry.cash).toBeNull();
+    expect(r.notice).toBe("Not answering right now: Mezo-paid Ethereum pools. Shown as unavailable; Compass tries again within 5 minutes.");
     expect(r.venues.at(-1)!.breakEven).toBeNull();
   });
 });

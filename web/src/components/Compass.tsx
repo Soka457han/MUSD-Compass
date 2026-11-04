@@ -72,7 +72,7 @@ function SizeOnly({ venues }: { venues: VenueOut[] }) {
             </span>
             <span className="w-full text-xs text-ink-muted">
               {v.status === "unavailable" ? "Source unavailable right now" : v.tags.join(" · ")} ·{" "}
-              <a href={v.action.url} target="_blank" rel="noreferrer" className="font-semibold text-accent-text underline">
+              <a href={v.action.url} target="_blank" rel="noreferrer" className="inline-block py-3 -my-3 font-semibold text-accent-text underline">
                 {v.action.label}
               </a>
             </span>
@@ -179,11 +179,12 @@ export function Compass({ sources, between, after }: { sources: Sources; between
   const byId = (id: string) => result?.venues.find((v) => v.id === id);
   const vault = byId("mezo-smusd");
   const stability = byId("mezo-stability-pool");
+  const isDown = (id: string) => byId(id)?.status === "unavailable"; // a down source would otherwise count as 0 pools
   const tiles = result
     ? [
         { label: "Savings Vault", value: pct(vault?.carry.cash ?? null), href: "/vault", bg: "bg-tile-yellow" },
-        { label: "Ethereum pools", value: String(result.venues.filter((v) => v.chain === "Ethereum" && v.status === "ok").length), href: "#venues", bg: "bg-tile-pink" },
-        { label: "Mezo pools", value: String(result.venues.filter((v) => v.chain === "Mezo" && v.status === "ok" && v !== vault && v !== stability).length), href: "#size-only", bg: "bg-tile-lilac" },
+        { label: "Ethereum pools", value: isDown("merkl") ? "Unavailable" : String(result.venues.filter((v) => v.chain === "Ethereum" && v.status === "ok").length), href: "#venues", bg: "bg-tile-pink" },
+        { label: "Mezo pools", value: isDown("mezo-pools") ? "Unavailable" : String(result.venues.filter((v) => v.chain === "Mezo" && v.status === "ok" && v !== vault && v !== stability).length), href: "#size-only", bg: "bg-tile-lilac" },
         { label: "Stability Pool", value: usd(stability?.tvlUsd ?? null), href: "#size-only", bg: "bg-tile-peach" },
         { label: "My MUSD", value: "Check", href: "/my", bg: "bg-tile-blue" },
         { label: "My trove", value: "Plan", href: "/trove", bg: "bg-tile-mint" },
@@ -195,7 +196,7 @@ export function Compass({ sources, between, after }: { sources: Sources; between
       <main id="main" className="mx-auto w-full max-w-6xl flex-1 px-4 pt-5 md:px-6 md:pt-14">
         <section aria-label="Calculator" className="grid gap-7 lg:grid-cols-[1.1fr_1fr] lg:items-center lg:gap-12">
           <div className="flex min-w-0 flex-col gap-4 md:gap-5">
-            <h1 className="text-[30px] leading-[1.15] font-extrabold tracking-tight md:text-[56px] md:leading-[1.06]">Where your MUSD earns most, after costs.</h1>
+            <h1 className="text-[30px] leading-[1.15] font-extrabold tracking-tight text-balance md:text-[56px] md:leading-[1.06]">Where your MUSD earns most, after costs.</h1>
             <p className="text-ink-muted md:max-w-[520px] md:text-lg">Every Mezo earning spot, ranked by the cash you keep. Live from Mezo and Ethereum.</p>
             <form
               data-hydrated={hydrated || undefined}
@@ -278,8 +279,6 @@ export function Compass({ sources, between, after }: { sources: Sources; between
         </section>
 
         <div className="mt-14 flex flex-col gap-14 md:mt-24 md:gap-20">
-          {between}
-
           {result && lead && (
             <>
               <section aria-labelledby="browse-h">
@@ -319,6 +318,8 @@ export function Compass({ sources, between, after }: { sources: Sources; between
               </section>
             </>
           )}
+
+          {between}
 
           {after}
         </div>

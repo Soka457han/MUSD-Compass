@@ -36,10 +36,13 @@ export type VenueOut = Venue & { carry: Carry; check: EntryCheck; breakEven: { c
 export function buildYields(s: Sources, q: Query) {
   const input: CarryInput = { ...q, ratePct: q.ratePct ?? s.borrow.ratePct, params: s.borrow };
   const minAmount = minNewTroveAmount(s.borrow);
+  const down = s.venues.filter((v) => v.status !== "ok").map((v) => v.name);
   const notice =
     q.mode === "borrower" && q.trove === "new" && q.amount < minAmount
       ? `New troves need at least ${s.borrow.minNetDebt.toLocaleString("en-US")} MUSD of debt — try ${Math.ceil(minAmount).toLocaleString("en-US")} or use holder mode.`
-      : null;
+      : down.length
+        ? `Not answering right now: ${down.join(", ")}. Shown as unavailable; Compass tries again within 5 minutes.`
+        : null;
 
   const withCost = (v: Venue): Venue =>
     v.chain === "Ethereum" && s.ethRoundTrip ? { ...v, rates: { ...v.rates, fixedCostUsd: s.ethRoundTrip.usd } } : v;

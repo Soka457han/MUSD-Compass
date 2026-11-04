@@ -142,7 +142,7 @@ export default function DevelopersPage() {
               <tr className="border-t border-line align-top">
                 <td className="py-2 pr-3">Mezo mainnet</td>
                 <td className="py-2 pr-3">0.01 MUSD</td>
-                <td className="py-2">Listed in the 402 response once the deploy names a payee. The curl above shows which networks are on offer.</td>
+                <td className="py-2">Live. Listed in the 402 response next to testnet; pay it from your own x402 client. The curl above shows both.</td>
               </tr>
             </tbody>
           </table>

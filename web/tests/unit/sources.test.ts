@@ -108,6 +108,11 @@ describe("settle", () => {
     expect(r.ok).toBe(false);
   });
 
+  it("with no limit (the live site), waits for a slow source instead of cutting it off", async () => {
+    const slow = new Promise<number>((r) => setTimeout(() => r(3), 50));
+    expect(await settle(slow, "slow", 0)).toEqual({ ok: true, value: 3 });
+  });
+
   it("passes a quick answer through", async () => {
     expect(await settle(Promise.resolve(7), "quick", 1000)).toEqual({ ok: true, value: 7 });
   });

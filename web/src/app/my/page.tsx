@@ -21,9 +21,14 @@ export default function MyPage() {
         <h1 className="sr-only">My MUSD</h1>
         <Suspense
           fallback={
-            <p className="mx-auto w-full max-w-3xl px-4 py-5 text-sm">
-              Loading live rates…
-            </p>
+            <div className="mx-auto flex w-full max-w-3xl flex-col gap-3 px-4 py-5" aria-busy="true">
+              <p role="status" className="text-sm">
+                Loading live rates…
+              </p>
+              <div aria-hidden="true" className="h-[54px] animate-pulse rounded-full bg-surface" />
+              <div aria-hidden="true" className="h-40 animate-pulse rounded-[20px] bg-surface" />
+              <div aria-hidden="true" className="h-40 animate-pulse rounded-[20px] bg-surface" />
+            </div>
           }
         >
           <Live />

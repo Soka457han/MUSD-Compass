@@ -13,7 +13,7 @@ export default function VaultPage() {
         Testnet action — real Mezo contracts, test funds. APR on Yields is mainnet.
       </p>
       <main id="main" className="flex flex-1 flex-col">
-        <h1 className="sr-only">MUSD Savings Vault on Mezo testnet</h1>
+        <h1 className="mx-auto w-full max-w-3xl px-4 pt-6 text-[28px] leading-tight font-extrabold tracking-tight text-balance md:pt-10 md:text-[40px]">MUSD Savings Vault on Mezo testnet</h1>
         <VaultPanel />
         <SafetyPanel />
       </main>

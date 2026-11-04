@@ -76,7 +76,7 @@ export function SafetyPanel() {
           {TRIES.map((t) => {
             const r = results[t.id];
             return (
-              <li key={t.id} className="rounded-2xl border border-line px-4 py-3">
+              <li key={t.id} className="border-t border-line pt-3 first:border-t-0 first:pt-0">
                 <button type="button" onClick={() => tryIt(t)} disabled={r === "busy"} className="min-h-11 rounded-full border border-line px-4 text-sm font-bold disabled:opacity-60">
                   {t.label}
                 </button>

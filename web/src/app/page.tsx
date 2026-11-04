@@ -45,7 +45,7 @@ function Loading() {
       <div aria-hidden="true">
         <div className="grid gap-7 lg:grid-cols-[1.1fr_1fr] lg:items-center lg:gap-12">
           <div className="flex flex-col gap-4 md:gap-5">
-            <p className="text-[30px] leading-[1.15] font-extrabold tracking-tight md:text-[56px] md:leading-[1.06]">Where your MUSD earns most, after costs.</p>
+            <p className="text-[30px] leading-[1.15] font-extrabold tracking-tight text-balance md:text-[56px] md:leading-[1.06]">Where your MUSD earns most, after costs.</p>
             <p className="text-ink-muted md:max-w-[520px] md:text-lg">Every Mezo earning spot, ranked by the cash you keep. Live from Mezo and Ethereum.</p>
             <div className="grid gap-4 rounded-2xl border border-line bg-surface p-4 md:mt-2 xl:grid-cols-[minmax(0,1fr)_auto_auto] xl:items-end xl:gap-3.5 xl:border-0 xl:bg-transparent xl:p-0">
               <div className={field} />

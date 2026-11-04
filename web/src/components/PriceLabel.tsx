@@ -142,7 +142,7 @@ export function PriceLabel({ v, days, amount, lead }: { v: VenueOut; days: numbe
           {v.routes.map((r, i) => (
             <span key={r.name + i}>
               {i > 0 && ", "}
-              <a href={r.url} className="text-accent-text underline" target="_blank" rel="noreferrer">
+              <a href={r.url} className="inline-block py-3 -my-3 text-accent-text underline" target="_blank" rel="noreferrer">
                 {r.name}
               </a>
             </span>

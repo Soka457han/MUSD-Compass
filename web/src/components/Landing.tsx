@@ -84,7 +84,7 @@ const CHANNELS = [
   { title: "Telegram bot", body: "Yields, carry, vault, rewards and trove checks in a chat.", code: "@musd_compass_bot", href: BOT, bg: "bg-tile-blue" },
   { title: "Embed widget", body: "One script tag puts the ranking on your own site.", code: '<script src=".../embed.js">', href: "/developers", bg: "bg-tile-mint" },
   { title: "JSON API", body: "Free and open, no key needed.", code: "GET /api/yields", href: "/developers", bg: "bg-tile-lilac" },
-  { title: "x402 premium", body: "A bundled report paid per call from your wallet.", code: "0.001 test MUSD", href: "/developers", bg: "bg-tile-yellow" },
+  { title: "x402 premium", body: "A bundled report paid per call from your wallet.", code: "0.001 test MUSD · 0.01 MUSD", href: "/developers", bg: "bg-tile-yellow" },
 ];
 
 export function Channels() {

@@ -1,4 +1,5 @@
 import { cacheLife } from "next/cache";
+import { PHASE_PRODUCTION_BUILD } from "next/constants";
 import { MAINNET } from "@/lib/chain/addresses";
 import { unavailable, type Venue } from "@/lib/venue";
 import type { Sources } from "@/lib/yields";
@@ -9,13 +10,15 @@ import { fetchSmusdMainnet } from "./smusd";
 import { fixtureSources } from "./fixture";
 
 /** Next.js stops a build when a cached function runs past 50 s; a source that hangs that long would break the deploy
- *  (it did on 3 Nov 2026 while Mezo was slow). After this, a slow source counts as failed and shows as unavailable. */
+ *  (it did on 3 Nov 2026 while Mezo was slow). So while building, a slow source counts as failed and shows as unavailable.
+ *  Only while building: on the live site a cut-off read never fills its cache, so every visit waited the full limit (4 Nov). */
 export const SOURCE_TIMEOUT_MS = 20_000;
+const buildLimit = () => (process.env.NEXT_PHASE === PHASE_PRODUCTION_BUILD ? SOURCE_TIMEOUT_MS : 0);
 
-export const settle = <T,>(p: Promise<T>, name: string, ms = SOURCE_TIMEOUT_MS) => {
+export const settle = <T,>(p: Promise<T>, name: string, ms = buildLimit()) => {
   let timer: ReturnType<typeof setTimeout> | undefined;
   const late = new Promise<never>((_, reject) => {
-    timer = setTimeout(() => reject(new Error(`timed out after ${ms / 1000} s`)), ms);
+    if (ms > 0) timer = setTimeout(() => reject(new Error(`timed out after ${ms / 1000} s`)), ms);
   });
   return Promise.race([p, late]).finally(() => clearTimeout(timer)).then(
     (value) => ({ ok: true as const, value }),

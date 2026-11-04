@@ -17,6 +17,12 @@
   --on-locked: #16171d;
   --danger-text: #b3141c;
   --focus: #6d28d9;
+  --tile-yellow: #fff1b8;
+  --tile-pink: #f6d8ff;
+  --tile-lilac: #e3d9ff;
+  --tile-peach: #ffe0cc;
+  --tile-blue: #dce6ff;
+  --tile-mint: #d7f5e6;
   color-scheme: light;
 }
 
@@ -34,6 +40,13 @@
   --accent-soft: rgb(163 112 252 / 0.2);
   --danger-text: #ff8a8f;
   --focus: #c4a6fd;
+  /* Dimmer pastels so the tiles do not glow on the near-black page; dark text still reads at 5:1 or more. */
+  --tile-yellow: #d8c98a;
+  --tile-pink: #cfb0dc;
+  --tile-lilac: #bdb1e3;
+  --tile-peach: #d9b9a3;
+  --tile-blue: #b5c1e0;
+  --tile-mint: #aed3c0;
   color-scheme: dark;
 }
 
@@ -52,15 +65,15 @@
   --color-locked: var(--locked);
   --color-on-locked: var(--on-locked);
   --color-danger-text: var(--danger-text);
-  /* Pastel tiles keep dark text in both themes. */
+  /* Pastel tiles keep dark text in both themes (dimmer pastels in dark). */
   --color-tile-ink: #16171d;
   --color-tile-ink-muted: #3a3b44;
-  --color-tile-yellow: #fff1b8;
-  --color-tile-pink: #f6d8ff;
-  --color-tile-lilac: #e3d9ff;
-  --color-tile-peach: #ffe0cc;
-  --color-tile-blue: #dce6ff;
-  --color-tile-mint: #d7f5e6;
+  --color-tile-yellow: var(--tile-yellow);
+  --color-tile-pink: var(--tile-pink);
+  --color-tile-lilac: var(--tile-lilac);
+  --color-tile-peach: var(--tile-peach);
+  --color-tile-blue: var(--tile-blue);
+  --color-tile-mint: var(--tile-mint);
   --font-sans: var(--font-jakarta), system-ui, sans-serif;
 }
 
