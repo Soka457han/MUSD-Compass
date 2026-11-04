@@ -6,7 +6,7 @@ import { fetchTroveQueue } from "@/lib/sources/troveQueue";
 import { readTrove, SAFE_ICR, sampleTrove, type TroveView } from "@/lib/trove";
 import { isWallet } from "@/lib/vault";
 
-export const maxDuration = 60;
+export const maxDuration = 300; // reads loadSources, same cold fill as /api/yields
 const HEADERS = { "Access-Control-Allow-Origin": "*", "Cache-Control": "no-store" };
 
 const FIXTURE: TroveView = {

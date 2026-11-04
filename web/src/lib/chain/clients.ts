@@ -21,6 +21,15 @@ export const mezoClient = createPublicClient({
   transport: fallback([mezoHttp(env.mezo), mezoHttp(env.mezoFallback)]),
 });
 
+// The sMUSD log scan gets its own client: eth_getLogs over 10k blocks takes 2 to 10 s on Boar (measured 4 Nov 2026), so batched
+// together they passed viem's 10 s default timeout and retried until the 60 s function limit; batched with them, every other
+// Mezo read waited too. Unbatched, 8 at a time, the 14-day scan took 37 s with no errors.
+const mezoLogsHttp = (url: string) => http(url, { timeout: 30_000, retryCount: 2, retryDelay: 400 });
+export const mezoLogsClient = createPublicClient({
+  chain: mezo,
+  transport: fallback([mezoLogsHttp(env.mezo), mezoLogsHttp(env.mezoFallback)]),
+});
+
 export const mezoTestnetClient = createPublicClient({ chain: mezoTestnet, transport: mezoHttp(env.mezoTestnet) });
 
 export const ethereumClient = createPublicClient({ chain: mainnet, transport: http(env.ethereum) });

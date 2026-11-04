@@ -2,7 +2,7 @@ import { cacheLife } from "next/cache";
 import { formatUnits, type PublicClient } from "viem";
 import { smusdAbi } from "@/lib/chain/abis";
 import { MAINNET, TESTNET } from "@/lib/chain/addresses";
-import { mezoClient, mezoTestnetClient } from "@/lib/chain/clients";
+import { mezoClient, mezoLogsClient, mezoTestnetClient } from "@/lib/chain/clients";
 import type { Venue } from "@/lib/venue";
 
 export type YieldEvent = { kind: string; blockNumber: number; timestamp: number; amount: string };
@@ -22,7 +22,7 @@ export function realisedApr(events: YieldEvent[], totalSupplyWei: string, nowTs:
 }
 
 const MAX_SPAN = 10_000n; // Mezo RPCs reject wider eth_getLogs ranges ("maximum [from, to] blocks distance: 10000")
-const CONCURRENCY = 8; // calls made together go out as one JSON-RPC batch (Boar takes 40 per request), so 8 is still one request at a time
+const CONCURRENCY = 8; // 8 requests in flight; each log call takes seconds, so this stays under Boar's 10 requests/s
 
 async function pool<T>(jobs: (() => Promise<T>)[], size: number): Promise<T[]> {
   const out: T[] = new Array(jobs.length);
@@ -88,10 +88,9 @@ export type SmusdData = { venue: Venue; events: YieldEvent[]; aprPct: number; la
 export async function fetchSmusdMainnet(): Promise<SmusdData> {
   "use cache: remote";
   cacheLife({ revalidate: 300, expire: 86_400 }); // after 5 min a visit gets the cached copy at once and refreshes it in the background; only a full day without visits makes one wait
-  const client = mezoClient as PublicClient;
   const [scan, supply] = await Promise.all([
-    scanYieldEvents(client, MAINNET.smusd, APR_WINDOW_DAYS),
-    client.readContract({ address: MAINNET.smusd, abi: smusdAbi, functionName: "totalSupply" }),
+    scanYieldEvents(mezoLogsClient as PublicClient, MAINNET.smusd, APR_WINDOW_DAYS),
+    mezoClient.readContract({ address: MAINNET.smusd, abi: smusdAbi, functionName: "totalSupply" }),
   ]);
   const r = realisedApr(scan.events, supply.toString(), scan.nowTs);
   return {

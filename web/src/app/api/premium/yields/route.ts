@@ -13,7 +13,7 @@ import { isWallet } from "@/lib/vault";
 import { premiumAccepts, X402_NETWORKS } from "@/lib/x402";
 import { buildYields, parseQuery } from "@/lib/yields";
 
-export const maxDuration = 60;
+export const maxDuration = 300; // same cold fill as /api/yields
 
 // Docs: @x402/next README (withX402 settles only when the handler answers < 400).
 // Both Mezo networks are registered; the facilitator lists MUSD on eip155:31611 and eip155:31612 (its /supported, 3 Nov 2026).
