@@ -4,14 +4,14 @@ import { realisedApr } from "@/lib/sources/smusd";
 
 describe("realisedApr (mainnet sample, 24 Oct 2026)", () => {
   it("14-day window: 11,349 MUSD over 7.38M sMUSD → 4.01%", () => {
-    const r = realisedApr(fixture.events, fixture.totalSupply, fixture.headTimestamp);
+    const r = realisedApr(fixture.events, fixture.totalSupply, fixture.headTimestamp, 14);
     expect(r.yieldMusd).toBeCloseTo(11_349.06, 1);
     expect(r.aprPct).toBeCloseTo(4.008, 2);
     expect(r.events).toBe(9);
   });
 
-  it("7-day window matches the design's earlier 4.23%", () => {
-    const r = realisedApr(fixture.events, fixture.totalSupply, fixture.headTimestamp, 7);
+  it("default 7-day window (the Mezo app's): 4.23%", () => {
+    const r = realisedApr(fixture.events, fixture.totalSupply, fixture.headTimestamp);
     expect(r.aprPct).toBeCloseTo(4.232, 2);
   });
 

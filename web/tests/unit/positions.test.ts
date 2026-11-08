@@ -6,6 +6,8 @@ import { gaugeAprPct } from "@/lib/gauge";
 
 const sources = fixtureSources();
 const vaultApr = sources.venues.find((v) => v.id === "mezo-smusd")!.rates.liquidApr!;
+// The same sources without the staked-sMUSD venue, for the cases where the plain vault is the best place.
+const noGauge = { ...sources, venues: sources.venues.filter((v) => v.id !== "mezo-smusd-gauge") };
 const base: Positions = { address: "0x0000000000000000000000000000000000000001", wallet: 0, vault: 0, staked: null, stakedApr: null, stability: 0, trove: null, veMezo: null };
 
 describe("compare", () => {
@@ -15,8 +17,14 @@ describe("compare", () => {
     expect(row.nowPct).toBe(0);
     expect(row.extraPerYear).toBeCloseTo((1000 * row.best.carry.cash!) / 100, 6);
   });
+  it("staked in the gauge when the gauge is best: nothing more to gain", () => {
+    const gauge = sources.venues.find((v) => v.id === "mezo-smusd-gauge")!;
+    const [row] = compare({ ...base, staked: 5000, stakedApr: gauge.rates.emissionsApr! }, sources);
+    expect(row.best.id).toBe("mezo-smusd-gauge");
+    expect(row.extraPerYear).toBeLessThan(5000 * 0.02); // only the dilution of 5,000 MUSD separates them
+  });
   it("already in the vault when the vault is best: nothing more to gain", () => {
-    const [row] = compare({ ...base, vault: 2000 }, sources);
+    const [row] = compare({ ...base, vault: 2000 }, noGauge);
     expect(row.best.id).toBe("mezo-smusd");
     expect(row.nowPct).toBe(vaultApr);
     expect(row.extraPerYear).toBeCloseTo(0, 6);
@@ -43,7 +51,7 @@ describe("staked sMUSD", () => {
     expect(gaugeAprPct(1n, 1, 100n, 200, 1)).toBe(0); // reward period over
   });
   it("staked earns MEZO instead of the savings yield, so unstaking is the better cash place", () => {
-    const [row] = compare({ ...base, staked: 10_000, stakedApr: 1.38 }, sources);
+    const [row] = compare({ ...base, staked: 10_000, stakedApr: 1.38 }, noGauge);
     expect(row.id).toBe("staked");
     expect(row.best.id).toBe("mezo-smusd");
     expect(row.extraPerYear).toBeCloseTo((10_000 * (row.best.carry.cash! - 1.38)) / 100, 6);
@@ -53,7 +61,8 @@ describe("staked sMUSD", () => {
 describe("placesFor", () => {
   it("lists every live place for the amount, best cash first, without the Stability Pool", () => {
     const v = placesFor(7050, sources);
-    expect(v[0].id).toBe("mezo-smusd");
+    expect(v[0].id).toBe("mezo-smusd-gauge");
+    expect(v.findIndex((x) => x.pairToken)).toBeGreaterThan(v.findIndex((x) => x.id === "mezo-smusd")); // pools needing BTC or MEZO come after MUSD-only places
     expect(v.some((x) => x.chain === "Ethereum")).toBe(true);
     expect(v.some((x) => x.id === "mezo-stability-pool")).toBe(false);
   });

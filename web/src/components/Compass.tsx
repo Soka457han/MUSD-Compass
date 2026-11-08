@@ -58,7 +58,7 @@ function SizeOnly({ venues }: { venues: VenueOut[] }) {
         Not ranked: no steady APR
       </h2>
       <p className="mt-1 max-w-prose text-[13px] text-ink-muted">
-        Mezo pools show their APR in the Mezo app; the Stability Pool earns only on liquidations. Size is live.
+        The Stability Pool earns only on liquidations; the Ditto vault earns on Ethereum, where Compass cannot read its rate. Size is live.
       </p>
       <ul className="mt-3 overflow-hidden rounded-2xl border border-line">
         {venues.map((v, i) => (
@@ -181,7 +181,8 @@ export function Compass({ sources, between, after }: { sources: Sources; between
 
   const liveRate = sources.borrow.ratePct;
   // Venues with a cash figure are ranked as labels; size-only venues (no steady APR) sit in a compact list below.
-  const ranked = result?.venues.filter((v) => v.carry.cash !== null) ?? [];
+  const ranked = result?.venues.filter((v) => v.carry.cash !== null && !v.pairToken) ?? [];
+  const paired = result?.venues.filter((v) => v.carry.cash !== null && v.pairToken) ?? [];
   const sizeOnly = result?.venues.filter((v) => v.carry.cash === null) ?? [];
   const [lead, ...rest] = ranked;
   const days = query?.days ?? 90;
@@ -194,7 +195,7 @@ export function Compass({ sources, between, after }: { sources: Sources; between
     ? [
         { label: "Savings Vault", value: pct(vault?.carry.cash ?? null), href: "/vault", bg: "bg-tile-yellow" },
         { label: "Ethereum pools", value: isDown("merkl") ? "Unavailable" : String(result.venues.filter((v) => v.chain === "Ethereum" && v.status === "ok").length), href: "#venues", bg: "bg-tile-pink" },
-        { label: "Mezo pools", value: isDown("mezo-pools") ? "Unavailable" : String(result.venues.filter((v) => v.id.startsWith("mezo-pool-") && v.status === "ok").length), href: "#size-only", bg: "bg-tile-lilac" },
+        { label: "Mezo pools", value: isDown("mezo-pools") ? "Unavailable" : String(result.venues.filter((v) => v.id.startsWith("mezo-pool-") && v.status === "ok").length), href: "#venues", bg: "bg-tile-lilac" },
         { label: "Stability Pool", value: usd(stability?.tvlUsd ?? null), href: "#size-only", bg: "bg-tile-peach" },
         { label: "My MUSD", value: "Check", href: "/my", bg: "bg-tile-blue" },
         { label: "My trove", value: "Plan", href: "/trove", bg: "bg-tile-mint" },
@@ -325,6 +326,23 @@ export function Compass({ sources, between, after }: { sources: Sources; between
                     </li>
                   ))}
                 </ol>
+                {paired.length > 0 && (
+                  <section aria-labelledby="paired" className="mt-8">
+                    <h2 id="paired" className="text-[15px] font-bold">
+                      Also needs BTC or MEZO
+                    </h2>
+                    <p className="mt-1 max-w-prose text-[13px] text-ink-muted">
+                      These pools take MUSD plus an equal value of BTC or MEZO, so you carry that token&apos;s price. Their rate is not compared with the MUSD-only spots above.
+                    </p>
+                    <ul aria-label="Pools that also need BTC or MEZO" className="mt-3 grid gap-3 md:grid-cols-2 md:gap-4">
+                      {paired.map((v) => (
+                        <li key={v.id}>
+                          <PriceLabel v={v} days={days} amount={query?.amount ?? 0} />
+                        </li>
+                      ))}
+                    </ul>
+                  </section>
+                )}
                 {sizeOnly.length > 0 && <SizeOnly venues={sizeOnly} />}
               </section>
             </>

@@ -8,7 +8,6 @@ import { readPeg } from "./peg";
 import { fetchMerkl, rescaleLockedApr } from "./merkl";
 import { FALLBACK_BORROW_PARAMS, mezoVenues, readMezo } from "./mezo";
 import { fetchSmusdMainnet } from "./smusd";
-import { MORPHO_BLUE, morphoVenues, readMorpho } from "./morpho";
 import { fixtureSources } from "./fixture";
 
 /** Next.js stops a build when a cached function runs past 50 s; a source that hangs that long would break the deploy
@@ -49,7 +48,7 @@ export function pickMezoPrice(poolPrice: number | null, merklPrice: number | nul
 async function readSources(): Promise<Sources> {
   if (process.env.COMPASS_FIXTURES === "1") return fixtureSources();
   // All in parallel: the Mezo chain read no longer waits for Merkl's MEZO price.
-  const [merkl, smusd, eth, chain, peg, morpho] = await Promise.all([settle(fetchMerkl(), "merkl"), settle(fetchSmusdMainnet(), "smusd"), settle(fetchEthereum(), "ethereum"), settle(readMezo(), "mezo"), settle(readPeg(), "peg"), settle(readMorpho(), "morpho")]);
+  const [merkl, smusd, eth, chain, peg] = await Promise.all([settle(fetchMerkl(), "merkl"), settle(fetchSmusdMainnet(), "smusd"), settle(fetchEthereum(), "ethereum"), settle(readMezo(), "mezo"), settle(readPeg(), "peg")]);
   // One MEZO price on the whole page: the Mezo pool's own price if it was read, else Merkl's.
   const merklPrice = merkl.ok ? merkl.value.mezoPriceUsd : null;
   const poolPrice = chain.ok ? chain.value.mezoPoolPriceMusd : null;
@@ -62,7 +61,6 @@ async function readSources(): Promise<Sources> {
       : unavailable("mezo-smusd", "MUSD Savings Vault (sMUSD)", "Mezo", { label: "Mezo chain", url: `https://explorer.mezo.org/address/${MAINNET.smusd}` }, { label: "Deposit (testnet)", url: "/vault" }),
     ...(mezo.ok ? mezo.value.venues : [unavailable("mezo-pools", "Mezo pools & Stability Pool", "Mezo", { label: "Mezo chain", url: "https://explorer.mezo.org" }, { label: "Open the Mezo app", url: "https://mezo.org/earn/pools" })]),
     ...(merkl.ok ? rescaleLockedApr(merkl.value.venues, mezoPrice, merklPrice) : [unavailable("merkl", "Mezo-paid Ethereum pools", "Ethereum", { label: "Merkl", url: "https://app.merkl.xyz" }, { label: "Open Merkl", url: "https://app.merkl.xyz" })]),
-    ...(morpho.ok ? morphoVenues(morpho.value) : [unavailable("mezo-morpho", "Morpho Blue BTC/MUSD (Surety's market)", "Mezo", { label: "Mezo chain: Morpho Blue", url: `https://explorer.mezo.org/address/${MORPHO_BLUE}` }, { label: "Lend through Surety", url: "https://surety-credit.vercel.app" })]),
     ...(eth.ok ? [eth.value.morpho] : []),
   ];
 

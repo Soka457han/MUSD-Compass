@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { parseUnits } from "viem";
 import { mezoClient } from "@/lib/chain/clients";
 import { MAINNET } from "@/lib/chain/addresses";
-import { gaugeEmissions, mezoVenues, readGauge, type GaugeRead, type MezoChain } from "@/lib/sources/mezo";
+import { dittoVenue, gaugeEmissions, mezoVenues, savingsGaugeVenue, readGauge, type GaugeRead, type MezoChain } from "@/lib/sources/mezo";
 import { pickMezoPrice } from "@/lib/sources";
 import { rescaleLockedApr } from "@/lib/sources/merkl";
 import { dilutedApr, venueCarry } from "@/lib/carry/carry";
@@ -53,7 +53,7 @@ const pool = (address: string, name: string, kind: string, gauge: GaugeRead | nu
 });
 const chain = (pools: MezoChain["pools"]): MezoChain => ({
   now: "2026-11-08T18:01:33.000Z", btcPrice: 80_000, borrow: { feePct: 0.1, gasCompensation: 200, minNetDebt: 1800, ratePct: 1 },
-  paramsLive: true, spDeposits: 1, gasPriceWei: "1", mezoPoolPriceMusd: 0.00425, pools,
+  paramsLive: true, spDeposits: 1, gasPriceWei: "1", mezoPoolPriceMusd: 0.00425, pools, savingsGauge: null, dittoAssets: null,
 });
 
 describe("mezoVenues with gauges", () => {
@@ -128,5 +128,31 @@ describe("pickMezoPrice", () => {
     expect(pickMezoPrice(0.00425, 0.00595)).toEqual({ price: 0.00425, source: "Mezo MEZO/MUSD pool" });
     expect(pickMezoPrice(null, 0.00595)).toEqual({ price: 0.00595, source: "Merkl" });
     expect(pickMezoPrice(null, null)).toEqual({ price: null, source: null });
+  });
+});
+
+describe("official vaults beside sMUSD", () => {
+  // Live 9 Nov 2026, block 13092373: 71,200.53 MEZO a day to 131,302.52 staked sMUSD until 12 Nov; the Mezo app showed 81.57%.
+  const g = { rewardRate: "824080208333333333", periodFinish: "1794441600", staked: "131302520000000000000000" };
+  it("staked sMUSD earns the gauge's MEZO and no vault fee yield", () => {
+    const v = savingsGaugeVenue(g, 0.00425, "the Mezo MEZO/MUSD pool", 1794200000, "2026-11-09T00:00:00.000Z")!;
+    expect(v.rates.emissionsApr).toBeCloseTo(84.1, 0);
+    expect(v.rates.liquidApr).toBe(0);
+    expect(v.rates.tvl).toBeCloseTo(131_302.52, 2);
+  });
+  it("no venue once the period ended, with no MEZO price or no read", () => {
+    expect(savingsGaugeVenue(g, 0.00425, "x", 1794441601, "")).toBeNull();
+    expect(savingsGaugeVenue(g, 0, "x", 1794200000, "")).toBeNull();
+    expect(savingsGaugeVenue(null, 0.00425, "x", 1794200000, "")).toBeNull();
+  });
+  it("Ditto lists size only: its rate is earned on Ethereum", () => {
+    const v = dittoVenue(104_230, "2026-11-09T00:00:00.000Z");
+    expect(v.rates.liquidApr).toBeNull();
+    expect(v.tvlUsd).toBe(104_230);
+  });
+  it("pools that also need BTC are marked, stable ones are not", () => {
+    const all = mezoVenues(chain([pool("0x0000000000000000000000000000000000000001", "Mezo pool BTC/MUSD", "Basic volatile", btcMusdGauge()), pool("0x0000000000000000000000000000000000000003", "Mezo pool mUSDC/MUSD", "Basic stable", null)]), 0.00425, undefined, NOW).venues;
+    expect(all.find((x) => x.name === "Mezo pool BTC/MUSD")!.pairToken).toBe("BTC");
+    expect(all.find((x) => x.name === "Mezo pool mUSDC/MUSD")!.pairToken).toBeUndefined();
   });
 });

@@ -24,7 +24,7 @@ async function TopThree({ searchParams }: { searchParams: PageProps<"/embed">["s
   const parsed = parseQuery(sp);
   const q = parsed.ok ? parsed.query : { amount: 2000, mode: "holder" as const, trove: "new" as const, days: 90 as const, ratePct: null };
   const { venues } = buildYields(await loadSources(), q);
-  const top = venues.filter((v) => v.status === "ok" && v.carry.cash !== null).slice(0, 3);
+  const top = venues.filter((v) => v.status === "ok" && v.carry.cash !== null && !v.pairToken).slice(0, 3);
   const full = `/?amount=${q.amount}&mode=holder&days=${q.days}`;
   return (
     <>

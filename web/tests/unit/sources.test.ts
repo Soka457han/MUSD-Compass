@@ -85,6 +85,8 @@ describe("Mezo source caching", () => {
       spDeposits: 14_200_000,
       gasPriceWei: "1",
       mezoPoolPriceMusd: null,
+      savingsGauge: null,
+      dittoAssets: null,
       pools: [
         {
           address: "0x0000000000000000000000000000000000000001",

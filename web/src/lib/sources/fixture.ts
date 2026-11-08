@@ -5,7 +5,7 @@ import { MAINNET } from "@/lib/chain/addresses";
 import type { Venue } from "@/lib/venue";
 import type { Sources } from "@/lib/yields";
 import { parseMerkl, type MerklListing } from "./merkl";
-import { morphoVenues } from "./morpho";
+import { dittoVenue, savingsGaugeVenue } from "./mezo";
 import { realisedApr } from "./smusd";
 
 const at = "2026-10-24T15:40:00.000Z";
@@ -14,8 +14,9 @@ const base = { routes: [], ends: null, status: "ok" as const, updatedAt: at };
 export function fixtureSources(): Sources {
   const apr = realisedApr(smusdSample.events, smusdSample.totalSupply, smusdSample.headTimestamp).aprPct;
   // `gauge` = recorded gauge values (8 Nov 2026, mUSDC/MUSD basic pool): 12.274 MEZO a day, 0.5066 of 5.7989 LP staked, valued at the fixture MEZO price.
-  const pool = (id: string, name: string, kind: string, tvl: number, gauge?: { stakedUsd: number; emissionsApr: number }): Venue => ({
+  const pool = (id: string, name: string, kind: string, tvl: number, gauge?: { stakedUsd: number; emissionsApr: number }, pairToken?: "BTC" | "MEZO"): Venue => ({
     ...base,
+    ...(pairToken && { pairToken }),
     id,
     name,
     chain: "Mezo",
@@ -41,8 +42,8 @@ export function fixtureSources(): Sources {
       source: { label: "Mezo chain — yield events", url: "https://explorer.mezo.org" },
       tags: ["Mezo-native", "No lock, no withdrawal fee", "Variable yield"],
       notes: [
-        "Realised APR: yield paid in the last 14 days ÷ supply, annualised.",
-        "Staking sMUSD in the Mezo gauge swaps this fee yield for MEZO emissions — see the Mezo app. Never both.",
+        "Realised APR: yield paid in the last 7 days ÷ supply, annualised. Over 14 days it is 4.01%.",
+        "Staking sMUSD in the gauge swaps this fee yield for MEZO emissions (listed separately). Never both.",
       ],
     },
     {
@@ -58,13 +59,14 @@ export function fixtureSources(): Sources {
       notes: ["Protocol-seeded. Earns discounted BTC only when troves are liquidated, so it has no steady APR."],
     },
     pool("mezo-pool-musdc-musd-10", "Mezo pool mUSDC/MUSD-10", "Concentrated stable", 5_342_377),
-    pool("mezo-pool-btc-musd", "Mezo pool BTC/MUSD", "Basic volatile", 77_021),
-    pool("mezo-pool-btc-musd-200", "Mezo pool BTC/MUSD-200", "Concentrated volatile", 45_834),
+    pool("mezo-pool-btc-musd", "Mezo pool BTC/MUSD", "Basic volatile", 77_021, undefined, "BTC"),
+    pool("mezo-pool-btc-musd-200", "Mezo pool BTC/MUSD-200", "Concentrated volatile", 45_834, undefined, "BTC"),
     pool("mezo-pool-musd-musdt", "Mezo pool MUSD/mUSDT", "Basic stable", 13_164),
     pool("mezo-pool-musdc-musd", "Mezo pool mUSDC/MUSD", "Basic stable", 11_651, { stakedUsd: 1_018, emissionsApr: 1.31 }),
-    pool("mezo-pool-mezo-musd-200", "Mezo pool MEZO/MUSD-200", "Concentrated volatile", 5_795),
-    // Recorded 8 Nov 2026: nothing supplied yet, so the market lists size only.
-    ...morphoVenues([{ id: "0x29c2a844b71bb5db40ca26e8880552dcd40517aa10e945b15ef616c46d5d6707", loanToken: MAINNET.musd, supplied: "0", borrowed: "0", fee: "0", rate: "150860000", now: at }]),
+    // Recorded 9 Nov 2026 (block 13092373): 71,200.53 MEZO a day to 131,302.52 staked sMUSD until 12 Nov, valued here at the fixture MEZO price.
+    savingsGaugeVenue({ rewardRate: "824080208333333333", periodFinish: "1794441600", staked: "131302520000000000000000" }, 0.00297, "Merkl", Date.parse(at) / 1000, at)!,
+    pool("mezo-pool-mezo-musd-200", "Mezo pool MEZO/MUSD-200", "Concentrated volatile", 5_795, { stakedUsd: 3_800, emissionsApr: 1_095 }, "MEZO"),
+    dittoVenue(104_230, at), // Mezo app TVL, 9 Nov 2026
     ...parseMerkl(listings as MerklListing[], new Date(at)),
     {
       ...base,

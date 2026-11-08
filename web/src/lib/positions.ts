@@ -81,9 +81,11 @@ export function compare(p: Positions, sources: Sources): Row[] {
   return held
     .filter(([, amount]) => amount >= 1)
     .flatMap(([id, amount, nowPct]) => {
-      const best = buildYields(sources, { amount, mode: "holder", trove: "new", days: 90, ratePct: null }).venues.find((v) => v.carry.cash !== null);
+      const best = buildYields(sources, { amount, mode: "holder", trove: "new", days: 90, ratePct: null }).venues.find((v) => v.carry.cash !== null && !v.pairToken);
       if (!best) return [];
-      const extra = nowPct === null ? null : Math.max(0, (amount * (best.carry.cash! - nowPct)) / 100);
+      // Already staked and staking is best: the same place, so no gap (the two rates differ only by the reads' timing and dilution).
+      const same = id === "staked" && best.id === "mezo-smusd-gauge";
+      const extra = nowPct === null ? null : same ? 0 : Math.max(0, (amount * (best.carry.cash! - nowPct)) / 100);
       return [{ id, label: LABELS[id], amount, nowPct, best, extraPerYear: extra }];
     });
 }

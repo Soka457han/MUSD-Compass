@@ -63,6 +63,8 @@ export function buildYields(s: Sources, q: Query) {
       if (a.carry.cash !== b.carry.cash) return a.carry.cash === null ? 1 : -1;
       return (b.tvlUsd ?? 0) - (a.tvlUsd ?? 0);
     }
+    // Pools that also need BTC or MEZO come after every MUSD-only spot: their rate is not cash on MUSD alone.
+    if (!a.pairToken !== !b.pairToken) return a.pairToken ? 1 : -1;
     return b.carry.cash - a.carry.cash;
   });
 

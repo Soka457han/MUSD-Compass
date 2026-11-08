@@ -101,8 +101,8 @@ test("Have BTC? turns on borrowing and says in one line whether minting MUSD to 
   await expect(page.getByTestId("mint-line")).toHaveCount(0);
   await page.getByRole("button", { name: "Have BTC? See if borrowing MUSD pays" }).click();
   await expect(page).toHaveURL(/mode=borrower/);
-  // 4.01 − 1.10 interest − 0.41 fee = 2.50% → about 50 MUSD a year on 2,000
-  await expect(page.getByTestId("mint-line")).toHaveText(/^Borrow 2,000 MUSD against your BTC at 1%: .+ pays 4\.01%\. After the fee and interest you keep 2\.50% a year, about 50 MUSD\.$/);
+  // The fixture's best is staked sMUSD at 57.90%: 57.90 − 1.10 interest − 0.41 fee = 56.40% → about 1,127 MUSD a year on 2,000
+  await expect(page.getByTestId("mint-line")).toHaveText(/^Borrow 2,000 MUSD against your BTC at 1%: MUSD Savings Vault, staked in the gauge pays 57\.90%\. After the fee and interest you keep 56\.40% a year, about 1,127 MUSD\.$/);
   await expect(page.getByRole("button", { name: /Have BTC/ })).toHaveCount(0);
 });
 
@@ -125,13 +125,14 @@ test("My MUSD: each holding against the best place, plus trove and veMEZO; reach
   const row = (name: string) => holdings.getByRole("listitem").filter({ has: page.getByRole("heading", { name, exact: true }) });
   await expect(row("Idle in your wallet")).toContainText(/1,250 MUSD.*Earns nothing.*more a year/);
   // Mainnet holdings act in the Mezo app, not on the testnet vault page.
-  await expect(row("Idle in your wallet").getByRole("link", { name: /Deposit in the Mezo app/ })).toHaveAttribute("href", "https://mezo.org/earn/vaults");
-  await expect(row("Savings Vault")).toContainText("This is the best cash place today.");
-  await expect(row("Savings Vault, staked in the gauge")).toContainText(/about 1\.38% a year, paid in MEZO.*unstaked/);
-  await expect(row("Savings Vault, staked in the gauge").getByRole("link", { name: /Unstake in the Mezo app/ })).toBeVisible();
+  await expect(row("Idle in your wallet").getByRole("link", { name: /Stake in the Mezo app/ })).toHaveAttribute("href", "https://mezo.org/earn/vaults");
+  await expect(row("Savings Vault")).toContainText(/Best now: MUSD Savings Vault, staked in the gauge at .*more a year/);
+  await expect(row("Savings Vault, staked in the gauge")).toContainText(/paid in MEZO.*This is the best cash place today\./);
   await expect(row("Stability Pool")).toContainText("No steady APR");
   const places = page.getByRole("region", { name: "Every place 7,050 MUSD could go today" }).getByRole("listitem");
-  await expect(places.first()).toContainText(/MUSD Savings Vault.*4\.01% cash.*about 282 MUSD a year/);
+  await expect(places.first()).toContainText(/MUSD Savings Vault, staked in the gauge.*cash.*paid in mezo/);
+  await expect(places.filter({ hasText: "MUSD Savings Vault (sMUSD)" })).toContainText(/4\.23% cash.*about 298 MUSD a year/);
+  await expect(page.getByText("Higher rates, but they need BTC or MEZO too")).toBeVisible();
   await expect(places.filter({ hasText: "Ethereum" }).first()).toContainText("locked veMEZO, not counted");
   await expect(page.getByText(/30,210 MUSD borrowed at 1%/)).toBeVisible();
   await expect(page.getByText(/239\.28 veMEZO waiting/)).toBeVisible();

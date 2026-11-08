@@ -7,13 +7,17 @@ test.describe("home (360 px, fixture data)", () => {
     await page.goto("/");
     await page.locator("form[data-hydrated]").waitFor();
     const ranked = page.getByRole("list", { name: "Venues ranked by cash carry" }).getByRole("article");
-    await expect(ranked.first()).toContainText("MUSD Savings Vault");
-    await expect(ranked.first()).toContainText("4.01%");
+    await expect(ranked.first()).toContainText("MUSD Savings Vault, staked in the gauge");
+    await expect(ranked.first()).toContainText("57.90%");
+    await expect(ranked.filter({ hasText: "MUSD Savings Vault (sMUSD)" })).toContainText("4.23%");
     await expect(ranked.first()).toContainText("assumes 90-day hold");
     const cards = page.locator('ol[aria-label="Venues ranked by cash carry"] > li');
     for (const c of await cards.all()) await expect(c).toContainText(/as of \d\d:\d\d UTC/);
     await expect(page.getByRole("heading", { name: "Not ranked: no steady APR" })).toBeVisible();
-    await expect(page.locator("#size-only").locator("..").getByText("Morpho Blue BTC/MUSD")).toBeVisible();
+    await expect(page.locator("#size-only").locator("..").getByText("Ditto MUSD Vault")).toBeVisible();
+    // Pools that also need BTC or MEZO sit in their own list, never in the cash ranking.
+    await expect(ranked.filter({ hasText: "MEZO/MUSD-200" })).toHaveCount(0);
+    await expect(page.getByRole("list", { name: "Pools that also need BTC or MEZO" })).toContainText("MEZO/MUSD-200");
     expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBe(0);
   });
 
@@ -24,14 +28,14 @@ test.describe("home (360 px, fixture data)", () => {
     await expect(page.getByText("below the floor: a redemption returns more than this price, before gas and slippage").first()).toBeVisible();
   });
 
-  test("calculator re-ranks and mirrors the URL; borrow mode shows the design's 2.72%", async ({ page }) => {
+  test("calculator re-ranks and mirrors the URL; borrow mode shows the vault at 2.73%", async ({ page }) => {
     await page.goto("/");
     await page.locator("form[data-hydrated]").waitFor();
     await page.getByText("Borrow", { exact: true }).click();
     await page.getByLabel("Borrow rate").selectOption("1");
-    const lead = page.getByRole("list", { name: "Venues ranked by cash carry" }).getByRole("article").first();
-    // 4.01 − 1.10 − 0.41 = 2.50 with the 14-day APR
-    await expect(lead).toContainText("2.50%");
+    const vault = page.getByRole("list", { name: "Venues ranked by cash carry" }).getByRole("article").filter({ hasText: "MUSD Savings Vault (sMUSD)" });
+    // 4.232 − 1.10 − 0.41 = 2.73 with the 7-day APR
+    await expect(vault).toContainText("2.73%");
     await expect(page).toHaveURL(/mode=borrower/);
     await page.getByLabel("Amount (MUSD)").fill("1000");
     await expect(page.getByRole("status")).toContainText("at least 1,800 MUSD");
@@ -139,7 +143,7 @@ test("the app icon, manifest and status bar use the purple logo, not the old yel
 test("the ranking is in the first HTML response, so the page never waits on a loading state", async ({ request }) => {
   const html = await (await request.get("/")).text();
   expect(html).toContain("Venues ranked by cash carry");
-  expect(html).toContain("4.01%");
+  expect(html).toContain("57.90%");
 });
 
 test("favicon.ico is the logo too, not the framework's default", async ({ request }) => {

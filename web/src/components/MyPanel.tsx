@@ -31,8 +31,8 @@ function actionFor(r: Row, benchmarkId: string) {
 /** Every place this MUSD could go: ranked by cash, then the pools that also need BTC or MEZO. */
 function Places({ amount, sources }: { amount: number; sources: Sources }) {
   const all = placesFor(amount, sources);
-  const ranked = all.filter((v) => v.carry.cash !== null);
-  const paired = all.filter((v) => v.carry.cash === null && v.tags.some((t) => t.startsWith("Mezo chain:")));
+  const ranked = all.filter((v) => v.carry.cash !== null && !v.pairToken);
+  const paired = all.filter((v) => v.carry.cash !== null && v.pairToken);
   const link = (v: VenueOut) => (v.id === sources.benchmarkId ? { label: "Mezo app", url: MEZO_VAULTS } : { label: v.chain === "Mezo" ? "Mezo app" : "Open", url: v.action.url });
   return (
     <section aria-labelledby="places-h" className="rounded-[20px] border border-line bg-card px-5 py-5">
@@ -70,7 +70,7 @@ function Places({ amount, sources }: { amount: number; sources: Sources }) {
           <ul className="mt-2 space-y-1.5 text-xs text-ink-muted">
             {paired.map((v) => (
               <li key={v.id}>
-                <span className="font-semibold text-ink">{v.name}</span>: {v.tags.find((t) => t.startsWith("Mezo chain:"))!.replace("Mezo chain: ", "")} · {v.tags.filter((t) => t.endsWith("price exposure")).join(", ")}
+                <span className="font-semibold text-ink">{v.name}</span>: {pct(v.carry.cash)} cash, paid in MEZO · needs {v.pairToken} too, so it carries {v.pairToken}&apos;s price
               </li>
             ))}
           </ul>

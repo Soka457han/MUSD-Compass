@@ -94,3 +94,15 @@ describe("buildYields", () => {
     expect(r.venues.at(-1)!.breakEven).toBeNull();
   });
 });
+
+describe("pools that also need BTC or MEZO", () => {
+  it("rank after every MUSD-only place, even with a higher rate", async () => {
+    const { fixtureSources } = await import("@/lib/sources/fixture");
+    const r = buildYields(fixtureSources(), q("amount=2000"));
+    const ranked = r.venues.filter((v) => v.carry.cash !== null);
+    const firstPair = ranked.findIndex((v) => v.pairToken);
+    expect(ranked.find((v) => v.pairToken === "MEZO")!.carry.cash!).toBeGreaterThan(ranked[0].carry.cash!);
+    expect(ranked.slice(0, firstPair).every((v) => !v.pairToken)).toBe(true);
+    expect(ranked.slice(firstPair).every((v) => v.pairToken)).toBe(true);
+  });
+});

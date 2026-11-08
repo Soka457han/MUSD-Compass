@@ -2,7 +2,7 @@ import { cacheLife } from "next/cache";
 import { formatUnits, getAddress, zeroAddress, type Address } from "viem";
 import { gaugeAprPct } from "@/lib/gauge";
 import type { BorrowParams } from "@/lib/carry/carry";
-import { borrowerOperationsAbi, clPoolAbi, erc20Abi, interestRateManagerAbi, poolAbi, poolsVoterAbi, priceFeedAbi, stabilityPoolAbi, vaultGaugeAbi } from "@/lib/chain/abis";
+import { borrowerOperationsAbi, clPoolAbi, erc20Abi, erc4626Abi, interestRateManagerAbi, poolAbi, poolsVoterAbi, priceFeedAbi, stabilityPoolAbi, vaultGaugeAbi } from "@/lib/chain/abis";
 import { MAINNET } from "@/lib/chain/addresses";
 import { mezoClient } from "@/lib/chain/clients";
 import type { Venue } from "@/lib/venue";
@@ -44,6 +44,7 @@ export function gaugeEmissions(g: GaugeRead | null, tvlUsd: number, mezoUsd: num
   return { aprPct, stakedUsd, mezoPerDay: Number(formatUnits(BigInt(g.rewardRate), 18)) * 86_400, endsAt: new Date(Number(g.periodFinish) * 1000) };
 }
 
+const usd0 = (n: number) => `$${Math.round(n).toLocaleString("en-US")}`;
 const dayLabel = (d: Date) => d.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
 
 export type MezoData = { venues: Venue[]; borrow: ReturnType<typeof toBorrowParams>; btcPriceUsd: number; gasPriceWei: string; paramsLive: boolean };
@@ -135,7 +136,8 @@ export async function readMezo() {
     paramsLive = false;
   }
 
-  const [spDeposits, pools, gasPrice, mezoPoolPriceMusd] = await Promise.all([
+  const smusdGauge = { address: MAINNET.smusdGauge, abi: vaultGaugeAbi } as const;
+  const [spDeposits, pools, gasPrice, mezoPoolPriceMusd, savingsGauge, dittoAssets] = await Promise.all([
     mezoClient.readContract({ address: MAINNET.stabilityPool, abi: stabilityPoolAbi, functionName: "getTotalMUSDDeposits" }),
     // Gauge reads run beside the reserve reads, so they add no sequential round trip.
     Promise.all(
@@ -146,14 +148,25 @@ export async function readMezo() {
     ),
     mezoClient.getGasPrice(),
     readMezoPoolPrice(),
+    // The two official vaults beside sMUSD: a failed read leaves that venue out instead of failing every Mezo venue.
+    Promise.all([
+      mezoClient.readContract({ ...smusdGauge, functionName: "rewardRate" }),
+      mezoClient.readContract({ ...smusdGauge, functionName: "periodFinish" }),
+      mezoClient.readContract({ ...smusdGauge, functionName: "totalSupply" }),
+    ]).then(([rewardRate, periodFinish, staked]) => ({ rewardRate: rewardRate.toString(), periodFinish: periodFinish.toString(), staked: staked.toString() }), () => null),
+    mezoClient.readContract({ address: MAINNET.dittoMusdVault, abi: erc4626Abi, functionName: "totalAssets" }).then((a) => Number(formatUnits(a, 18)), () => null),
   ]);
-  return { now, btcPrice, borrow, paramsLive, spDeposits: Number(formatUnits(spDeposits, 18)), pools, gasPriceWei: gasPrice.toString(), mezoPoolPriceMusd };
+  return { now, btcPrice, borrow, paramsLive, spDeposits: Number(formatUnits(spDeposits, 18)), pools, gasPriceWei: gasPrice.toString(), mezoPoolPriceMusd, savingsGauge, dittoAssets };
 }
 
 /** Builds the Mezo venues from the cached chain read and today's MEZO price. */
 export function mezoVenues(chain: MezoChain, mezoPriceUsd: number, priceSource = "the Mezo MEZO/MUSD pool", nowSec = Date.now() / 1000): MezoData {
   const { now, btcPrice, borrow, paramsLive, spDeposits } = chain;
   const pools = chain.pools.map((p) => ({ ...p, tvl: poolTvlUsd(p.tokens.map((t) => ({ ...t, reserve: BigInt(t.reserve) })), { btcUsd: btcPrice, mezoUsd: mezoPriceUsd }) }));
+
+  // MEZO is valued at the MEZO/MUSD pool's price; that pool is small, so selling a lot of MEZO there moves the price.
+  const mezoPool = pools.find((p) => p.address === MAINNET.pools.mezoMusdCl200);
+  const sellNote = mezoPool ? [`MEZO mainly trades in the MEZO/MUSD-200 pool, which holds about ${usd0(mezoPool.tvl)}; selling a lot of MEZO there lowers its price.`] : [];
 
   const venues: Venue[] = [
     {
@@ -184,17 +197,20 @@ export function mezoVenues(chain: MezoChain, mezoPriceUsd: number, priceSource =
         action: em ? { label: "Stake in the Mezo app", url: "https://mezo.org/earn/pools" } : { label: "See APR in the Mezo app", url: "https://mezo.org/earn/pools" },
         source: { label: em ? "Mezo chain: gauge and pool reserves" : "Mezo chain — pool reserves", url: `https://explorer.mezo.org/address/${p.address}` },
         routes: [],
+        ...(p.name.includes("BTC/") ? { pairToken: "BTC" as const } : p.name.includes("MEZO/") ? { pairToken: "MEZO" as const } : {}),
         tags: [
           "Mezo-native",
           p.kind,
           ...(p.name.includes("BTC") ? ["BTC price exposure"] : []),
           ...(p.name.includes("MEZO/") ? ["MEZO price exposure"] : []),
+          ...(em ? ["Paid in MEZO"] : []),
           ...(em && em.stakedUsd < 10_000 ? ["Small pool: the rate drops fast as money comes in"] : []),
         ],
         notes: em
           ? [
               `Pays about ${Math.round(em.mezoPerDay).toLocaleString("en-US")} MEZO a day to staked LP until ${dayLabel(em.endsAt)}, valued at $${mezoPriceUsd.toFixed(5)} per MEZO from ${priceSource}.`,
               "LP trading fees are not included.",
+              ...sellNote,
               ...(p.kind.includes("Concentrated") ? ["Only in-range staked liquidity earns; the rate is an estimate from the pool's staked share."] : []),
             ]
           : ["The Mezo app shows this pool's fee APR and emissions APR; Compass shows its size and links there."],
@@ -204,5 +220,58 @@ export function mezoVenues(chain: MezoChain, mezoPriceUsd: number, priceSource =
     }),
   ];
 
+  const gauged = savingsGaugeVenue(chain.savingsGauge, mezoPriceUsd, priceSource, nowSec, now, sellNote);
+  if (gauged) venues.splice(1, 0, gauged);
+  if (chain.dittoAssets !== null) venues.push(dittoVenue(chain.dittoAssets, now));
+
   return { venues, borrow, btcPriceUsd: btcPrice, gasPriceWei: chain.gasPriceWei, paramsLive };
+}
+
+/** sMUSD staked in Mezo's MUSD Savings gauge: MEZO emissions instead of the vault's fee yield (Mezo docs, MUSD Savings Vault).
+ *  1 sMUSD is counted as 1 MUSD, as on the My MUSD page. Null when the gauge was not read, has ended or holds nothing. */
+export function savingsGaugeVenue(g: { rewardRate: string; periodFinish: string; staked: string } | null, mezoPriceUsd: number, priceSource: string, nowSec: number, now: string, sellNote: string[] = []): Venue | null {
+  if (!g || !(mezoPriceUsd > 0)) return null;
+  const stakedUsd = Number(formatUnits(BigInt(g.staked), 18));
+  const aprPct = gaugeAprPct(BigInt(g.rewardRate), stakedUsd, BigInt(g.periodFinish), nowSec, mezoPriceUsd);
+  if (!(aprPct > 0)) return null;
+  const endsAt = new Date(Number(g.periodFinish) * 1000);
+  const mezoPerDay = Number(formatUnits(BigInt(g.rewardRate), 18)) * 86_400;
+  return {
+    id: "mezo-smusd-gauge",
+    name: "MUSD Savings Vault, staked in the gauge",
+    chain: "Mezo",
+    rates: { liquidApr: 0, lockedApr: null, fixedCostUsd: 0, tvl: stakedUsd, emissionsApr: aprPct },
+    tvlUsd: stakedUsd,
+    ends: endsAt.toISOString(),
+    action: { label: "Stake in the Mezo app", url: "https://mezo.org/earn/vaults" },
+    source: { label: "Mezo chain: MUSD Savings gauge", url: `https://explorer.mezo.org/address/${MAINNET.smusdGauge}` },
+    routes: [],
+    tags: ["Mezo-native", "Paid in MEZO", "No vault fee yield while staked"],
+    notes: [
+      `Pays about ${Math.round(mezoPerDay).toLocaleString("en-US")} MEZO a day to staked sMUSD until ${dayLabel(endsAt)}, valued at $${mezoPriceUsd.toFixed(5)} per MEZO from ${priceSource}.`,
+      "While staked, your share of the vault's fees goes to veBTC voters instead (Mezo docs). Unstaking brings the fee yield back.",
+      ...sellNote,
+    ],
+    status: "ok",
+    updatedAt: now,
+  };
+}
+
+/** Ditto MUSD Vault, listed in the Mezo app. Its yield is earned on Ethereum and Compass cannot read it on Mezo, so it lists size only. */
+export function dittoVenue(assetsMusd: number, now: string): Venue {
+  return {
+    id: "mezo-ditto-musd",
+    name: "Ditto MUSD Vault",
+    chain: "Mezo",
+    rates: { liquidApr: null, lockedApr: null, fixedCostUsd: 0, tvl: assetsMusd },
+    tvlUsd: assetsMusd,
+    ends: null,
+    action: { label: "See its rate in the Mezo app", url: "https://mezo.org/earn/vaults" },
+    source: { label: "Mezo chain: vault assets", url: `https://explorer.mezo.org/address/${MAINNET.dittoMusdVault}` },
+    routes: [],
+    tags: ["Listed in the Mezo app", "Yield earned on Ethereum", "Withdrawals are batched"],
+    notes: ["The vault moves MUSD to a USDC strategy on Ethereum, so its rate is not on the Mezo chain; the Mezo app shows an estimate. Withdrawals wait for a batch and carry MUSD/USDC price risk (Mezo docs)."],
+    status: "ok",
+    updatedAt: now,
+  };
 }

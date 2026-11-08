@@ -7,9 +7,11 @@ import type { Venue } from "@/lib/venue";
 
 export type YieldEvent = { kind: string; blockNumber: number; timestamp: number; amount: string };
 
-/** Realised APR from distributed yield. sMUSD pays weekly (Thu ~00:20 UTC), so a 14-day window always
- *  spans two distributions and is not thrown off by one landing a few minutes early or late. */
-export const APR_WINDOW_DAYS = 14;
+/** Realised APR from distributed yield. Mezo pays the vault weekly (Mezo docs) and the Mezo app's Yield APR
+ *  matched the last 7 days on 9 Nov 2026 (12.42% there, about 12.2% here), so the rate uses 7 days.
+ *  Payouts vary week to week, so the 14-day figure is shown beside it. */
+export const APR_WINDOW_DAYS = 7;
+const SCAN_DAYS = 14;
 
 export function realisedApr(events: YieldEvent[], totalSupplyWei: string, nowTs: number, days = APR_WINDOW_DAYS) {
   const cutoff = nowTs - days * 86_400;
@@ -89,10 +91,11 @@ export async function fetchSmusdMainnet(): Promise<SmusdData> {
   "use cache: remote";
   cacheLife({ revalidate: 300, expire: 86_400 }); // after 5 min a visit gets the cached copy at once and refreshes it in the background; only a full day without visits makes one wait
   const [scan, supply] = await Promise.all([
-    scanYieldEvents(mezoLogsClient as PublicClient, MAINNET.smusd, APR_WINDOW_DAYS),
+    scanYieldEvents(mezoLogsClient as PublicClient, MAINNET.smusd, SCAN_DAYS),
     mezoClient.readContract({ address: MAINNET.smusd, abi: smusdAbi, functionName: "totalSupply" }),
   ]);
   const r = realisedApr(scan.events, supply.toString(), scan.nowTs);
+  const r14 = realisedApr(scan.events, supply.toString(), scan.nowTs, SCAN_DAYS);
   return {
     aprPct: r.aprPct,
     lastDistribution: r.lastDistribution,
@@ -109,8 +112,8 @@ export async function fetchSmusdMainnet(): Promise<SmusdData> {
       routes: [],
       tags: ["Mezo-native", "No lock, no withdrawal fee", "Variable yield"],
       notes: [
-        `Realised APR: yield paid in the last ${APR_WINDOW_DAYS} days ÷ supply, annualised.`,
-        "Staking sMUSD in the Mezo gauge swaps this fee yield for MEZO emissions — see the Mezo app. Never both.",
+        `Realised APR: yield paid in the last ${APR_WINDOW_DAYS} days ÷ supply, annualised. Over ${SCAN_DAYS} days it is ${r14.aprPct.toFixed(2)}%.`,
+        "Staking sMUSD in the gauge swaps this fee yield for MEZO emissions (listed separately). Never both.",
       ],
       status: "ok",
       updatedAt: new Date().toISOString(),
@@ -122,6 +125,6 @@ export async function fetchSmusdMainnet(): Promise<SmusdData> {
 export async function fetchSmusdTestnetLastDistribution(): Promise<number | null> {
   "use cache: remote";
   cacheLife({ revalidate: 300, expire: 86_400 }); // after 5 min a visit gets the cached copy at once and refreshes it in the background; only a full day without visits makes one wait
-  const scan = await scanYieldEvents(mezoTestnetClient as PublicClient, TESTNET.smusd, APR_WINDOW_DAYS);
+  const scan = await scanYieldEvents(mezoTestnetClient as PublicClient, TESTNET.smusd, SCAN_DAYS);
   return realisedApr(scan.events, "1", scan.nowTs).lastDistribution;
 }

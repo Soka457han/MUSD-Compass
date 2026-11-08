@@ -143,15 +143,16 @@ export function TrovePanel() {
           </Link>
           <p className="mt-2 text-xs text-ink-muted">Opens Yields in borrower mode for an existing trove{t.ratePct >= 1 && t.ratePct <= 5 ? ` at your ${n(t.ratePct, 2)}% rate` : ""}.</p>
           <p className="mt-4 text-xs text-ink-muted">
-            Protection tools by other Mezo builders (testnet only, not audited):{" "}
-            <a href="https://github.com/nftkingiii/Vigil" target="_blank" rel="noreferrer" className="font-semibold text-ink underline">
-              Vigil
-            </a>{" "}
-            (alerts and a pre-signed rescue) ·{" "}
-            <a href="https://github.com/XachP/mezo-lifeline" target="_blank" rel="noreferrer" className="font-semibold text-ink underline">
-              Lifeline
-            </a>{" "}
-            (a rescue reserve and a redemption guard).
+            From Mezo:{" "}
+            <a href="https://mezo.org/borrow" target="_blank" rel="noreferrer" className="inline-block py-3 -my-3 font-semibold text-ink underline">
+              Manage this trove in the Mezo app
+            </a> ·{" "}
+            <a href="https://mezo.org/docs/users/borrow/liquidation-mechanics/" target="_blank" rel="noreferrer" className="inline-block py-3 -my-3 font-semibold text-ink underline">
+              How liquidation works
+            </a> ·{" "}
+            <a href="https://mezo.org/docs/users/borrow/fees/" target="_blank" rel="noreferrer" className="inline-block py-3 -my-3 font-semibold text-ink underline">
+              Borrowing fees
+            </a>
           </p>
         </section>
       )}

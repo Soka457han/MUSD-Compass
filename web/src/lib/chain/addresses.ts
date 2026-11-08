@@ -3,6 +3,8 @@ export const MAINNET = {
   musd: "0xdD468A1DDc392dcdbEf6db6e34E89AA338F9F186",
   smusd: "0xb4D498029af77680cD1eF828b967f010d06C51CC",
   smusdGauge: "0x677817bf3e44b90e8f95222f75e2950b7904a401",
+  // Ditto MUSD Vault: the address the Mezo app's Vaults page links to (9 Nov 2026).
+  dittoMusdVault: "0x9171Cb787C3fEEbBC808D07CaB62B1d789CE14F8",
   stabilityPool: "0x73245Eff485aB3AAc1158B3c4d8f4b23797B0e32",
   troveManager: "0x94AfB503dBca74aC3E4929BACEeDfCe19B93c193",
   priceFeed: "0xc5aC5A8892230E0A3e1c473881A2de7353fFcA88",
@@ -13,7 +15,7 @@ export const MAINNET = {
   interestRateManager: "0x4a453700d157717fe02fb62e7700ed7845048285",
   btc: "0x7b7C000000000000000000000000000000000000",
   mezo: "0x7B7c000000000000000000000000000000000001",
-  // PoolsVoter: Surety mainnet deployment file, and live gauges(pool) reads for all six pools below (block 13091751, 8 Nov 2026).
+  // PoolsVoter: live gauges(pool) reads for all six pools below (block 13091751, 8 Nov 2026).
   poolsVoter: "0x48233cCC97B87Ba93bCA212cbEe48e3210211f03",
   merklVeMezo: "0x089A6af90041c3ac734cbdeFa84832Aa7fBF67C8",
   // MUSD pools listed in the Mezo app (24 Oct). CL addresses from CLFactory.getPool, basic from PoolFactory.getPool.

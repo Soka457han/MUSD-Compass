@@ -14,6 +14,7 @@ export type Venue = {
   source: { label: string; url: string };
   routes: { name: string; url: string }[]; // "also via" chips (never summed)
   tags: string[]; // plain-language risk tags
+  pairToken?: "BTC" | "MEZO"; // a deposit also needs this token, so the venue is listed apart from MUSD-only spots
   notes: string[];
   incentiveUsdPerDay?: number; // what the reward campaign pays out per day (Merkl venues only)
   status: "ok" | "unavailable";
