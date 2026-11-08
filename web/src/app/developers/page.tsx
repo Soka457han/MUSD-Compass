@@ -41,7 +41,7 @@ const FIELDS: [string, string][] = [
   ["carry.costs", "% per year of entry/exit costs (Ethereum bridge + gas round trip, borrow fee and interest)."],
   ["breakEven", "Ethereum venues only: the amounts where the venue beats the Savings Vault, for cash and total."],
   ["status", "ok or unavailable — a source that is down says so instead of guessing."],
-  ["assumptions", "the holding period, borrow parameters and costs used, with plain-language labels. assumptions.peg is MUSD's price on Mezo's MUSD/mUSDC pool (mUSDC counted as $1) and the redemption floor (1 minus the redemption fee), or null when unread."],
+  ["assumptions", "the holding period, borrow parameters and costs used, with plain-language labels. assumptions.peg is MUSD's price on Mezo's MUSD/mUSDC pool (mUSDC counted as $1) and the redemption floor (1 minus the redemption fee), or null when unread. It also carries depthMusd and depthUsdc (MUSD the pool can absorb before MUSD falls below depthFloorUsd, $0.99, and the mUSDC it pays out; null when the tick read failed)."],
   ["notice", "a sentence to show the user as-is, e.g. when an amount is below the new-trove minimum."],
 ];
 

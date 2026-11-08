@@ -20,6 +20,7 @@ const sources: Sources = {
   ethRoundTrip: { usd: 1.3, basis: "est." },
   peg: null,
   mezoPriceUsd: 0.00297,
+  mezoPriceSource: "Merkl",
 };
 const q = (s: string) => {
   const r = parseQuery(new URLSearchParams(s));

@@ -5,6 +5,7 @@ import { MAINNET } from "@/lib/chain/addresses";
 import type { Venue } from "@/lib/venue";
 import type { Sources } from "@/lib/yields";
 import { parseMerkl, type MerklListing } from "./merkl";
+import { morphoVenues } from "./morpho";
 import { realisedApr } from "./smusd";
 
 const at = "2026-10-24T15:40:00.000Z";
@@ -12,17 +13,21 @@ const base = { routes: [], ends: null, status: "ok" as const, updatedAt: at };
 
 export function fixtureSources(): Sources {
   const apr = realisedApr(smusdSample.events, smusdSample.totalSupply, smusdSample.headTimestamp).aprPct;
-  const pool = (id: string, name: string, kind: string, tvl: number): Venue => ({
+  // `gauge` = recorded gauge values (8 Nov 2026, mUSDC/MUSD basic pool): 12.274 MEZO a day, 0.5066 of 5.7989 LP staked, valued at the fixture MEZO price.
+  const pool = (id: string, name: string, kind: string, tvl: number, gauge?: { stakedUsd: number; emissionsApr: number }): Venue => ({
     ...base,
     id,
     name,
     chain: "Mezo",
-    rates: { liquidApr: null, lockedApr: null, fixedCostUsd: 0, tvl },
+    rates: { liquidApr: null, lockedApr: null, fixedCostUsd: 0, tvl: gauge ? gauge.stakedUsd : tvl, ...(gauge && { emissionsApr: gauge.emissionsApr }) },
     tvlUsd: tvl,
-    action: { label: "See APR in the Mezo app", url: "https://mezo.org/earn/pools" },
-    source: { label: "Mezo chain — pool balances", url: "https://explorer.mezo.org" },
-    tags: ["Mezo-native", kind],
-    notes: ["The Mezo app shows this pool's fee APR and emissions APR; Compass shows its size and links there."],
+    ends: gauge ? "2026-11-12T00:00:00.000Z" : null,
+    action: { label: gauge ? "Stake in the Mezo app" : "See APR in the Mezo app", url: "https://mezo.org/earn/pools" },
+    source: { label: gauge ? "Mezo chain: gauge and pool reserves" : "Mezo chain — pool balances", url: "https://explorer.mezo.org" },
+    tags: ["Mezo-native", kind, ...(gauge ? ["Small pool: the rate drops fast as money comes in"] : [])],
+    notes: gauge
+      ? ["Pays about 12 MEZO a day to staked LP until 12 Nov 2026, valued at $0.00297 per MEZO from Merkl.", "LP trading fees are not included."]
+      : ["The Mezo app shows this pool's fee APR and emissions APR; Compass shows its size and links there."],
   });
   const venues: Venue[] = [
     {
@@ -56,8 +61,10 @@ export function fixtureSources(): Sources {
     pool("mezo-pool-btc-musd", "Mezo pool BTC/MUSD", "Basic volatile", 77_021),
     pool("mezo-pool-btc-musd-200", "Mezo pool BTC/MUSD-200", "Concentrated volatile", 45_834),
     pool("mezo-pool-musd-musdt", "Mezo pool MUSD/mUSDT", "Basic stable", 13_164),
-    pool("mezo-pool-musdc-musd", "Mezo pool mUSDC/MUSD", "Basic stable", 11_651),
+    pool("mezo-pool-musdc-musd", "Mezo pool mUSDC/MUSD", "Basic stable", 11_651, { stakedUsd: 1_018, emissionsApr: 1.31 }),
     pool("mezo-pool-mezo-musd-200", "Mezo pool MEZO/MUSD-200", "Concentrated volatile", 5_795),
+    // Recorded 8 Nov 2026: nothing supplied yet, so the market lists size only.
+    ...morphoVenues([{ id: "0x29c2a844b71bb5db40ca26e8880552dcd40517aa10e945b15ef616c46d5d6707", loanToken: MAINNET.musd, supplied: "0", borrowed: "0", fee: "0", rate: "150860000", now: at }]),
     ...parseMerkl(listings as MerklListing[], new Date(at)),
     {
       ...base,
@@ -79,6 +86,7 @@ export function fixtureSources(): Sources {
     paramsLive: true,
     ethRoundTrip: { usd: 1.28, basis: "≈1,150,000 Ethereum gas + 550,000 Mezo gas at live prices (bridge relay priced as gas; est.)" },
     mezoPriceUsd: 0.00297,
-    peg: { priceUsd: 0.9913, floorUsd: 0.9925, redemptionPct: 0.75, pool: MAINNET.pools.musdcMusdCl10, updatedAt: at },
+    mezoPriceSource: "Merkl",
+    peg: { priceUsd: 0.9913, floorUsd: 0.9925, redemptionPct: 0.75, pool: MAINNET.pools.musdcMusdCl10, updatedAt: at, depthMusd: 121_174, depthUsdc: 120_070, depthFloorUsd: 0.99 },
   };
 }

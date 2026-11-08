@@ -87,6 +87,7 @@ function PegLine({ peg }: { peg: NonNullable<Sources["peg"]> }) {
   return (
     <p className="text-sm text-ink-muted">
       MUSD trades at ${peg.priceUsd.toFixed(4)} on Mezo&apos;s MUSD/mUSDC pool (mUSDC counted as $1) · redemption floor ${peg.floorUsd.toFixed(4)} (1 minus the {peg.redemptionPct}% redemption fee) · as of {timeUtc(peg.updatedAt)}
+      {peg.depthMusd != null && ` · ${peg.depthMusd < 1000 ? "under 1,000" : `about ${(Math.round(peg.depthMusd / 1000) * 1000).toLocaleString("en-US")}`} MUSD can be sold on this pool before MUSD falls below $${peg.depthFloorUsd.toFixed(2)}`}
       {peg.priceUsd < peg.floorUsd && " · below the floor: a redemption returns more than this price, before gas and slippage"}
     </p>
   );
@@ -193,7 +194,7 @@ export function Compass({ sources, between, after }: { sources: Sources; between
     ? [
         { label: "Savings Vault", value: pct(vault?.carry.cash ?? null), href: "/vault", bg: "bg-tile-yellow" },
         { label: "Ethereum pools", value: isDown("merkl") ? "Unavailable" : String(result.venues.filter((v) => v.chain === "Ethereum" && v.status === "ok").length), href: "#venues", bg: "bg-tile-pink" },
-        { label: "Mezo pools", value: isDown("mezo-pools") ? "Unavailable" : String(result.venues.filter((v) => v.chain === "Mezo" && v.status === "ok" && v !== vault && v !== stability).length), href: "#size-only", bg: "bg-tile-lilac" },
+        { label: "Mezo pools", value: isDown("mezo-pools") ? "Unavailable" : String(result.venues.filter((v) => v.id.startsWith("mezo-pool-") && v.status === "ok").length), href: "#size-only", bg: "bg-tile-lilac" },
         { label: "Stability Pool", value: usd(stability?.tvlUsd ?? null), href: "#size-only", bg: "bg-tile-peach" },
         { label: "My MUSD", value: "Check", href: "/my", bg: "bg-tile-blue" },
         { label: "My trove", value: "Plan", href: "/trove", bg: "bg-tile-mint" },
@@ -343,7 +344,7 @@ export function Compass({ sources, between, after }: { sources: Sources; between
               <span className="font-semibold text-ink">Mezo testnet</span>.
             </p>
             <p>
-              Cash carry ranks. Locked rewards are veMEZO: claimed on Mezo, locked 12 weeks, valued at MEZO spot{sources.mezoPriceUsd ? ` ($${sources.mezoPriceUsd.toFixed(5)})` : ""}, shown on the pink tag and never in the cash figure.{" "}
+              Cash carry ranks. Locked rewards are veMEZO: claimed on Mezo, locked 12 weeks, valued at MEZO spot{sources.mezoPriceUsd ? ` ($${sources.mezoPriceUsd.toFixed(5)}${sources.mezoPriceSource ? `, from ${sources.mezoPriceSource === "Merkl" ? "Merkl" : "the Mezo MEZO/MUSD pool"}` : ""})` : ""}, shown on the pink tag and never in the cash figure.{" "}
               <Link href="/rewards" className="font-semibold text-accent-text underline">
                 Check an address for unclaimed veMEZO
               </Link>

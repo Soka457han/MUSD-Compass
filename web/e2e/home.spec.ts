@@ -13,12 +13,14 @@ test.describe("home (360 px, fixture data)", () => {
     const cards = page.locator('ol[aria-label="Venues ranked by cash carry"] > li');
     for (const c of await cards.all()) await expect(c).toContainText(/as of \d\d:\d\d UTC/);
     await expect(page.getByRole("heading", { name: "Not ranked: no steady APR" })).toBeVisible();
+    await expect(page.locator("#size-only").locator("..").getByText("Morpho Blue BTC/MUSD")).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBe(0);
   });
 
   test("shows the MUSD price and redemption floor", async ({ page }) => {
     await page.goto("/");
     await expect(page.getByText("redemption floor $0.9925").first()).toBeVisible();
+    await expect(page.getByText("about 121,000 MUSD can be sold on this pool before MUSD falls below $0.99").first()).toBeVisible();
     await expect(page.getByText("below the floor: a redemption returns more than this price, before gas and slippage").first()).toBeVisible();
   });
 

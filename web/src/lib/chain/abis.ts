@@ -27,7 +27,11 @@ export const poolAbi = parseAbi([
   "function token0() view returns (address)",
   "function token1() view returns (address)",
   "function stable() view returns (bool)",
+  "function totalSupply() view returns (uint256)",
 ]);
+
+// PoolsVoter, read live 8 Nov 2026 (selectors 0xb9a09fd5, 0x1703e5f9).
+export const poolsVoterAbi = parseAbi(["function gauges(address pool) view returns (address)", "function isAlive(address gauge) view returns (bool)"]);
 
 export const borrowerOperationsAbi = parseAbi([
   "function redemptionRate() view returns (uint256)",
@@ -84,4 +88,12 @@ export const hintHelpersAbi = parseAbi([
 ]);
 
 // Concentrated-liquidity pool (Slipstream/Uniswap v3 style), read 8 Nov 2026; only the first word is used.
-export const clPoolAbi = parseAbi(["function slot0() view returns (uint160 sqrtPriceX96, int24 tick, uint16 observationIndex, uint16 observationCardinality, uint16 observationCardinalityNext, bool unlocked)"]);
+export const clPoolAbi = parseAbi([
+  "function slot0() view returns (uint160 sqrtPriceX96, int24 tick, uint16 observationIndex, uint16 observationCardinality, uint16 observationCardinalityNext, bool unlocked)",
+  // Selectors 0x3ab04b20 and 0x1a686502, read live 8 Nov 2026: in-range liquidity staked in the gauge, and all in-range liquidity.
+  "function stakedLiquidity() view returns (uint128)",
+  "function liquidity() view returns (uint128)",
+  "function tickSpacing() view returns (int24)",
+  // Only used to encode the call: Slipstream returns 10 words, so peg.ts decodes the result by hand (depth.ts).
+  "function ticks(int24) view returns (uint128 liquidityGross, int128 liquidityNet)",
+]);

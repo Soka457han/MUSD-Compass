@@ -30,6 +30,7 @@ export type Sources = {
   paramsLive: boolean;
   ethRoundTrip: { usd: number; basis: string } | null;
   mezoPriceUsd: number | null;
+  mezoPriceSource: "Mezo MEZO/MUSD pool" | "Merkl" | null; // where mezoPriceUsd came from
   peg: Peg | null;
 };
 

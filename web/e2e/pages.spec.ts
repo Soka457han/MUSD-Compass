@@ -112,8 +112,8 @@ test("every ranked venue says what this amount keeps before you go in", async ({
   const cards = page.getByRole("list", { name: "Venues ranked by cash carry" }).getByRole("article");
   await expect(cards.first()).toContainText("Before you go in: 2,000 MUSD for 90 days");
   await expect(cards.first()).toContainText(/you keep \d+\.\d\d MUSD cash, no one-off costs/);
-  // Ethereum rows carry the bridge round trip as a one-off cost.
-  await expect(cards.nth(1)).toContainText(/MUSD one-off costs, (never earned back|earned back after \d+ days)/);
+  // Ethereum rows carry the bridge round trip as a one-off cost (the fixture's ranked Mezo gauge pool has none, so pick the Ethereum row).
+  await expect(cards.filter({ hasText: "Ethereum" }).first()).toContainText(/MUSD one-off costs, (never earned back|earned back after \d+ days)/);
 });
 
 test("My MUSD: each holding against the best place, plus trove and veMEZO; reachable from home; accessible", async ({ page }) => {

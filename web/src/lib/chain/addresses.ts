@@ -13,6 +13,8 @@ export const MAINNET = {
   interestRateManager: "0x4a453700d157717fe02fb62e7700ed7845048285",
   btc: "0x7b7C000000000000000000000000000000000000",
   mezo: "0x7B7c000000000000000000000000000000000001",
+  // PoolsVoter: Surety mainnet deployment file, and live gauges(pool) reads for all six pools below (block 13091751, 8 Nov 2026).
+  poolsVoter: "0x48233cCC97B87Ba93bCA212cbEe48e3210211f03",
   merklVeMezo: "0x089A6af90041c3ac734cbdeFa84832Aa7fBF67C8",
   // MUSD pools listed in the Mezo app (24 Oct). CL addresses from CLFactory.getPool, basic from PoolFactory.getPool.
   pools: {

@@ -1,6 +1,6 @@
 import { allow } from "@/lib/rateLimit";
 import { loadSources } from "@/lib/sources";
-import { fetchMerkl, fetchUserRewards } from "@/lib/sources/merkl";
+import { fetchUserRewards } from "@/lib/sources/merkl";
 import { isWallet } from "@/lib/vault";
 
 export const maxDuration = 60;
@@ -27,9 +27,8 @@ export async function GET(req: Request, { params }: { params: Promise<{ address:
   const fixtures = process.env.COMPASS_FIXTURES === "1";
   const [rewards, sources] = await Promise.all([
     fixtures ? Promise.resolve({ unclaimed: 239.28, pending: 12.5 }) : fetchUserRewards(address).catch(() => null),
-    // Only the MEZO price and campaign dates are needed: Merkl's cached listing, not every source (one of
-    // them is a 14-day chain scan that made this answer slow on a cold cache).
-    fixtures ? loadSources() : fetchMerkl().catch(() => ({ venues: [], mezoPriceUsd: null })),
+    // The cached sources carry the one MEZO price used on the whole site, and the campaign dates.
+    loadSources().catch(() => ({ venues: [], mezoPriceUsd: null, mezoPriceSource: null })),
   ]);
   if (!rewards) return Response.json({ error: "Merkl is unavailable right now — try again in a minute." }, { status: 503, headers: HEADERS });
 
@@ -48,6 +47,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ address:
       pending: rewards.pending,
       usd: price === null ? null : rewards.unclaimed * price,
       mezoPriceUsd: price,
+      mezoPriceSource: sources.mezoPriceSource,
       campaignEnds: ends,
       ...ABOUT,
     },

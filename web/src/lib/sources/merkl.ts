@@ -68,6 +68,12 @@ export function parseMerkl(listings: MerklListing[], now = new Date()): Venue[] 
   });
 }
 
+/** Merkl priced its veMEZO rewards at its own MEZO price; restate them at the one price Compass uses everywhere. */
+export function rescaleLockedApr(venues: Venue[], usedPrice: number | null, merklPrice: number | null): Venue[] {
+  if (!usedPrice || !merklPrice || usedPrice === merklPrice) return venues;
+  return venues.map((v) => (v.rates.lockedApr === null ? v : { ...v, rates: { ...v.rates, lockedApr: (v.rates.lockedApr * usedPrice) / merklPrice } }));
+}
+
 export type MerklData = { venues: Venue[]; mezoPriceUsd: number | null; ethPriceUsd: number | null; raw: MerklListing[] };
 
 async function getJson<T>(url: string): Promise<T> {

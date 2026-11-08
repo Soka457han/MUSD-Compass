@@ -84,11 +84,13 @@ describe("Mezo source caching", () => {
       paramsLive: true,
       spDeposits: 14_200_000,
       gasPriceWei: "1",
+      mezoPoolPriceMusd: null,
       pools: [
         {
           address: "0x0000000000000000000000000000000000000001",
           name: "Mezo pool MEZO/MUSD-200",
           kind: "Concentrated volatile",
+          gauge: null,
           tokens: [
             { address: MAINNET.mezo, reserve: parseUnits("1000000", 18).toString(), decimals: 18 },
             { address: MAINNET.musd, reserve: parseUnits("5000", 18).toString(), decimals: 18 },

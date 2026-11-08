@@ -2,7 +2,8 @@ import type { PublicClient } from "viem";
 import { mezoClient } from "@/lib/chain/clients";
 import { readPositions, type Positions } from "@/lib/positions";
 import { allow } from "@/lib/rateLimit";
-import { fetchMerkl, fetchUserRewards } from "@/lib/sources/merkl";
+import { loadSources } from "@/lib/sources";
+import { fetchUserRewards } from "@/lib/sources/merkl";
 import { isWallet } from "@/lib/vault";
 
 export const maxDuration = 60;
@@ -26,14 +27,14 @@ export async function GET(req: Request, { params }: { params: Promise<{ address:
   if (process.env.COMPASS_FIXTURES === "1") return Response.json({ address, ...FIXTURE, network: "Mezo mainnet" }, { headers: HEADERS });
 
   try {
-    // Merkl's listing is cached and gives the MEZO price the gauge rate is valued at.
-    const price = (await fetchMerkl().catch(() => ({ mezoPriceUsd: null }))).mezoPriceUsd;
+    // The cached sources carry the one MEZO price used on the whole site (Mezo pool, else Merkl).
+    const { mezoPriceUsd: price, mezoPriceSource } = await loadSources().catch(() => ({ mezoPriceUsd: null, mezoPriceSource: null }));
     const [chain, rewards] = await Promise.all([
       readPositions(mezoClient as PublicClient, address, price),
       fetchUserRewards(address).catch(() => null), // optional: the rest still answers without Merkl
     ]);
     const veMezo = rewards ? { unclaimed: rewards.unclaimed, usd: price === null ? null : rewards.unclaimed * price } : null;
-    return Response.json({ ...chain, veMezo, network: "Mezo mainnet" } satisfies Positions & { network: string }, { headers: HEADERS });
+    return Response.json({ ...chain, veMezo, mezoPriceSource, network: "Mezo mainnet" } satisfies Positions & { network: string; mezoPriceSource: string | null }, { headers: HEADERS });
   } catch {
     return Response.json({ error: "Mezo mainnet is unavailable right now — try again in a minute." }, { status: 503, headers: HEADERS });
   }

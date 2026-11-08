@@ -20,15 +20,22 @@ Every value below was read live on Mezo mainnet (chain 31612) through `https://r
 - The basic MUSD/mUSDC pool `0xEd812AEc0Fecc8fD882Ac3eccC43f3aA80A6c356` holds only about 4,866 mUSDC and 6,734 MUSD and implies $0.72, so it is not used as a price source.
 - Cross-check: the user reported Plumb showing about $0.9899 on the same day.
 
-## Morpho Blue MUSD markets on Mezo — UNKNOWN
+## Morpho Blue MUSD markets on Mezo (checked 8 Nov 2026, block 13091603, 17:52 UTC)
 
-No source read so far documents a Morpho Blue deployment on Mezo, a market id, LLTV or oracle. Not built until the user supplies the app or contract links and each market is read on chain.
+Sources: AKINDO Wave 1 submissions (https://app.akindo.io/wave-hacks/OVOO0gdrVU8379D10?tab=products) and the teams' public repos.
 
-## veBTC gauge and boost yields (Janus, Plumb, mbLP) — UNKNOWN
+- Mezo mainnet runs Morpho Blue at `0x565834cE7E40b8987BC20EbF83E2159467bDA311` (owner: Mezo multisig; per Surety and Baserate docs).
+- Surety (https://surety-credit.vercel.app, github.com/RaYYeR220/surety) created a BTC/MUSD market there, id `0x29c2a844b71bb5db40ca26e8880552dcd40517aa10e945b15ef616c46d5d6707`. VERIFIED live: loan token MUSD `0xdD46…F186`, collateral BTC `0x7b7C…0000`, oracle `0x1cc8daeb91B7da756E3eA1f51eAB8c0776f0cb9B`, IRM AdaptiveCurveIrm `0x3760Ebc636F912a4dB9540fdA4Dec09C25C6C1e7`, LLTV 86%, fee 0. **Supplied 0 MUSD, borrowed 0** (last update 25 Oct 2026). Surety's mainnet vault `0x632d627b66F2b11C8d0Fc61790422B0931D145de` holds 0. The Wave 1 judge said the same ("the mainnet vault holds no MUSD").
+- Read path for a supply rate if liquidity arrives: `idToMarketParams(id)` + `market(id)` on Morpho, `borrowRateView(params, market)` on the IRM; supply APY = (e^(rate·year) − 1) × utilization × (1 − fee).
 
-No source read so far describes these; the musd repo and the Mezo MUSD docs do not mention them. Not built until links are supplied and the reward rates are read on chain.
+## Other Wave 1 projects (all testnet only, so not mainnet earning spots)
+
+- Baserate (https://baserate-mezo.vercel.app): borrow MUSD on Morpho Blue; deployments only for testnet 31611.
+- Janus: veBTC boost market, live on Matsnet (testnet).
+- Plumb (github.com/kinnuworks/plumb): MUSD peg module on the MUSD/mUSDC pool; testnet vault, mainnet planned.
+- mbLP (https://mblp.surge.sh): BTC to BTC/MUSD LP vault with gauge rewards; testnet.
 
 ## Decision
 
 - Task 10 (peg and floor line): build now from the two VERIFIED reads.
-- Task 9 (new venues): waits for links from the user.
+- Task 9 (new venues): only Surety's Morpho BTC/MUSD market is on mainnet, and it is empty. Proposed: list it as a size-only venue that ranks itself once MUSD is supplied. Needs the user's OK.
