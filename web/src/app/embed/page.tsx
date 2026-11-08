@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
-import { connection } from "next/server";
+import { headers } from "next/headers";
+import { after, connection } from "next/server";
 import { Suspense } from "react";
 import { ArrowUpRightIcon, CompassMark, LockIcon } from "@/components/Icons";
 import { musd, pct } from "@/lib/format";
 import { loadSources } from "@/lib/sources";
+import { countCall, countEmbedHost } from "@/lib/stats";
 import { buildYields, parseQuery } from "@/lib/yields";
 
 export const metadata: Metadata = { title: "MUSD Compass widget", robots: { index: false } };
@@ -11,6 +13,11 @@ export const metadata: Metadata = { title: "MUSD Compass widget", robots: { inde
 /** Compact top-3 by cash carry for iframes on other sites (loaded by /embed.js). */
 async function TopThree({ searchParams }: { searchParams: PageProps<"/embed">["searchParams"] }) {
   await connection();
+  const h = await headers();
+  after(async () => {
+    await countCall("embed", new Request("https://musd-compass.vercel.app/embed"));
+    await countEmbedHost(h.get("referer"), h.get("sec-fetch-dest"));
+  });
   const sp = new URLSearchParams();
   const amount = (await searchParams).amount;
   if (typeof amount === "string") sp.set("amount", amount);

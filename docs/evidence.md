@@ -42,3 +42,26 @@ No mainnet transaction has been sent. The dry run exercises Compass's own Borrow
 - Savings Vault gauge: `rewardRate` 0.4425 MEZO/s over 5,309,027 staked sMUSD at MEZO $0.005276 = 1.39% a year; the Mezo app shows 1.38%. Staking hands the vault's savings yield to veBTC voters (Mezo docs, Earn → Vaults).
 - Mezo pool rates are not shown yet: the Mezo app showed mUSDC/MUSD-10 at 0.09% fees or 1.81% MEZO staked on 26 Oct, below the Savings Vault's 4.01%.
 - Testnet trove inputs read from BorrowerOperations: minimum net debt 1,800 MUSD, fee 0.1%, gas compensation 200 MUSD; `openTrove(1800 MUSD)` with 0.04 BTC simulates successfully.
+
+## MUSD peg and redemption floor, 8 Nov 2026
+
+Two reads on Mezo mainnet (chain 31612) through `https://rpc-http.mezo.boar.network`, block 13087631 (8 Nov 2026, about 13:39 UTC). Full notes: `docs/research/2026-11-wave2b-venues-peg.md`.
+
+- Redemption fee: BorrowerOperations `0x44b1bac67dDA612a41a58AAf779143B181dEe031`, `redemptionRate()` returns 0.0075 (0.75%), so the floor is 1 - 0.0075 = $0.9925. Source: `mezo-org/musd` `solidity/contracts/BorrowerOperations.sol`.
+- Market price: MUSD/mUSDC pool `0xcc372b7e15535ab225fe17c1075831d38ef7ac1a`, `slot0()` `sqrtPriceX96 = 79573356042004189394853931856270274`, i.e. 1.00874 MUSD per mUSDC, so MUSD is about $0.9913 with mUSDC counted as $1 (an assumption, stated next to the number on screen).
+- Mezo's docs (https://mezo.org/docs/users/musd) say redemption is profitable until MUSD reaches $0.995. They do not show that arithmetic, so Compass shows the on-chain figure.
+
+## Serving cost estimate for the premium endpoint, 8 Nov 2026
+
+This is an estimate, not a bill. Source: https://vercel.com/docs/functions/usage-and-pricing (read 8 Nov 2026). Fluid compute, region iad1 (this project's region), Pro on-demand: Active CPU $0.128 per hour, Provisioned Memory $0.0106 per GB-hour, Invocations $0.60 per million. The estimate uses Pro on-demand prices, which is what paid traffic would run on, with 1 vCPU and 2 GB.
+
+Assumptions for 1,000 premium calls answered from the warm cache: 50 ms active CPU and 0.3 s wall time per call, 2 GB, no instance sharing.
+
+- CPU: 1,000 x 0.05 s = 0.0139 h x $0.128 = about $0.0018
+- Memory: 1,000 x 0.3 s x 2 GB = 0.167 GB-h x $0.0106 = about $0.0018
+- Invocations: about $0.0006
+- Total: about $0.004 per 1,000 calls at Pro on-demand prices.
+
+The x402 facilitator pays the settlement gas, not Compass. Price charged: 0.01 MUSD per call on Mezo mainnet (10 MUSD per 1,000), 0.001 test MUSD on testnet (1 test MUSD per 1,000), from `web/src/lib/x402.ts`.
+
+Do-it-yourself cost: one refresh needs 34 `eth_getLogs` requests for 14 days of sMUSD yield events (Mezo RPCs cap a request at 10,000 blocks), plus pool, trove, gauge and Merkl reads; measured 7 to 37 s per cold refresh on 4 Nov 2026, depending on the RPC.

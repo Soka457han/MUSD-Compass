@@ -1,10 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { usd } from "@/lib/format";
 import { AdviceList } from "./AdviceList";
 import { troveAdvice } from "@/lib/safety";
+import { isWallet } from "@/lib/vault";
 import type { TroveView } from "@/lib/trove";
 
 type Trove = TroveView & { safeIcrPct: number; minIcrPct: number };
@@ -44,6 +45,16 @@ export function TrovePanel() {
       setBusy(false);
     }
   };
+
+  // Alert links open /trove?address=0x…: look that trove up once on mount.
+  useEffect(() => {
+    const a = new URLSearchParams(window.location.search).get("address");
+    if (a && isWallet(a)) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time read of the URL, which only exists on the client
+      setLookup(a);
+      load(a);
+    }
+  }, []);
 
   return (
     <div className="mx-auto w-full max-w-3xl flex-1 space-y-5 px-4 py-5">

@@ -1,5 +1,5 @@
 import type { Range } from "@/lib/carry/breakEven";
-import { musd, pct, shortDate, usd } from "@/lib/format";
+import { musd, pct, shortDate, timeUtc, usd } from "@/lib/format";
 import type { VenueOut } from "@/lib/yields";
 import { ArrowUpRightIcon, ChevronIcon, LockIcon } from "./Icons";
 
@@ -178,6 +178,7 @@ export function PriceLabel({ v, days, amount, lead }: { v: VenueOut; days: numbe
             </li>
           </ul>
         </details>
+        {v.status !== "unavailable" && <p className="text-xs text-ink-muted">as of {timeUtc(v.updatedAt)}</p>}
       </div>
     </article>
   );

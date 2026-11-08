@@ -30,6 +30,7 @@ export const poolAbi = parseAbi([
 ]);
 
 export const borrowerOperationsAbi = parseAbi([
+  "function redemptionRate() view returns (uint256)",
   "function minNetDebt() view returns (uint256)",
   "function borrowingRate() view returns (uint256)",
   "function MUSD_GAS_COMPENSATION() view returns (uint256)",
@@ -81,3 +82,6 @@ export const sortedTrovesAbi = parseAbi([
 export const hintHelpersAbi = parseAbi([
   "function getApproxHint(uint256 _CR, uint256 _numTrials, uint256 _inputRandomSeed) view returns (address hintAddress, uint256 diff, uint256 latestRandomSeed)",
 ]);
+
+// Concentrated-liquidity pool (Slipstream/Uniswap v3 style), read 8 Nov 2026; only the first word is used.
+export const clPoolAbi = parseAbi(["function slot0() view returns (uint160 sqrtPriceX96, int24 tick, uint16 observationIndex, uint16 observationCardinality, uint16 observationCardinalityNext, bool unlocked)"]);

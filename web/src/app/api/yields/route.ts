@@ -1,5 +1,7 @@
+import { after } from "next/server";
 import { allow } from "@/lib/rateLimit";
 import { loadSources } from "@/lib/sources";
+import { countCall } from "@/lib/stats";
 import { buildYields, parseQuery } from "@/lib/yields";
 
 // Source data is cached for 5 minutes (use cache: remote); a cold refresh scans 34 log windows, about 40 s on 4 Nov 2026.
@@ -11,6 +13,7 @@ const CORS = { "Access-Control-Allow-Origin": "*", "Cache-Control": "public, max
 
 export async function GET(req: Request) {
   if (!allow(req)) return Response.json({ error: "Too many requests — try again in a minute." }, { status: 429, headers: CORS });
+  after(() => countCall("yields", req));
   const parsed = parseQuery(new URL(req.url).searchParams);
   if (!parsed.ok) return Response.json({ error: parsed.error }, { status: 400, headers: CORS });
   const sources = await loadSources();

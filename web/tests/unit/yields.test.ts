@@ -18,6 +18,7 @@ const sources: Sources = {
   borrow: { feePct: 0.1, gasCompensation: 200, minNetDebt: 1800, ratePct: 1 },
   paramsLive: true,
   ethRoundTrip: { usd: 1.3, basis: "est." },
+  peg: null,
   mezoPriceUsd: 0.00297,
 };
 const q = (s: string) => {

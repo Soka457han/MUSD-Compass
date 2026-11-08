@@ -2,11 +2,12 @@ import { HTTPFacilitatorClient, x402ResourceServer } from "@x402/core/server";
 import { ExactEvmScheme } from "@x402/evm/exact/server";
 import { declareEip2612GasSponsoringExtension } from "@x402/extensions";
 import { withX402 } from "@x402/next";
-import { NextResponse, type NextRequest } from "next/server";
+import { after, NextResponse, type NextRequest } from "next/server";
 import type { PublicClient } from "viem";
 import { mezoClient } from "@/lib/chain/clients";
 import { allow } from "@/lib/rateLimit";
 import { loadSources } from "@/lib/sources";
+import { countCall, countPayment } from "@/lib/stats";
 import { fetchUserRewards } from "@/lib/sources/merkl";
 import { readTrove } from "@/lib/trove";
 import { isWallet } from "@/lib/vault";
@@ -55,10 +56,16 @@ const paid = withX402(
 
 export async function GET(req: NextRequest) {
   if (!allow(req)) return NextResponse.json({ error: "Too many requests — try again in a minute." }, { status: 429 });
+  after(() => countCall("premium", req));
   // zod 3 inside @x402 can exhaust memory on oversized input (GHSA-mrhx-c7xc-m3w5): refuse big payment headers before parsing.
   const size = (req.headers.get("payment-signature")?.length ?? 0) + (req.headers.get("x-payment")?.length ?? 0);
   if (size > 16_384) return NextResponse.json({ error: "Payment header too large." }, { status: 431 });
   const res = await paid(req);
+  // Only a settled 200 counts as a payment; a 402 or failed settlement carries no settlement header.
+  if (res.status === 200) {
+    const settled = res.headers.get("PAYMENT-RESPONSE") ?? res.headers.get("X-PAYMENT-RESPONSE");
+    after(() => countPayment(settled));
+  }
   // @x402/next answers a generic 500 when it can't sync with the facilitator (it retries on the next request).
   if (res.status !== 500) return res;
   return NextResponse.json({ error: "The x402 payment service is unavailable right now — try again in a minute. The free /api/yields has the same numbers." }, { status: 503 });

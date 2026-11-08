@@ -8,6 +8,8 @@ Local run without a webhook: TELEGRAM_BOT_TOKEN=... python compass_bot.py --poll
 
 from __future__ import annotations
 
+import contextvars
+import hashlib
 import html
 import math
 import os
@@ -36,7 +38,10 @@ HELP = (
     f"   try: <code>/vault {SAMPLE_WALLET}</code>\n"
     "/rewards &lt;address&gt; — unclaimed veMEZO from Merkl\n"
     "/trove &lt;address&gt; — your trove: ratio, rate, safe extra borrow (or <code>/trove sample</code>)\n"
-    f"   try: <code>/rewards {SAMPLE_REWARDS}</code>\n\n"
+    f"   try: <code>/rewards {SAMPLE_REWARDS}</code>\n"
+    "/watch &lt;address&gt;: message me here when your trove's advice changes (checked every 15 minutes)\n"
+    "/unwatch &lt;address&gt;: stop watching\n"
+    "/watching: the addresses you watch\n\n"
     "Cash carry ranks; 🔒 = locked veMEZO, shown beside it, never counted as cash.\n"
     "Compass never asks for keys or seed phrases.\n"
     f"Web: {WEB_URL}"
@@ -48,21 +53,34 @@ class ApiError(Exception):
     """A reply-ready sentence: either the API's own validation error or the 'down' message."""
 
 
-def api_get(path: str, params: dict | None = None) -> dict:
-    headers = {"x-compass-bot": os.environ.get("BOT_API_KEY", "")}
+_chat = contextvars.ContextVar("chat_id", default=None)
+
+
+def _headers() -> dict:
+    key = os.environ.get("BOT_API_KEY", "")
+    h = {"x-compass-bot": key}
+    chat = _chat.get()
+    # A salted hash, so the site can count distinct bot users without ever seeing a chat id.
+    if key and chat is not None:
+        h["x-compass-user"] = hashlib.sha256((key + str(chat)).encode()).hexdigest()[:16]
+    return h
+
+
+def _request(method: str, path: str, retry_5xx: bool = True, **kw) -> dict:
+    send = getattr(httpx, method)
     # One retry: a fresh deploy or a cold function can miss once and answer fine a second later.
     for attempt in (1, 2):
         try:
-            r = httpx.get(f"{API_URL}{path}", params=params, headers=headers, timeout=20)
+            r = send(f"{API_URL}{path}", headers=_headers(), timeout=20, **kw)
         except httpx.HTTPError as e:
             if attempt == 2:
                 raise ApiError(DOWN) from e
             time.sleep(1)
             continue
-        if r.status_code < 500 or attempt == 2:
+        if r.status_code < 500 or attempt == 2 or not retry_5xx:
             break
         time.sleep(1)
-    if r.status_code in (400, 429, 503):  # the API explains these in words; pass them on
+    if r.status_code in (400, 401, 429, 503):  # the API explains these in words; pass them on
         try:
             raise ApiError(r.json().get("error", DOWN))
         except ValueError:
@@ -70,6 +88,15 @@ def api_get(path: str, params: dict | None = None) -> dict:
     if r.status_code != 200:
         raise ApiError(DOWN)
     return r.json()
+
+
+def api_get(path: str, params: dict | None = None) -> dict:
+    return _request("get", path, params=params)
+
+
+def api_post(path: str, body: dict) -> dict:
+    # A 5xx may mean the write happened: retry only when the request never got an answer.
+    return _request("post", path, retry_5xx=False, json=body)
 
 
 # ---- formatting ----
@@ -226,7 +253,10 @@ def format_trove(d: dict) -> str:
     ]
     if d.get("recoveryMode"):
         lines.append("⚠️ Mezo is in recovery mode: borrowing rules are stricter for now.")
-    lines.append(f"Plan it: {WEB_URL}/trove")
+    icons = {"act": "⚠️", "watch": "👀", "ok": "✅"}
+    for a in d.get("advice") or []:  # text comes from the API: escape it
+        lines += ["", f"{icons.get(a['level'], '•')} <b>{html.escape(a['title'])}</b>", html.escape(a["detail"])]
+    lines += ["", "Add BTC or repay MUSD in the Mezo app: https://mezo.org", f"Get an alert when this changes: /watch {d['address']}", f"Plan it: {WEB_URL}/trove"]
     return "\n".join(lines)
 
 
@@ -236,6 +266,38 @@ def cmd_trove(args: list[str]) -> str:
     return format_trove(api_get(f"/api/trove/{quote(args[0])}"))
 
 
+WATCH_REPLIES = {
+    "added": "Watching <code>{a}</code>. Compass checks it about every 15 minutes and messages you here when its advice changes. Stop with /unwatch {a}",
+    "exists": "Already watching <code>{a}</code>.",
+    "limit": "You can watch up to 3 addresses. Remove one with /unwatch, see them with /watching.",
+    "full": "Alerts are full right now. Try again later.",
+    "off": "Alerts are not set up yet. /trove {a} shows the advice now.",
+}
+
+
+def cmd_watch(chat_id: int, args: list[str]) -> str:
+    if not args or not ADDRESS.match(args[0]):
+        return "Usage: /watch &lt;address&gt; (a public 0x address)"
+    status = api_post("/api/watch", {"chatId": chat_id, "action": "add", "address": args[0]})["status"]
+    return WATCH_REPLIES[status].format(a=html.escape(args[0]))
+
+
+def cmd_unwatch(chat_id: int, args: list[str]) -> str:
+    if not args or not ADDRESS.match(args[0]):
+        return "Usage: /unwatch &lt;address&gt; (a public 0x address)"
+    a = html.escape(args[0])
+    removed = api_post("/api/watch", {"chatId": chat_id, "action": "remove", "address": args[0]})["removed"]
+    return f"Stopped watching <code>{a}</code>." if removed else f"You were not watching <code>{a}</code>."
+
+
+def cmd_watching(chat_id: int, args: list[str]) -> str:
+    addresses = api_post("/api/watch", {"chatId": chat_id, "action": "list"})["addresses"]
+    if not addresses:
+        return "You are not watching any trove. Add one with /watch &lt;address&gt;."
+    return "\n".join(["<b>Watching</b>"] + [f"<code>{html.escape(a)}</code>" for a in addresses] + ["", "Stop with /unwatch ADDRESS"])
+
+
+CHAT_COMMANDS = {"watch": cmd_watch, "unwatch": cmd_unwatch, "watching": cmd_watching}  # these need the chat id
 COMMANDS = {"yield": cmd_yield, "carry": cmd_carry, "vault": cmd_vault, "rewards": cmd_rewards, "trove": cmd_trove}
 
 FAQ = (
@@ -253,8 +315,9 @@ FAQ = (
 # Buttons under the message box. A tap sends the label as text; labels that need input ask for it with a
 # reply prompt, and the answer is matched back to the prompt it replies to (so the bot keeps no state).
 B_YIELD, B_CARRY, B_VAULT, B_REWARDS, B_TROVE, B_HELP = "📈 Best yields", "🏦 Borrow carry", "💰 My vault", "🎁 My rewards", "🛡️ My trove", "❓ Help & FAQ"
+B_WATCH = "🔔 Watch my trove"
 KEYBOARD = {
-    "keyboard": [[{"text": B_YIELD}, {"text": B_CARRY}], [{"text": B_VAULT}, {"text": B_REWARDS}], [{"text": B_TROVE}, {"text": B_HELP}]],
+    "keyboard": [[{"text": B_YIELD}, {"text": B_CARRY}], [{"text": B_VAULT}, {"text": B_REWARDS}], [{"text": B_TROVE}, {"text": B_HELP}], [{"text": B_WATCH}]],
     "resize_keyboard": True,
     "is_persistent": True,
     "input_field_placeholder": "Tap a button",
@@ -265,6 +328,7 @@ ASK = {  # button -> (prompt the bot sends, command it runs on the answer, place
     B_VAULT: ("Reply with your wallet address (0x…), or with the word sample.", "vault", "0x…"),
     B_REWARDS: ("Reply with the address to check for unclaimed veMEZO (0x…), or with the word sample.", "rewards", "0x…"),
     B_TROVE: ("Reply with the address that has the trove (0x…), or with the word sample.", "trove", "0x…"),
+    B_WATCH: ("Reply with the trove address to watch (0x…). I will message you here when its advice changes.", "watch", "0x…"),
 }
 PROMPTS = {prompt: command for prompt, command, _ in ASK.values()}
 SAMPLES = {"vault": SAMPLE_WALLET, "rewards": SAMPLE_REWARDS, "trove": "sample"}
@@ -293,12 +357,14 @@ def allowed(chat_id: int, now: float | None = None) -> bool:
     return len(recent) < RATE_MAX
 
 
-def reply_text(text: str) -> str:
+def reply_text(text: str, chat_id: int | None = None) -> str:
     name, *args = text.split()
     command = name[1:].split("@")[0].lower()  # "/yield@musd_compass_bot" in groups
     if command == "faq":
         return FAQ
     handler = COMMANDS.get(command)
+    if command in CHAT_COMMANDS and chat_id is not None:
+        handler = lambda a: CHAT_COMMANDS[command](chat_id, a)  # noqa: E731
     if handler is None:
         return HELP
     try:
@@ -312,6 +378,7 @@ def reply_text(text: str) -> str:
 def route(message: dict) -> tuple[str, dict]:
     """The reply text and the keyboard to show with it."""
     text = message["text"].strip()
+    chat_id = message["chat"]["id"]
     replied = message.get("reply_to_message")
     asked = replied.get("text") if isinstance(replied, dict) else None
     if text in ASK:
@@ -320,8 +387,10 @@ def route(message: dict) -> tuple[str, dict]:
     if text == B_HELP:
         return FAQ, KEYBOARD
     if text.startswith("/"):
-        return reply_text(text), KEYBOARD
+        return reply_text(text, chat_id), KEYBOARD
     if isinstance(asked, str) and asked in PROMPTS:
+        if PROMPTS[asked] == "watch":
+            return reply_text(f"/watch {text}", chat_id), KEYBOARD
         return answer(PROMPTS[asked], text), KEYBOARD
     if _amount(text) is not None:  # a bare number: best places for that much
         return reply_text(f"/yield {text}"), KEYBOARD
@@ -339,10 +408,14 @@ def handle_update(update: dict) -> dict | None:
     chat_id = chat.get("id") if isinstance(chat, dict) else None
     if not isinstance(chat_id, int) or not isinstance(text, str) or not text.strip():
         return None
-    if allowed(chat_id):
-        body, markup = route(message)
-    else:
-        body, markup = "Too many requests — try again in a minute.", KEYBOARD
+    token = _chat.set(chat_id)
+    try:
+        if allowed(chat_id):
+            body, markup = route(message)
+        else:
+            body, markup = "Too many requests — try again in a minute.", KEYBOARD
+    finally:
+        _chat.reset(token)
     return {
         "method": "sendMessage",
         "chat_id": chat_id,

@@ -5,11 +5,19 @@ const WINDOW_MS = 60_000;
 const LIMIT = 60;
 const hits = new Map<string, { count: number; reset: number }>();
 
-/** True when this caller may proceed. The bot (shared secret) is exempt: all its traffic comes from one IP. */
-export function allow(req: Request): boolean {
+/** True when the request carries the bot's shared secret (timing-safe compare). */
+export function isBot(req: Request): boolean {
   const key = process.env.BOT_API_KEY;
   const given = req.headers.get("x-compass-bot");
-  if (key && given && given.length === key.length && timingSafeEqual(Buffer.from(given), Buffer.from(key))) return true;
+  if (!key || !given) return false;
+  const a = Buffer.from(given);
+  const b = Buffer.from(key);
+  return a.length === b.length && timingSafeEqual(a, b);
+}
+
+/** True when this caller may proceed. The bot (shared secret) is exempt: all its traffic comes from one IP. */
+export function allow(req: Request): boolean {
+  if (isBot(req)) return true;
   const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
   const now = Date.now();
   const h = hits.get(ip);

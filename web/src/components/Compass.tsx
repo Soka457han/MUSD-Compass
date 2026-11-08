@@ -71,7 +71,7 @@ function SizeOnly({ venues }: { venues: VenueOut[] }) {
               <span className="font-semibold">{v.status === "unavailable" ? "n/a" : usd(v.tvlUsd)}</span>
             </span>
             <span className="w-full text-xs text-ink-muted">
-              {v.status === "unavailable" ? "Source unavailable right now" : v.tags.join(" · ")} ·{" "}
+              {v.status === "unavailable" ? "Source unavailable right now" : `${v.tags.join(" · ")} · as of ${timeUtc(v.updatedAt)}`} ·{" "}
               <a href={v.action.url} target="_blank" rel="noreferrer" className="inline-block py-3 -my-3 font-semibold text-accent-text underline">
                 {v.action.label}
               </a>
@@ -80,6 +80,15 @@ function SizeOnly({ venues }: { venues: VenueOut[] }) {
         ))}
       </ul>
     </section>
+  );
+}
+
+function PegLine({ peg }: { peg: NonNullable<Sources["peg"]> }) {
+  return (
+    <p className="text-sm text-ink-muted">
+      MUSD trades at ${peg.priceUsd.toFixed(4)} on Mezo&apos;s MUSD/mUSDC pool (mUSDC counted as $1) · redemption floor ${peg.floorUsd.toFixed(4)} (1 minus the {peg.redemptionPct}% redemption fee) · as of {timeUtc(peg.updatedAt)}
+      {peg.priceUsd < peg.floorUsd && " · below the floor: a redemption returns more than this price, before gas and slippage"}
+    </p>
   );
 }
 
@@ -276,6 +285,7 @@ export function Compass({ sources, between, after }: { sources: Sources; between
           ) : (
             <p className="text-sm">Enter an amount to rank venues.</p>
           )}
+          {result?.assumptions.peg && <PegLine peg={result.assumptions.peg} />}
         </section>
 
         <div className="mt-14 flex flex-col gap-14 md:mt-24 md:gap-20">

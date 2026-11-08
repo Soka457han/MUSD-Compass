@@ -41,7 +41,7 @@ const FIELDS: [string, string][] = [
   ["carry.costs", "% per year of entry/exit costs (Ethereum bridge + gas round trip, borrow fee and interest)."],
   ["breakEven", "Ethereum venues only: the amounts where the venue beats the Savings Vault, for cash and total."],
   ["status", "ok or unavailable — a source that is down says so instead of guessing."],
-  ["assumptions", "the holding period, borrow parameters and costs used, with plain-language labels."],
+  ["assumptions", "the holding period, borrow parameters and costs used, with plain-language labels. assumptions.peg is MUSD's price on Mezo's MUSD/mUSDC pool (mUSDC counted as $1) and the redemption floor (1 minus the redemption fee), or null when unread."],
   ["notice", "a sentence to show the user as-is, e.g. when an amount is below the new-trove minimum."],
 ];
 
@@ -130,6 +130,7 @@ export default function DevelopersPage() {
               <tr className="text-xs text-ink-muted">
                 <th scope="col" className="py-1 pr-3 font-semibold">Network</th>
                 <th scope="col" className="py-1 pr-3 font-semibold">Price</th>
+                <th scope="col" className="py-1 pr-3 font-semibold">Per 1,000 calls</th>
                 <th scope="col" className="py-1 font-semibold">Status</th>
               </tr>
             </thead>
@@ -137,11 +138,13 @@ export default function DevelopersPage() {
               <tr className="border-t border-line align-top">
                 <td className="py-2 pr-3">Mezo testnet</td>
                 <td className="py-2 pr-3">0.001 test MUSD</td>
+                <td className="py-2 pr-3">1 test MUSD</td>
                 <td className="py-2">Live. The Pay &amp; fetch button uses it.</td>
               </tr>
               <tr className="border-t border-line align-top">
                 <td className="py-2 pr-3">Mezo mainnet</td>
                 <td className="py-2 pr-3">0.01 MUSD</td>
+                <td className="py-2 pr-3">10 MUSD</td>
                 <td className="py-2">Live. Listed in the 402 response next to testnet; pay it from your own x402 client. The curl above shows both.</td>
               </tr>
             </tbody>
@@ -162,7 +165,20 @@ export default function DevelopersPage() {
             Reading the chain yourself is heavier still: 14 days of sMUSD yield events alone take 34 <code className="font-mono text-xs">eth_getLogs</code> requests on Mezo mainnet, because its RPCs cap a request at 10,000 blocks.
           </p>
           <p className="mt-2 max-w-prose text-sm">
-            Both payments on record are ours, one of them from a second wallet. There are no outside buyers yet.
+            The payers we expect: bot and agent developers who need every mode and holding period, plus an address&apos;s trove and rewards, in one call, and treasury dashboards that track a trove and its rewards.
+            Both payments on record are ours, one of them from a second wallet. There are no outside payers yet; the live count is on{" "}
+            <a href="/stats" className="font-semibold underline">/stats</a>.
+          </p>
+
+          <h3 className="mt-4 text-sm font-bold">What it costs us, and what it costs you to do it yourself</h3>
+          <p className="mt-1 max-w-prose text-sm">
+            Our serving cost is an estimate of about $0.004 per 1,000 calls at Vercel Pro on-demand prices, for calls answered from the warm cache. Basis: Vercel Fluid compute, region iad1 (
+            <a href="https://vercel.com/docs/functions/usage-and-pricing" className="font-semibold underline">pricing page</a>, read 8 Nov 2026): Active CPU $0.128 per hour, Provisioned Memory $0.0106 per GB-hour, Invocations $0.60 per million.
+            Assumptions: 50 ms active CPU and 0.3 s wall time per call, 2 GB, no instance sharing. That is about $0.0018 for CPU, $0.0018 for memory and $0.0006 for invocations. The x402 facilitator pays the settlement gas, not Compass.
+            The estimate uses Vercel Pro on-demand prices, which is what paid traffic would run on.
+          </p>
+          <p className="mt-2 max-w-prose text-sm">
+            Doing it yourself: one refresh needs 34 <code className="font-mono text-xs">eth_getLogs</code> requests for 14 days of sMUSD yield events alone (Mezo RPCs cap a request at 10,000 blocks), plus pool, trove, gauge and Merkl reads. We measured 7 to 37 seconds per cold refresh on 4 Nov 2026, depending on the RPC.
           </p>
         </section>
 

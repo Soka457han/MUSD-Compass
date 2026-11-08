@@ -1,5 +1,6 @@
 import { breakEven, type Range } from "./carry/breakEven";
 import { entryCheck, minNewTroveAmount, venueCarry, type BorrowParams, type Carry, type CarryInput, type Days, type EntryCheck } from "./carry/carry";
+import type { Peg } from "./sources/peg";
 import type { Venue } from "./venue";
 
 export type Query = Omit<CarryInput, "params" | "ratePct"> & { ratePct: number | null };
@@ -29,6 +30,7 @@ export type Sources = {
   paramsLive: boolean;
   ethRoundTrip: { usd: number; basis: string } | null;
   mezoPriceUsd: number | null;
+  peg: Peg | null;
 };
 
 export type VenueOut = Venue & { carry: Carry; check: EntryCheck; breakEven: { cash: Range; total: Range } | null };
@@ -79,6 +81,7 @@ export function buildYields(s: Sources, q: Query) {
       locked: "🔒 = veMEZO: claimed on Mezo, locked 12 weeks, valued at MEZO spot. Cash carry ranks; total carry adds 🔒.",
       ethRoundTrip: s.ethRoundTrip,
       mezoPriceUsd: s.mezoPriceUsd,
+      peg: s.peg,
     },
     notice,
     venues,

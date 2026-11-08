@@ -4,6 +4,7 @@ import { MAINNET } from "@/lib/chain/addresses";
 import { unavailable, type Venue } from "@/lib/venue";
 import type { Sources } from "@/lib/yields";
 import { fetchEthereum, roundTripCostUsd } from "./ethereum";
+import { readPeg } from "./peg";
 import { fetchMerkl } from "./merkl";
 import { FALLBACK_BORROW_PARAMS, mezoVenues, readMezo } from "./mezo";
 import { fetchSmusdMainnet } from "./smusd";
@@ -42,7 +43,7 @@ export async function loadSources(): Promise<Sources> {
 async function readSources(): Promise<Sources> {
   if (process.env.COMPASS_FIXTURES === "1") return fixtureSources();
   // All four in parallel: the Mezo chain read no longer waits for Merkl's MEZO price.
-  const [merkl, smusd, eth, chain] = await Promise.all([settle(fetchMerkl(), "merkl"), settle(fetchSmusdMainnet(), "smusd"), settle(fetchEthereum(), "ethereum"), settle(readMezo(), "mezo")]);
+  const [merkl, smusd, eth, chain, peg] = await Promise.all([settle(fetchMerkl(), "merkl"), settle(fetchSmusdMainnet(), "smusd"), settle(fetchEthereum(), "ethereum"), settle(readMezo(), "mezo"), settle(readPeg(), "peg")]);
   const mezoPrice = merkl.ok ? merkl.value.mezoPriceUsd : null;
   const mezo = chain.ok ? { ok: true as const, value: mezoVenues(chain.value, mezoPrice ?? 0) } : chain;
 
@@ -72,5 +73,6 @@ async function readSources(): Promise<Sources> {
     paramsLive: mezo.ok && mezo.value.paramsLive,
     ethRoundTrip,
     mezoPriceUsd: mezoPrice,
+    peg: peg.ok ? peg.value : null,
   };
 }

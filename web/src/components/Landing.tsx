@@ -172,6 +172,7 @@ export function SiteFooter({ notes }: { notes?: React.ReactNode }) {
             [REPO, "GitHub"],
             [BOT, "Telegram bot"],
             ["/developers", "Developers"],
+            ["/stats", "Usage stats"],
             ["https://mezo.org", "Mezo"],
           ].map(([href, label]) => (
             <a key={href + label} href={href} className="flex min-h-10 items-center no-underline hover:underline">

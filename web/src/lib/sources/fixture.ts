@@ -1,6 +1,7 @@
 // Deterministic sources for local runs and e2e (COMPASS_FIXTURES=1): live samples recorded 24 Oct 2026.
 import listings from "../../../tests/fixtures/merkl-opportunities-2026-10-24.json";
 import smusdSample from "../../../tests/fixtures/smusd-yield-events-2026-10-24.json";
+import { MAINNET } from "@/lib/chain/addresses";
 import type { Venue } from "@/lib/venue";
 import type { Sources } from "@/lib/yields";
 import { parseMerkl, type MerklListing } from "./merkl";
@@ -78,5 +79,6 @@ export function fixtureSources(): Sources {
     paramsLive: true,
     ethRoundTrip: { usd: 1.28, basis: "≈1,150,000 Ethereum gas + 550,000 Mezo gas at live prices (bridge relay priced as gas; est.)" },
     mezoPriceUsd: 0.00297,
+    peg: { priceUsd: 0.9913, floorUsd: 0.9925, redemptionPct: 0.75, pool: MAINNET.pools.musdcMusdCl10, updatedAt: at },
   };
 }

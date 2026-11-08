@@ -24,6 +24,8 @@ test("developers: documents the endpoints with curl examples; nav API goes here"
   }
   await expect(page.getByLabel("Example: yields request")).toContainText('curl "https://musd-compass.vercel.app/api/yields?amount=2000');
   await expect(page.getByRole("heading", { name: /GET \/api\/premium\/yields/ })).toBeVisible();
+  await expect(page.getByText("per 1,000 calls").first()).toBeVisible();
+  await expect(page.locator('main a[href="/stats"]')).toBeVisible();
   await page.getByRole("button", { name: "Pay 0.001 MUSD & fetch" }).click(); // no wallet in the test browser
   await expect(page.getByRole("alert").filter({ hasText: "No wallet in this browser" })).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBe(0);
@@ -42,6 +44,11 @@ test("rewards: the sample shows unclaimed veMEZO, the warning and the reward pat
   await page.getByRole("button", { name: "Look up" }).click();
   await expect(page.getByRole("alert").filter({ hasText: "not an EVM address" })).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBe(0);
+});
+
+test("trove link from an alert opens that trove", async ({ page }) => {
+  await page.goto("/trove?address=0x593c000000000000000000000000000000005bb5");
+  await expect(page.getByText("333%", { exact: true })).toBeVisible();
 });
 
 test("trove planner: sample → ratio, safe borrow, queue; 'Use in calculator' opens existing-trove mode at its rate", async ({ page }) => {
@@ -131,4 +138,31 @@ test("My MUSD: each holding against the best place, plus trove and veMEZO; reach
   expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBe(0);
   const bad = (await axe(page)).violations.filter((v) => v.impact === "serious" || v.impact === "critical");
   expect(bad.map((v) => v.id)).toEqual([]);
+});
+
+test("trove API: the fixture response carries advice", async ({ request }) => {
+  const body = await (await request.get("/api/trove/sample")).json();
+  expect(body.advice.length).toBeGreaterThan(0);
+  expect(body.advice[0]).toEqual(expect.objectContaining({ level: expect.stringMatching(/^(ok|watch|act)$/), title: expect.any(String), detail: expect.any(String) }));
+});
+
+test("stats: heading, not-switched-on state under fixtures, second-wallet tx link, no horizontal scroll, accessible; footer link on home", async ({ page }) => {
+  await page.setViewportSize({ width: 360, height: 800 });
+  for (const scheme of ["light", "dark"] as const) {
+    await page.addInitScript((s) => localStorage.setItem("theme", s), scheme);
+    await page.goto("/stats");
+    await expect(page.getByRole("heading", { level: 1, name: "Usage stats" })).toBeVisible();
+    await expect(page.getByText("Counting is not switched on in this deployment yet")).toBeVisible();
+    await expect(page.getByText("not counted yet")).toBeVisible();
+    await expect(page.getByRole("link", { name: /Paid from a second wallet/ })).toHaveAttribute(
+      "href",
+      "https://explorer.test.mezo.org/tx/0x3a63cdf86569c3787867fcc9ddb3ebf8c91eb8dec1a2a206c716457f8c30bc5a",
+    );
+    expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBe(0);
+    const bad = (await axe(page)).violations.filter((v) => v.impact === "serious" || v.impact === "critical");
+    expect(bad.map((v) => `${scheme}: ${v.id}`)).toEqual([]);
+  }
+  await page.goto("/");
+  await page.getByRole("contentinfo").getByRole("link", { name: "Usage stats" }).click();
+  await expect(page).toHaveURL(/\/stats$/);
 });

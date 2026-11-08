@@ -1,3 +1,4 @@
+import hashlib
 import json
 import os
 import sys
@@ -12,6 +13,7 @@ import compass_bot  # noqa: E402
 from compass_bot import handle_update  # noqa: E402
 
 FIX = Path(__file__).parent / "fixtures"
+USER_1 = hashlib.sha256(b"k1").hexdigest()[:16]
 SAMPLE = "0xfe21B2782B35BE770DD4a7b05f81cE43790D676C"
 
 
@@ -57,7 +59,7 @@ def say(text, chat_id=1):
 def test_yield_ranks_cash_first_with_labels_and_links(api):
     text = say("/yield")
     assert api.calls[0]["params"] == {"amount": "2000"}
-    assert api.calls[0]["headers"] == {"x-compass-bot": "k"}
+    assert api.calls[0]["headers"] == {"x-compass-bot": "k", "x-compass-user": USER_1}
     assert text.index("Savings Vault") < text.index("Curve")  # API order = cash carry
     assert "cash 4.01%" in text
     assert "with 🔒 4.64%" in text  # locked shown beside cash, not inside it
@@ -143,6 +145,15 @@ def test_trove_shows_ratio_rate_queue_and_safe_borrow(api):
     assert "Usage: /trove" in say("/trove 0x12")
 
 
+def test_trove_shows_advice_and_watch_hint(api):
+    text = say("/trove sample")
+    assert "👀 <b>Keep an eye on the redemption queue</b>" in text
+    assert "so a rate rise could move you up." in text
+    assert "/watch 0x593c000000000000000000000000000000005bb5" in text
+    assert "Add BTC or repay MUSD in the Mezo app: https://mezo.org" in text
+    assert "/vault" not in text
+
+
 # ---- buttons ----
 
 def send(text, reply_to=None, chat_id=1):
@@ -155,7 +166,8 @@ def send(text, reply_to=None, chat_id=1):
 def test_every_answer_carries_the_buttons(api):
     rows = send("/start")["reply_markup"]["keyboard"]
     labels = [b["text"] for row in rows for b in row]
-    assert labels == list(compass_bot.ASK) + [compass_bot.B_HELP]
+    asks = [b for b in compass_bot.ASK if b != compass_bot.B_WATCH]
+    assert labels == asks + [compass_bot.B_HELP, compass_bot.B_WATCH]
 
 
 def test_a_button_that_needs_an_address_asks_for_it_then_answers_the_reply(api):
@@ -218,3 +230,100 @@ def test_one_retry_after_a_server_error_or_timeout(api, monkeypatch):
     monkeypatch.setattr(compass_bot.httpx, "get", flaky)
     assert "Savings Vault" in say("/yield")
     assert state["n"] == 2
+
+
+# ---- watch ----
+
+class FakePost:
+    """Stands in for httpx.post: records calls, answers with a canned body."""
+
+    def __init__(self, body=None, status=200):
+        self.calls, self.body, self.status = [], body, status
+
+    def __call__(self, url, json=None, headers=None, timeout=None):
+        self.calls.append({"url": url, "json": json, "headers": headers})
+        return httpx.Response(self.status, json=self.body)
+
+
+@pytest.fixture
+def post(api, monkeypatch):
+    fake = FakePost({"status": "added"})
+    monkeypatch.setattr(compass_bot.httpx, "post", fake)
+    return fake
+
+
+def test_watch_posts_the_chat_and_address_with_the_bot_header(post):
+    text = say(f"/watch {SAMPLE}", chat_id=42)
+    assert post.calls[0]["url"].endswith("/api/watch")
+    assert post.calls[0]["json"] == {"chatId": 42, "action": "add", "address": SAMPLE}
+    assert post.calls[0]["headers"] == {"x-compass-bot": "k", "x-compass-user": hashlib.sha256(b"k42").hexdigest()[:16]}
+    assert f"Watching <code>{SAMPLE}</code>. Compass checks it about every 15 minutes" in text
+    assert f"Stop with /unwatch {SAMPLE}" in text
+
+
+@pytest.mark.parametrize("status,expected", [
+    ("exists", "Already watching"),
+    ("limit", "You can watch up to 3 addresses"),
+    ("full", "Alerts are full right now"),
+    ("off", f"Alerts are not set up yet. /trove {SAMPLE} shows the advice now."),
+])
+def test_watch_replies_for_each_status(post, status, expected):
+    post.body = {"status": status}
+    assert expected in say(f"/watch {SAMPLE}")
+
+
+@pytest.mark.parametrize("text", ["/watch", "/watch 0x123", "/unwatch nope"])
+def test_bad_or_missing_address_gets_usage_and_no_call(post, text):
+    assert "Usage: /" in say(text)
+    assert post.calls == []
+
+
+def test_unwatch_and_watching(post):
+    post.body = {"removed": True}
+    assert f"Stopped watching <code>{SAMPLE}</code>" in say(f"/unwatch {SAMPLE}", chat_id=5)
+    assert post.calls[-1]["json"] == {"chatId": 5, "action": "remove", "address": SAMPLE}
+    post.body = {"removed": False}
+    assert "You were not watching" in say(f"/unwatch {SAMPLE}")
+    post.body = {"addresses": [SAMPLE.lower(), "0x" + "1" * 40]}
+    text = say("/watching", chat_id=5)
+    assert post.calls[-1]["json"] == {"chatId": 5, "action": "list"}
+    assert SAMPLE.lower() in text and "1" * 40 in text
+    post.body = {"addresses": []}
+    assert say("/watching") == "You are not watching any trove. Add one with /watch &lt;address&gt;."
+
+
+def test_watch_button_asks_then_watches_the_reply_for_that_chat(post):
+    ask = send(compass_bot.B_WATCH)
+    assert ask["reply_markup"]["force_reply"] is True
+    assert post.calls == []
+    out = send(SAMPLE, reply_to=ask["text"], chat_id=9)
+    assert post.calls[0]["json"] == {"chatId": 9, "action": "add", "address": SAMPLE}
+    assert "Watching" in out["text"]
+
+
+def test_watch_api_errors_are_passed_on_or_say_down(post):
+    post.status, post.body = 401, {"error": "Unauthorized."}
+    assert say(f"/watch {SAMPLE}") == "Unauthorized."
+    post.status, post.body = 500, {}
+    assert "unavailable" in say(f"/watch {SAMPLE}")
+
+
+def test_help_lists_the_watch_commands(api):
+    text = say("/help")
+    assert "/watch &lt;address&gt;" in text and "/unwatch" in text and "/watching" in text
+
+
+def test_watch_post_is_not_retried_after_a_5xx(post):
+    post.status, post.body = 503, {"error": "busy"}
+    assert say(f"/watch {SAMPLE}") == "busy"
+    assert len(post.calls) == 1
+
+
+def test_user_header_is_a_salted_hash_and_absent_without_a_key(api, monkeypatch):
+    say("/yield", chat_id=7)
+    h = api.calls[0]["headers"]["x-compass-user"]
+    assert h == hashlib.sha256(b"k7").hexdigest()[:16]
+    monkeypatch.setenv("BOT_API_KEY", "")
+    say("/yield", chat_id=7)
+    assert "x-compass-user" not in api.calls[-1]["headers"]
+    assert compass_bot._headers() == {"x-compass-bot": ""}  # outside an update there is no chat

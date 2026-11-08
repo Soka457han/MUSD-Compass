@@ -10,8 +10,16 @@ test.describe("home (360 px, fixture data)", () => {
     await expect(ranked.first()).toContainText("MUSD Savings Vault");
     await expect(ranked.first()).toContainText("4.01%");
     await expect(ranked.first()).toContainText("assumes 90-day hold");
+    const cards = page.locator('ol[aria-label="Venues ranked by cash carry"] > li');
+    for (const c of await cards.all()) await expect(c).toContainText(/as of \d\d:\d\d UTC/);
     await expect(page.getByRole("heading", { name: "Not ranked: no steady APR" })).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBe(0);
+  });
+
+  test("shows the MUSD price and redemption floor", async ({ page }) => {
+    await page.goto("/");
+    await expect(page.getByText("redemption floor $0.9925").first()).toBeVisible();
+    await expect(page.getByText("below the floor: a redemption returns more than this price, before gas and slippage").first()).toBeVisible();
   });
 
   test("calculator re-ranks and mirrors the URL; borrow mode shows the design's 2.72%", async ({ page }) => {

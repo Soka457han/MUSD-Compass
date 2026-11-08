@@ -1,8 +1,11 @@
+import { after } from "next/server";
 import type { Address, PublicClient } from "viem";
 import { mezoClient } from "@/lib/chain/clients";
 import { allow } from "@/lib/rateLimit";
 import { loadSources } from "@/lib/sources";
+import { countCall } from "@/lib/stats";
 import { fetchTroveQueue } from "@/lib/sources/troveQueue";
+import { troveAdvice } from "@/lib/safety";
 import { readTrove, SAFE_ICR, sampleTrove, type TroveView } from "@/lib/trove";
 import { isWallet } from "@/lib/vault";
 
@@ -27,10 +30,11 @@ const FIXTURE: TroveView = {
 /** Mainnet trove for an address, or `sample` for the safest live trove (SortedTroves.getFirst()). */
 export async function GET(req: Request, { params }: { params: Promise<{ address: string }> }) {
   if (!allow(req)) return Response.json({ error: "Too many requests — try again in a minute." }, { status: 429, headers: HEADERS });
+  after(() => countCall("trove", req));
   const { address } = await params;
   if (address !== "sample" && !isWallet(address)) return Response.json({ error: "That is not an EVM address (0x… with 40 hex characters)." }, { status: 400, headers: HEADERS });
   const about = { network: "Mezo mainnet", safeIcrPct: SAFE_ICR * 100, minIcrPct: 110 };
-  if (process.env.COMPASS_FIXTURES === "1") return Response.json({ ...FIXTURE, ...about }, { headers: HEADERS });
+  if (process.env.COMPASS_FIXTURES === "1") return Response.json({ ...FIXTURE, advice: troveAdvice(FIXTURE), ...about }, { headers: HEADERS });
 
   const client = mezoClient as PublicClient;
   try {
@@ -40,7 +44,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ address:
       address === "sample" ? sampleTrove(client) : Promise.resolve(address as Address),
     ]);
     const trove = await readTrove(client, who, sources.borrow.feePct, queue ? queue.map(BigInt) : null);
-    return Response.json({ ...trove, ...about }, { headers: HEADERS });
+    return Response.json({ ...trove, advice: troveAdvice(trove), ...about }, { headers: HEADERS });
   } catch {
     return Response.json({ error: "Mezo mainnet is unavailable right now — try again in a minute." }, { status: 503, headers: HEADERS });
   }
