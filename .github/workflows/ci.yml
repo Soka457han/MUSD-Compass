@@ -5,7 +5,7 @@ on:
 
 jobs:
   web:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04 # Playwright 1.56 cannot install Chromium on Ubuntu 26.04 (ubuntu-latest from Oct 2026)
     defaults:
       run:
         working-directory: web
@@ -27,7 +27,7 @@ jobs:
       - run: npm run e2e
 
   bot:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04 # Playwright 1.56 cannot install Chromium on Ubuntu 26.04 (ubuntu-latest from Oct 2026)
     defaults:
       run:
         working-directory: bot

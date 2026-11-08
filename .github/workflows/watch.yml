@@ -1,0 +1,17 @@
+# Every 15 minutes, call the watch runner. It reads each trove that someone subscribed to with the
+# Telegram bot's /watch and sends a message when that trove's advice changed since the last run.
+# Needs the repo secret CRON_SECRET (the same value as the CRON_SECRET env var on Vercel).
+name: Watch troves
+
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch:
+
+jobs:
+  watch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - name: Run the watch check
+        run: curl -fsS -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" https://musd-compass.vercel.app/api/watch/run
