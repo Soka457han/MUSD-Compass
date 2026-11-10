@@ -3,6 +3,7 @@ import { formatUnits, type PublicClient } from "viem";
 import { smusdAbi } from "@/lib/chain/abis";
 import { MAINNET, TESTNET } from "@/lib/chain/addresses";
 import { mezoClient, mezoLogsClient, mezoTestnetClient } from "@/lib/chain/clients";
+import { mainnetWritesEnabled } from "@/lib/sendSafely";
 import type { Venue } from "@/lib/venue";
 
 export type YieldEvent = { kind: string; blockNumber: number; timestamp: number; amount: string };
@@ -85,6 +86,9 @@ export async function scanYieldEvents(client: PublicClient, address: `0x${string
   return { nowTs: Number(head.timestamp), events: out };
 }
 
+/** Where the Savings Vault card sends people: the mainnet vault once a deploy switches mainnet on, the testnet one until then. */
+export const smusdAction = () => (mainnetWritesEnabled() ? { label: "Deposit", url: "/vault?net=mainnet" } : { label: "Deposit (testnet)", url: "/vault" });
+
 export type SmusdData = { venue: Venue; events: YieldEvent[]; aprPct: number; lastDistribution: number | null };
 
 export async function fetchSmusdMainnet(): Promise<SmusdData> {
@@ -107,7 +111,7 @@ export async function fetchSmusdMainnet(): Promise<SmusdData> {
       rates: { liquidApr: r.aprPct, lockedApr: 0, fixedCostUsd: 0, tvl: null },
       tvlUsd: Number(formatUnits(supply, 18)),
       ends: null,
-      action: { label: "Deposit (testnet)", url: "/vault" },
+      action: smusdAction(),
       source: { label: "Mezo chain — yield events", url: `https://explorer.mezo.org/address/${MAINNET.smusd}` },
       routes: [],
       tags: ["Mezo-native", "No lock, no withdrawal fee", "Variable yield"],

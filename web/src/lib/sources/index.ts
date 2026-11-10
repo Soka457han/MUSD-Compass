@@ -7,7 +7,7 @@ import { fetchEthereum, roundTripCostUsd } from "./ethereum";
 import { readPeg } from "./peg";
 import { fetchMerkl, rescaleLockedApr } from "./merkl";
 import { FALLBACK_BORROW_PARAMS, mezoVenues, readMezo } from "./mezo";
-import { fetchSmusdMainnet } from "./smusd";
+import { fetchSmusdMainnet, smusdAction } from "./smusd";
 import { fixtureSources } from "./fixture";
 
 /** Next.js stops a build when a cached function runs past 50 s; a source that hangs that long would break the deploy
@@ -58,7 +58,7 @@ async function readSources(): Promise<Sources> {
   const venues: Venue[] = [
     smusd.ok
       ? smusd.value.venue
-      : unavailable("mezo-smusd", "MUSD Savings Vault (sMUSD)", "Mezo", { label: "Mezo chain", url: `https://explorer.mezo.org/address/${MAINNET.smusd}` }, { label: "Deposit (testnet)", url: "/vault" }),
+      : unavailable("mezo-smusd", "MUSD Savings Vault (sMUSD)", "Mezo", { label: "Mezo chain", url: `https://explorer.mezo.org/address/${MAINNET.smusd}` }, smusdAction()),
     ...(mezo.ok ? mezo.value.venues : [unavailable("mezo-pools", "Mezo pools & Stability Pool", "Mezo", { label: "Mezo chain", url: "https://explorer.mezo.org" }, { label: "Open the Mezo app", url: "https://mezo.org/earn/pools" })]),
     ...(merkl.ok ? rescaleLockedApr(merkl.value.venues, mezoPrice, merklPrice) : [unavailable("merkl", "Mezo-paid Ethereum pools", "Ethereum", { label: "Merkl", url: "https://app.merkl.xyz" }, { label: "Open Merkl", url: "https://app.merkl.xyz" })]),
     ...(eth.ok ? [eth.value.morpho] : []),

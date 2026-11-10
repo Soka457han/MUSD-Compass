@@ -61,6 +61,14 @@ describe("buildBorrowEarnSteps", () => {
     expect(deposit.address).toBe(NETWORKS.mainnet.smusd);
     expect(deposit.args).toEqual([2000n * e18]);
   });
+  it("refuses a mainnet trove above the 2,500 MUSD cap before any read, and leaves testnet uncapped", async () => {
+    const c = client();
+    await expect(buildBorrowEarnSteps(c as never, "mainnet", account, 2500.01)).rejects.toThrow(/at most 2,500\.00 MUSD on mainnet/);
+    expect(c.readContract).not.toHaveBeenCalled();
+    await expect(buildBorrowEarnSteps(client() as never, "mainnet", account, 2500)).resolves.toBeDefined();
+    await expect(buildBorrowEarnSteps(client({ btc: parseEther("10") }) as never, "testnet", account, 50_000)).resolves.toBeDefined();
+    await expect(buildBorrowEarnSteps(client() as never, "testnet", account, Number.NaN)).rejects.toThrow(/more than zero/);
+  });
   it("skips the approval when the vault is already allowed to take the amount", async () => {
     const { steps } = await buildBorrowEarnSteps(client({ allowance: 2000n * e18 }) as never, "testnet", account, 2000);
     expect(steps.map((s) => s.functionName)).toEqual(["openTrove", "deposit"]);

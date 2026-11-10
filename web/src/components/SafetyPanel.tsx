@@ -3,13 +3,13 @@
 import { useState } from "react";
 import { BaseError, ContractFunctionRevertedError, maxUint256, parseUnits } from "viem";
 import { smusdAbi } from "@/lib/chain/abis";
-import { SAMPLES, TESTNET } from "@/lib/chain/addresses";
-import { guard } from "@/lib/sendSafely";
+import { MAINNET, SAMPLES, TESTNET } from "@/lib/chain/addresses";
+import { guard, MAINNET_CAP_MUSD } from "@/lib/sendSafely";
 import { humanError, testnetPublic } from "@/lib/wallet";
 
 type Result = { ok: boolean; text: string };
 
-/** Three things a bad page would try. Each runs for real, with no wallet: the first two hit Compass's own guard, the third Mezo testnet. */
+/** Four things a bad page would try. Each runs for real, with no wallet: the first three hit Compass's own guard, the last Mezo testnet. */
 const TRIES = [
   {
     id: "unlimited",
@@ -24,6 +24,15 @@ const TRIES = [
     label: "Send to a contract that is not the vault",
     run: async (): Promise<Result> => {
       guard({ address: "0x000000000000000000000000000000000000dEaD", functionName: "transfer", args: [SAMPLES.devWallet, 1n] });
+      return { ok: false, text: "Not refused. This is a bug." };
+    },
+  },
+  {
+    id: "cap",
+    label: `Deposit 1,000,000 MUSD on mainnet (the limit is ${MAINNET_CAP_MUSD.toLocaleString("en-US")})`,
+    run: async (): Promise<Result> => {
+      // Judged as if mainnet were switched on, so the answer is about the amount.
+      guard({ address: MAINNET.smusd, functionName: "deposit", args: [parseUnits("1000000", 18)], network: "mainnet" }, { mainnetEnabled: true });
       return { ok: false, text: "Not refused. This is a bug." };
     },
   },
@@ -70,7 +79,7 @@ export function SafetyPanel() {
           Try to break it
         </h2>
         <p className="mt-1 max-w-prose text-sm text-ink-muted">
-          Each button runs for real, no wallet needed. The first two go through the same check every Compass transaction passes; the third asks Mezo testnet to simulate it, as every deposit is simulated before you sign.
+          Each button runs for real, no wallet needed. The first three go through the same check every Compass transaction passes; the last asks Mezo testnet to simulate it, as every deposit is simulated before you sign.
         </p>
         <ul className="mt-3 space-y-3">
           {TRIES.map((t) => {

@@ -11,6 +11,12 @@ const VAULT_CALLS = new Set(["deposit", "withdraw", "claimYield"]);
 /** Mainnet writes stay off until a deploy sets NEXT_PUBLIC_MAINNET_WRITES=1; testnet is always allowed. */
 export const mainnetWritesEnabled = () => process.env.NEXT_PUBLIC_MAINNET_WRITES === "1";
 
+/** The most MUSD one mainnet transaction may deposit, approve or borrow through Compass while it is new. Top-up, repay, withdraw and claim are not capped: they lower risk or return funds. */
+export const MAINNET_CAP_MUSD = 2_500;
+const overCap = (network: NetworkId, amount: bigint) => network === "mainnet" && amount > BigInt(MAINNET_CAP_MUSD) * 10n ** 18n;
+const CAP_TEXT = `Compass moves at most ${MAINNET_CAP_MUSD.toLocaleString("en-US")} MUSD per transaction on Mezo mainnet for now.`;
+const positive = (v: unknown): v is bigint => typeof v === "bigint" && v > 0n;
+
 /** Mezo charges at least half the gas limit, so the buffer stays small: estimate × 1.2, rounded up. */
 export const gasWithBuffer = (estimate: bigint) => (estimate * 12n + 9n) / 10n;
 
@@ -51,17 +57,27 @@ export function guard(
   // Contract by contract, the only functions Compass ever calls. A transfer or a mint on an allowed contract is refused like an unknown contract.
   const to = w.address.toLowerCase();
   if (to === net.musd.toLowerCase() && w.functionName !== "approve") throw new Error("Compass only approves MUSD, and only for the Savings Vault.");
-  if (to === net.smusd.toLowerCase() && !VAULT_CALLS.has(w.functionName)) throw new Error("Compass only deposits, withdraws and claims yield on the Savings Vault.");
+  if (to === net.smusd.toLowerCase()) {
+    if (!VAULT_CALLS.has(w.functionName)) throw new Error("Compass only deposits, withdraws and claims yield on the Savings Vault.");
+    if (w.functionName !== "claimYield" && !positive(w.args[0])) throw new Error("Compass can only deposit or withdraw more than zero.");
+    if (w.functionName === "deposit" && overCap(network, w.args[0] as bigint)) throw new Error(CAP_TEXT);
+  }
   if (w.address.toLowerCase() === net.borrowerOperations.toLowerCase()) {
     if (!TROVE_CALLS.has(w.functionName)) throw new Error("Compass only opens a trove, tops it up or repays it on BorrowerOperations; closing or adjusting it is done in the Mezo app.");
     const hints = w.functionName === "openTrove" || w.functionName === "repayMUSD" ? w.args.slice(1) : w.args;
     if (w.functionName === "repayMUSD" && !(typeof w.args[0] === "bigint" && w.args[0] > 0n)) throw new Error("Compass can only repay more than zero MUSD.");
     if (!hints.every((h) => typeof h === "string" && isAddress(h, { strict: false }))) throw new Error("The trove hints must be addresses.");
+    if (w.functionName === "openTrove") {
+      if (!positive(w.args[0])) throw new Error("Compass can only borrow more than zero MUSD.");
+      if (overCap(network, w.args[0])) throw new Error(CAP_TEXT);
+    }
   }
   if (w.functionName === "approve") {
-    const [spender, amount] = w.args as [string, bigint];
+    const [spender, amount] = w.args as [string, unknown];
     if (String(spender).toLowerCase() !== net.smusd.toLowerCase()) throw new Error("Compass only approves the Savings Vault to spend MUSD.");
+    if (!positive(amount)) throw new Error("Compass can only approve more than zero MUSD.");
     if (amount >= maxUint256 / 2n) throw new Error("Compass never asks for an unlimited approval, only the exact amount you deposit.");
+    if (overCap(network, amount)) throw new Error(CAP_TEXT);
   }
 }
 

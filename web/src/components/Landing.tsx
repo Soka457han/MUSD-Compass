@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { MAINNET_CAP_MUSD, mainnetWritesEnabled } from "@/lib/sendSafely";
+import { walletConnectEnabled } from "@/lib/walletconnect";
 
 const BOT = process.env.NEXT_PUBLIC_BOT_URL ?? "https://t.me/musd_compass_bot";
 const REPO = "https://github.com/Soka457han/MUSD-Compass";
@@ -109,10 +111,16 @@ export function Channels() {
   );
 }
 
+const LIVE = mainnetWritesEnabled();
 const FAQ = [
   { q: "What is veMEZO?", a: "Mezo's vote-escrowed token. Rewards paid in it are locked for 12 weeks, so Compass shows them beside the cash figure." },
-  { q: "Why can I only deposit on testnet?", a: "This site sends transactions to Mezo testnet only for now. The rates you see come from mainnet. Mainnet actions are built behind a switch that stays off until they have been reviewed and tried once with real funds." },
-  { q: "Does it work with a phone wallet?", a: "Reading the ranking works in any phone browser. To deposit from a phone, open Compass in your wallet app's built-in browser. WalletConnect for other phone wallets is planned for Wave 2." },
+  LIVE
+    ? { q: "Can I use real funds here?", a: `Yes, on the Vault page. Choose Mezo mainnet there to deposit in the Savings Vault, open a trove, add BTC or repay MUSD from your own wallet. Each action is simulated first, asks you to type the amount, and deposits and new troves stop at ${MAINNET_CAP_MUSD.toLocaleString("en-US")} MUSD per transaction. Compass never holds your funds. Testnet stays the default.` }
+    : { q: "Why can I only deposit on testnet?", a: "This site sends transactions to Mezo testnet only for now. The rates you see come from mainnet. Mainnet actions are built behind a switch that stays off until they have been reviewed and tried once with real funds." },
+  {
+    q: "Does it work with a phone wallet?",
+    a: `Reading the ranking works in any phone browser. To deposit from a phone, open Compass in your wallet app's built-in browser${walletConnectEnabled() ? ", or choose WalletConnect on the Vault page and scan the QR code with your wallet." : "."}`,
+  },
   { q: "Is this financial advice?", a: "No. It is arithmetic on public data. Check the source link on a number before you move money." },
 ];
 
@@ -147,7 +155,7 @@ export function SiteFooter({ notes }: { notes?: React.ReactNode }) {
       <div className="mx-auto grid max-w-6xl gap-6 px-4 py-7 text-sm md:grid-cols-[1.4fr_1fr_1fr] md:gap-8 md:px-6 md:py-10 md:text-[15px]">
         <div className="flex flex-col gap-2.5">
           <span className="text-[17px] font-bold md:text-lg">MUSD Compass</span>
-          <span className="text-ink-muted">Built for the Mezo Buildathon. Mainnet data, testnet actions. Not financial advice. Independent community tool, not made by Mezo.</span>
+          <span className="text-ink-muted">Built for the Mezo Buildathon. {LIVE ? "Mainnet data. Actions on testnet, and on mainnet from your own wallet." : "Mainnet data, testnet actions."} Not financial advice. Independent community tool, not made by Mezo.</span>
         </div>
         <nav aria-label="Product" className="flex flex-col gap-1">
           <span className="text-[13px] font-semibold text-ink-muted">Product</span>

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { formatEther, parseUnits, type Abi, type Address, type EIP1193Provider } from "viem";
 import { erc20Abi, smusdAbi } from "@/lib/chain/abis";
 import { collateralFor, readBorrowSetup, type BorrowSetup } from "@/lib/borrow";
@@ -9,8 +9,8 @@ import { assertSafeAtSend, buildBorrowEarnSteps, icrAfterOpen } from "@/lib/borr
 import { troveAdvice, type Action } from "@/lib/safety";
 import { buildRepayStep, buildTopUpStep } from "@/lib/troveActions";
 import { readTrove, type TroveView } from "@/lib/trove";
-import { NETWORKS, SAMPLES, TESTNET, type NetworkId } from "@/lib/chain/addresses";
-import { mainnetWritesEnabled, sendSafely } from "@/lib/sendSafely";
+import { NETWORKS, SAMPLES, type NetworkId } from "@/lib/chain/addresses";
+import { MAINNET_CAP_MUSD, mainnetWritesEnabled, sendSafely } from "@/lib/sendSafely";
 import type { VaultState } from "@/lib/vault";
 import { connect, explorerTx, humanError, injected, publicFor } from "@/lib/wallet";
 import { walletConnectProjectId, walletConnectProvider } from "@/lib/walletconnect";
@@ -23,6 +23,8 @@ type Tx = { label: string; hash?: string; state: "pending" | "done" | "error"; n
 // On mainnet an action waits behind the typed-amount dialog; `go` is what runs once it is confirmed.
 type Pending = { view: MainnetPlan; go: () => void };
 
+const CAP = MAINNET_CAP_MUSD.toLocaleString("en-US");
+const REAL = "Mezo mainnet: real funds";
 const fmt = (s: string) => Number(s).toLocaleString("en-US", { maximumFractionDigits: 4 });
 
 function ago(ts: number | null) {
@@ -60,12 +62,17 @@ export function VaultPanel() {
   const [repayAmt, setRepayAmt] = useState("");
 
   const [loading, setLoading] = useState(false);
-  const load = useCallback(async (addr: string) => {
+  const asked = useRef(0);
+  const sending = useRef(false);
+  const load = useCallback(async (addr: string, network: NetworkId) => {
+    // Only the newest request may fill the page: an answer for the other network must never show under this one's label.
+    const mine = ++asked.current;
     setLoadError(null);
     setLoading(true);
     try {
-      const r = await fetch(`/api/vault/${encodeURIComponent(addr)}`);
+      const r = await fetch(`/api/vault/${encodeURIComponent(addr)}${network === "mainnet" ? "?network=mainnet" : ""}`);
       const j = await r.json();
+      if (mine !== asked.current) return;
       if (!r.ok) {
         setState(null);
         setLoadError(j.error ?? "Could not read the vault.");
@@ -73,11 +80,24 @@ export function VaultPanel() {
       }
       setState(j);
     } catch {
-      setLoadError("Could not reach Compass. Check your connection and try again.");
+      if (mine === asked.current) setLoadError("Could not reach Compass. Check your connection and try again.");
     } finally {
-      setLoading(false);
+      if (mine === asked.current) setLoading(false);
     }
   }, []);
+
+  /** Switch the whole page to one Mezo network: the old network's numbers are cleared before the new ones are read. */
+  const chooseNet = (n: NetworkId) => {
+    if (n === net || (n === "mainnet" && !mainnetWritesEnabled())) return;
+    setNet(n);
+    setState(null);
+    setSetup(null);
+    setTrove(null);
+    setPending(null);
+    asked.current++; // drops any answer still on its way for the old network
+    setLoading(false);
+    if (lookup.trim()) void load(lookup.trim(), n);
+  };
 
   useEffect(() => {
     // Wallet presence and the bot's ?action=deposit&amount=… link are only known in the browser.
@@ -85,6 +105,8 @@ export function VaultPanel() {
     const amt = sp.get("amount");
     setHasWallet(Boolean(injected()));
     if (sp.get("action") === "deposit" && amt && toWei(amt)) setDepositAmt(amt);
+    // Links from the trove page and the alerts open /vault?net=mainnet. It only counts where a deploy switched mainnet on.
+    if (sp.get("net") === "mainnet" && mainnetWritesEnabled()) setNet("mainnet");
   }, []);
 
   // The picker stays open while the wallet asks; it closes on success and shows the reason on failure.
@@ -99,7 +121,7 @@ export function VaultPanel() {
         setPicking(false);
         p = await walletConnectProvider(walletConnectProjectId());
       } else p = w.provider!;
-      c = await connect(p);
+      c = await connect(p, net);
     } catch (e) {
       setPickError(humanError(e));
       return;
@@ -109,27 +131,37 @@ export function VaultPanel() {
     setProvider(p);
     setAccount(c.account);
     setLookup(c.account);
-    await load(c.account);
+    await load(c.account, net);
   };
 
   // Re-read the trove inputs whenever the vault position is re-read (after connecting and after every transaction).
   useEffect(() => {
-    if (account) readBorrowSetup(publicFor(net) as never, account, net).then(setSetup, () => setSetup(null));
+    if (!account) return;
+    let current = true; // a read for the other network, or an older one, must not land here
+    readBorrowSetup(publicFor(net) as never, account, net).then((v) => current && setSetup(v), () => current && setSetup(null));
+    return () => {
+      current = false;
+    };
   }, [account, state, net]);
 
   // The caller's own trove on the chosen network, re-read with the borrow setup (after connecting and after every transaction).
   useEffect(() => {
-    if (account && setup?.hasTrove) readTrove(publicFor(net) as never, account, setup.feePct, null, net).then(setTrove, () => setTrove(null));
-    else setTrove(null);
+    if (!(account && setup?.hasTrove)) return setTrove(null);
+    let current = true;
+    readTrove(publicFor(net) as never, account, setup.feePct, null, net).then((v) => current && setTrove(v), () => current && setTrove(null));
+    return () => {
+      current = false;
+    };
   }, [account, setup, net]);
 
   const run = async (
     label: string,
     steps: { label: string; address: Address; abi: Abi; functionName: string; args: readonly unknown[]; value?: bigint }[],
-    network: NetworkId = "testnet",
+    network: NetworkId, // always stated by the caller: a forgotten argument must never fall back to another network
     before?: (step: { functionName: string }) => Promise<void>,
   ) => {
-    if (!provider || !account) return;
+    if (!provider || !account || sending.current) return; // one sequence at a time, even if a button fires twice
+    sending.current = true;
     setBusy(true);
     try {
       // Re-ask the wallet for this action's Mezo network (a no-op when it is already there), and make sure the account did not change.
@@ -144,24 +176,45 @@ export function VaultPanel() {
     } catch (e) {
       setTxs((t) => [{ label, state: "error", note: humanError(e), network }, ...(t[0]?.state === "pending" ? t.slice(1) : t)]);
     } finally {
+      sending.current = false;
       setBusy(false);
-      await load(account);
+      await load(account, network);
     }
   };
 
+  /** Testnet runs straight away; mainnet asks once more, on screen, with the amount typed in. */
+  const gate = (view: MainnetPlan, go: () => void) => (net === "mainnet" ? setPending({ view, go }) : go());
   const deposit = () => {
     const wei = toWei(depositAmt);
     if (!wei || !state) return;
-    const allowance = parseUnits(state.allowance, 18);
-    run("Deposit", [
-      ...(allowance < wei ? [{ label: `Approve exactly ${depositAmt} MUSD`, address: TESTNET.musd, abi: erc20Abi, functionName: "approve", args: [TESTNET.smusd, wei] }] : []),
-      { label: `Deposit ${depositAmt} MUSD`, address: TESTNET.smusd, abi: smusdAbi, functionName: "deposit", args: [wei] },
-    ]);
+    const on = NETWORKS[net];
+    const approve = parseUnits(state.allowance, 18) < wei;
+    const steps = [
+      ...(approve ? [{ label: `Approve exactly ${depositAmt} MUSD`, address: on.musd, abi: erc20Abi, functionName: "approve", args: [on.smusd, wei] }] : []),
+      { label: `Deposit ${depositAmt} MUSD`, address: on.smusd, abi: smusdAbi, functionName: "deposit", args: [wei] },
+    ];
+    gate(
+      {
+        title: REAL,
+        amount: Number(depositAmt),
+        button: "Deposit on mainnet",
+        lines: [
+          `Moves ${depositAmt} MUSD from your wallet into the Mezo Savings Vault.`,
+          approve ? "Two wallet prompts: an approval for exactly this amount, then the deposit. Each is simulated first." : "One wallet prompt, simulated first.",
+          `Compass deposits at most ${CAP} MUSD per transaction on mainnet.`,
+        ],
+      },
+      () => void run("Deposit", steps, net),
+    );
   };
   const withdraw = () => {
     const wei = toWei(withdrawAmt);
     if (!wei) return;
-    run("Withdraw", [{ label: `Withdraw ${withdrawAmt} sMUSD`, address: TESTNET.smusd, abi: smusdAbi, functionName: "withdraw", args: [wei] }]);
+    const steps = [{ label: `Withdraw ${withdrawAmt} sMUSD`, address: NETWORKS[net].smusd, abi: smusdAbi, functionName: "withdraw", args: [wei] }];
+    gate(
+      { title: REAL, amount: Number(withdrawAmt), button: "Withdraw on mainnet", lines: [`Takes ${withdrawAmt} sMUSD out of the Mezo Savings Vault and back to your wallet as MUSD, with any pending yield.`, "One wallet prompt, simulated first."] },
+      () => void run("Withdraw", steps, net),
+    );
   };
   const borrowWei = toWei(borrowAmt);
   const minBorrow = setup ? Math.ceil(setup.minNetDebt / (1 + setup.feePct / 100)) : 0;
@@ -175,8 +228,6 @@ export function VaultPanel() {
         if (held < built.plan.debt) throw new Error("The borrowed MUSD is not in this wallet yet, so nothing more was sent. Deposit it above once it shows.");
       }
     });
-  /** Testnet runs straight away; mainnet asks once more, on screen, with the amount typed in. */
-  const gate = (view: MainnetPlan, go: () => void) => (net === "mainnet" ? setPending({ view, go }) : go());
   const failed = (label: string, e: unknown) => setTxs((t) => [{ label, state: "error", note: humanError(e), network: net }, ...t]);
   const borrowEarn = async () => {
     if (!account || !borrowWei) return;
@@ -189,7 +240,7 @@ export function VaultPanel() {
       const fee = setup ? (debt * setup.feePct) / 100 : 0;
       gate(
         {
-          title: "Mezo mainnet: real funds",
+          title: REAL,
           amount: debt,
           button: "Open on mainnet",
           lines: [
@@ -214,7 +265,7 @@ export function VaultPanel() {
     try {
       const step = await buildTopUpStep(publicFor(net) as never, net, account, btc);
       gate(
-        { title: "Mezo mainnet: real funds", amount: btc, button: "Add on mainnet", lines: [`Adds ${btc} BTC to your trove as collateral.`, "One wallet prompt, simulated first. The ratio goes up; the BTC stays in the trove until it is closed."] },
+        { title: REAL, amount: btc, button: "Add on mainnet", lines: [`Adds ${btc} BTC to your trove as collateral.`, "One wallet prompt, simulated first. The ratio goes up; the BTC stays in the trove until it is closed."] },
         () => void run("Add BTC", [step], net),
       );
     } catch (e) {
@@ -230,7 +281,7 @@ export function VaultPanel() {
     try {
       const step = await buildRepayStep(publicFor(net) as never, net, account, musd);
       gate(
-        { title: "Mezo mainnet: real funds", amount: musd, button: "Repay on mainnet", lines: [`Repays ${musd.toLocaleString("en-US")} MUSD of this trove's debt from your wallet.`, "One wallet prompt, simulated first. The MUSD is burned, and the debt and your ratio improve."] },
+        { title: REAL, amount: musd, button: "Repay on mainnet", lines: [`Repays ${musd.toLocaleString("en-US")} MUSD of this trove's debt from your wallet.`, "One wallet prompt, simulated first. The MUSD is burned, and the debt and your ratio improve."] },
         () => void run("Repay MUSD", [step], net),
       );
     } catch (e) {
@@ -240,13 +291,16 @@ export function VaultPanel() {
     }
   };
   const suggestion = (a: Action) => (a.kind === "addColl" ? setTopUpAmt(String(a.btc)) : setRepayAmt(String(a.musd)));
-  const claim = () => run("Claim yield", [{ label: "Claim yield", address: TESTNET.smusd, abi: smusdAbi, functionName: "claimYield", args: [] }]);
+  const claim = () => run("Claim yield", [{ label: "Claim yield", address: NETWORKS[net].smusd, abi: smusdAbi, functionName: "claimYield", args: [] }], net);
 
   const own = Boolean(account && state && state.address.toLowerCase() === account.toLowerCase());
   const depositWei = toWei(depositAmt);
   const withdrawWei = toWei(withdrawAmt);
   const depositTooBig = Boolean(state && depositWei && depositWei > parseUnits(state.musd, 18));
   const withdrawTooBig = Boolean(state && withdrawWei && withdrawWei > parseUnits(state.smusd, 18));
+  const depositOverCap = net === "mainnet" && Number(depositAmt) > MAINNET_CAP_MUSD;
+  const borrowOverCap = net === "mainnet" && Number(borrowAmt) > MAINNET_CAP_MUSD;
+  const sample = net === "mainnet" ? SAMPLES.positions : SAMPLES.devWallet;
 
   return (
     <div className="mx-auto w-full max-w-3xl flex-1 space-y-5 px-4 py-5">
@@ -254,9 +308,25 @@ export function VaultPanel() {
         <h2 id="wallet-h" className="text-base font-bold">
           Wallet
         </h2>
+        {mainnetWritesEnabled() && (
+          <fieldset disabled={busy} className="mt-2 flex flex-wrap gap-x-5 gap-y-1 text-sm">
+            <legend className="sr-only">Network</legend>
+            {(["testnet", "mainnet"] as const).map((n) => (
+              <label key={n} className="flex min-h-11 items-center gap-2 font-semibold">
+                <input type="radio" name="net" value={n} checked={net === n} onChange={() => chooseNet(n)} />
+                {n === "testnet" ? "Mezo testnet (test funds)" : "Mezo mainnet (real funds)"}
+              </label>
+            ))}
+          </fieldset>
+        )}
+        {net === "mainnet" && (
+          <p role="note" className="mt-2 rounded-2xl border-2 border-danger-text px-4 py-2 text-sm font-semibold">
+            {REAL}. Every action on this page now uses real MUSD and BTC. A deposit, a withdrawal, a new trove, a top-up and a repayment each ask you to type the amount before any wallet prompt. Deposits and new troves stop at {CAP} MUSD.
+          </p>
+        )}
         {account ? (
           <p className="mt-1 text-sm">
-            Connected <span className="font-semibold">{account.slice(0, 6)}…{account.slice(-4)}</span> on Mezo testnet.
+            Connected <span className="font-semibold">{account.slice(0, 6)}…{account.slice(-4)}</span> on Mezo {net}.
           </p>
         ) : (
           <>
@@ -285,24 +355,26 @@ export function VaultPanel() {
           picked={picked}
           error={pickError}
         />
-        <p className="mt-3 text-xs text-ink-muted">
-          Need test funds?{" "}
-          <Link href="/get-test-musd" className="font-semibold text-ink underline">
-            Get test MUSD in 3 steps
-          </Link>{" "}
-          (faucet BTC, then swap on testnet.mezo.org).
-        </p>
+        {net === "testnet" && (
+          <p className="mt-3 text-xs text-ink-muted">
+            Need test funds?{" "}
+            <Link href="/get-test-musd" className="font-semibold text-ink underline">
+              Get test MUSD in 3 steps
+            </Link>{" "}
+            (faucet BTC, then swap on testnet.mezo.org).
+          </p>
+        )}
       </section>
 
       <section aria-labelledby="lookup-h" className="rounded-[20px] border border-line bg-card px-5 py-5">
         <h2 id="lookup-h" className="text-base font-bold">
-          Savings Vault position
+          Savings Vault position{mainnetWritesEnabled() ? ` on Mezo ${net}` : ""}
         </h2>
         <form
           className="mt-2 flex flex-wrap items-end gap-2"
           onSubmit={(e) => {
             e.preventDefault();
-            load(lookup.trim());
+            load(lookup.trim(), net);
           }}
         >
           <div className="min-w-0 basis-full sm:flex-1 sm:basis-auto">
@@ -317,8 +389,8 @@ export function VaultPanel() {
           <button
             type="button"
             onClick={() => {
-              setLookup(SAMPLES.devWallet);
-              load(SAMPLES.devWallet);
+              setLookup(sample);
+              load(sample, net);
             }}
             className="min-h-11 px-2 text-sm font-semibold underline"
           >
@@ -384,7 +456,8 @@ export function VaultPanel() {
               </label>
               <input id="dep" inputMode="decimal" value={depositAmt} onChange={(e) => setDepositAmt(e.target.value)} placeholder="100" aria-invalid={depositTooBig} className="price block h-11 w-full rounded-full border border-field bg-card px-4 text-2xl" />
               {depositTooBig && <p className="mt-1 text-xs font-semibold text-danger-text">More than your wallet holds ({fmt(state!.musd)} MUSD).</p>}
-              <button type="submit" disabled={busy || !depositWei || depositTooBig} className="mt-2 inline-flex min-h-11 items-center rounded-full bg-accent px-4 text-sm font-bold text-on-accent disabled:opacity-50">
+              {depositOverCap && <p className="mt-1 text-xs font-semibold text-danger-text">Compass deposits at most {CAP} MUSD per transaction on mainnet. Deposit less, or use the Mezo app for more.</p>}
+              <button type="submit" disabled={busy || !depositWei || depositTooBig || depositOverCap} className="mt-2 inline-flex min-h-11 items-center rounded-full bg-accent px-4 text-sm font-bold text-on-accent disabled:opacity-50">
                 Deposit
               </button>
             </form>
@@ -415,20 +488,9 @@ export function VaultPanel() {
           <h2 id="borrow-h" className="text-base font-bold">
             Borrow MUSD against BTC, then earn
           </h2>
-          {mainnetWritesEnabled() && (
-            <fieldset className="mt-2 flex flex-wrap gap-x-5 gap-y-1 text-sm">
-              <legend className="sr-only">Network</legend>
-              {(["testnet", "mainnet"] as const).map((n) => (
-                <label key={n} className="flex min-h-11 items-center gap-2 font-semibold">
-                  <input type="radio" name="net" value={n} checked={net === n} onChange={() => setNet(n)} />
-                  {n === "testnet" ? "Mezo testnet (test funds)" : "Mezo mainnet (real funds)"}
-                </label>
-              ))}
-            </fieldset>
-          )}
           {net === "mainnet" && (
-            <p role="note" className="mt-2 rounded-2xl border-2 border-danger-text px-4 py-2 text-sm font-semibold">
-              Mezo mainnet: this opens a real trove with real BTC. You confirm once more on screen before any wallet prompt.
+            <p className="mt-2 text-sm font-semibold">
+              This opens a real trove with real BTC. Below 110% it can be liquidated, and you confirm once more on screen before any wallet prompt.
             </p>
           )}
           <p className="mt-1 max-w-prose text-sm text-ink-muted">
@@ -458,7 +520,12 @@ export function VaultPanel() {
                   Not enough {net === "mainnet" ? "BTC" : "test BTC"} for this trove. {net === "testnet" && <><Link href="/get-test-musd" className="underline">Get test BTC</Link> or </>}{net === "testnet" ? "borrow less." : "Borrow less."}
                 </p>
               )}
-              <button type="submit" disabled={busy || !borrowWei || Number(borrowAmt) < minBorrow || shortBtc} className="inline-flex min-h-11 items-center rounded-full bg-accent px-5 text-sm font-bold text-on-accent disabled:opacity-50">
+              {borrowOverCap && (
+                <p role="alert" className="text-sm font-semibold text-danger-text">
+                  Compass opens troves of at most {CAP} MUSD on mainnet. Borrow less, or use the Mezo app for more.
+                </p>
+              )}
+              <button type="submit" disabled={busy || !borrowWei || Number(borrowAmt) < minBorrow || shortBtc || borrowOverCap} className="inline-flex min-h-11 items-center rounded-full bg-accent px-5 text-sm font-bold text-on-accent disabled:opacity-50">
                 Borrow {borrowWei ? borrowAmt : ""} MUSD and deposit it
               </button>
             </form>

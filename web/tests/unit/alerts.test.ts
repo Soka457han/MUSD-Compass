@@ -40,6 +40,12 @@ describe("alertText", () => {
     expect(t).toContain("Add &lt;BTC&gt; &amp; repay.");
     expect(t).not.toContain("<BTC>");
   });
+  it("offers the Compass top-up and repay page only where mainnet is switched on, and always names the Mezo app", () => {
+    vi.stubEnv("NEXT_PUBLIC_MAINNET_WRITES", "1");
+    const t = alertText(ADDR, view(), [watchAdv], "https://x.test");
+    vi.unstubAllEnvs();
+    expect(t).toContain('Add BTC or repay MUSD <a href="https://x.test/vault?net=mainnet">in Compass</a> or in the Mezo app: https://mezo.org');
+  });
   it("says all clear and no open trove", () => {
     expect(alertText(ADDR, view({ icrPct: 250 }), [okAdv], "https://x.test")).toContain("All clear");
     expect(alertText(ADDR, view({ active: false }), [], "https://x.test")).toContain("no open trove");

@@ -3,6 +3,7 @@ import { expect, test } from "@playwright/test";
 
 test.describe("vault (360 px, fixture data)", () => {
   test("says it is testnet, works without a wallet, and the sample shows a position", async ({ page }) => {
+    test.skip(process.env.MAINNET_E2E === "1", "this build has mainnet switched on");
     await page.goto("/vault");
     await expect(page.getByRole("note")).toContainText("Testnet action");
     await expect(page.getByText("No wallet in this browser. Open this page inside")).toBeVisible();
@@ -10,6 +11,20 @@ test.describe("vault (360 px, fixture data)", () => {
     await expect(page.getByText("157.31")).toBeVisible();
     await expect(page.getByText(/Pending yield is 0 until the next distribution/)).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBe(0);
+  });
+
+  test("with mainnet switched off, ?net=mainnet changes nothing: no network choice, still testnet", async ({ page, request }) => {
+    test.skip(process.env.MAINNET_E2E === "1", "this build has mainnet switched on");
+    await page.goto("/vault?net=mainnet");
+    await expect(page.getByRole("note")).toContainText("Testnet action");
+    await expect(page.getByRole("radio")).toHaveCount(0);
+    await expect(page.getByText("real funds")).toHaveCount(0);
+    await expect(page.getByRole("heading", { name: "MUSD Savings Vault on Mezo testnet" })).toBeVisible();
+    // The read API names the network it answered for, and refuses one it does not know.
+    const a = "0xfe21B2782B35BE770DD4a7b05f81cE43790D676C";
+    expect((await (await request.get(`/api/vault/${a}`)).json()).network).toBe("Mezo testnet");
+    expect((await (await request.get(`/api/vault/${a}?network=mainnet`)).json()).network).toBe("Mezo mainnet");
+    expect((await request.get(`/api/vault/${a}?network=ethereum`)).status()).toBe(400);
   });
 
   test("a bad address gets a readable error", async ({ page }) => {
@@ -46,7 +61,7 @@ test("Connect wallet opens the wallet picker: detected EVM wallets, what is not 
   const dialog = page.getByRole("dialog", { name: "Connect a wallet" });
   await expect(dialog).toBeVisible();
   await expect(dialog.getByRole("button", { name: /Test Wallet/ })).toBeVisible();
-  await expect(dialog.getByText("Phone wallets by QR code, planned for Wave 2")).toBeVisible();
+  await expect(dialog.getByText("Phone wallets by QR code, not switched on in this deployment")).toBeVisible();
   await expect(dialog.getByText("Unisat")).toBeVisible();
   await expect(dialog.getByRole("button", { name: /Unisat|WalletConnect/ })).toHaveCount(0); // listed, not clickable
   await expect(dialog.getByRole("heading", { name: "What is a wallet?" })).toBeVisible();

@@ -3,7 +3,7 @@ import { borrowerOperationsAbi, erc20Abi, priceFeedAbi, smusdAbi } from "@/lib/c
 import { NETWORKS, type NetworkId } from "@/lib/chain/addresses";
 import { collateralFor, readBorrowSetup } from "@/lib/borrow";
 import { getTroveHints } from "@/lib/hints";
-import type { SafeWrite } from "@/lib/sendSafely";
+import { MAINNET_CAP_MUSD, type SafeWrite } from "@/lib/sendSafely";
 import { SAFE_ICR } from "@/lib/trove";
 
 const f = (v: bigint) => Number(formatUnits(v, 18));
@@ -38,6 +38,9 @@ export async function buildBorrowEarnSteps(
   debtMusd: number,
 ): Promise<{ steps: BorrowEarnStep[]; plan: { debt: bigint; collateral: bigint } }> {
   const net = NETWORKS[network];
+  if (!(debtMusd > 0)) throw new Error("Borrow more than zero MUSD.");
+  // The guard refuses this too; saying it here stops the plan before the confirm dialog.
+  if (network === "mainnet" && debtMusd > MAINNET_CAP_MUSD) throw new Error(`Compass opens troves of at most ${usd(MAINNET_CAP_MUSD)} MUSD on mainnet for now. Borrow less, or use the Mezo app.`);
   const setup = await readBorrowSetup(client, account, network);
   if (setup.hasTrove) throw new Error(`This account already has a trove on Mezo ${network}. Compass opens one per account; top it up or repay it instead.`);
   const minDebt = Math.ceil((setup.minNetDebt / (1 + setup.feePct / 100)) * 100) / 100; // the minimum counts the fee

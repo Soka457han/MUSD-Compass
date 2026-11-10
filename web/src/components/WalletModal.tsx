@@ -140,7 +140,7 @@ export function WalletModal({
                 </button>
               </li>
             ) : (
-              <Unavailable name="WalletConnect" note="Phone wallets by QR code, planned for Wave 2" />
+              <Unavailable name="WalletConnect" note="Phone wallets by QR code, not switched on in this deployment" />
             )}
           </ul>
 

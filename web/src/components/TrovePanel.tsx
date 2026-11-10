@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { usd } from "@/lib/format";
 import { AdviceList } from "./AdviceList";
 import { troveAdvice } from "@/lib/safety";
+import { mainnetWritesEnabled } from "@/lib/sendSafely";
 import { isWallet } from "@/lib/vault";
 import type { TroveView } from "@/lib/trove";
 
@@ -142,6 +143,14 @@ export function TrovePanel() {
             Use in calculator
           </Link>
           <p className="mt-2 text-xs text-ink-muted">Opens Yields in borrower mode for an existing trove{t.ratePct >= 1 && t.ratePct <= 5 ? ` at your ${n(t.ratePct, 2)}% rate` : ""}.</p>
+          {mainnetWritesEnabled() && (
+            <p className="mt-4 text-sm">
+              <Link href="/vault?net=mainnet" className="inline-block py-3 -my-3 font-semibold underline">
+                Add BTC or repay MUSD here in Compass
+              </Link>{" "}
+              <span className="text-ink-muted">(connect the wallet that owns this trove; real funds, you confirm each amount).</span>
+            </p>
+          )}
           <p className="mt-4 text-xs text-ink-muted">
             From Mezo:{" "}
             <a href="https://mezo.org/borrow" target="_blank" rel="noreferrer" className="inline-block py-3 -my-3 font-semibold text-ink underline">

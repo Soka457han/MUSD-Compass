@@ -1,4 +1,5 @@
 import type { Advice } from "@/lib/safety";
+import { mainnetWritesEnabled } from "@/lib/sendSafely";
 import type { TroveView } from "@/lib/trove";
 
 const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
@@ -21,7 +22,9 @@ export function alertText(address: string, view: TroveView, advice: Advice[], or
     return `${head}\nAll clear. Your ratio is ${n(view.icrPct)}% and nothing needs doing.\n<a href="${esc(origin)}/trove?address=${esc(address)}">See your trove</a>`;
   }
   const lines = open.map((a) => `<b>${esc(a.title)}</b>\n${esc(a.detail)}`).join("\n\n");
-  return `${head}\n${lines}\n\n<a href="${esc(origin)}/trove?address=${esc(address)}">See your trove</a> · Add BTC or repay MUSD in the Mezo app: https://mezo.org`;
+  // Where a deploy switched mainnet on, Compass can do the top-up or repay itself; the Mezo app is always named too.
+  const here = mainnetWritesEnabled() ? `<a href="${esc(origin)}/vault?net=mainnet">in Compass</a> or ` : "";
+  return `${head}\n${lines}\n\n<a href="${esc(origin)}/trove?address=${esc(address)}">See your trove</a> · Add BTC or repay MUSD ${here}in the Mezo app: https://mezo.org`;
 }
 
 /** The HTTP status Telegram answered with, or 0 when there is no token, the request failed or it timed out. A 403 means the user blocked the bot. */

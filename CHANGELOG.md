@@ -1,5 +1,14 @@
 # Changelog
 
+## Wave 2e: mainnet actions (10 Nov 2026)
+- Savings Vault on Mezo mainnet: with `NEXT_PUBLIC_MAINNET_WRITES=1`, `/vault` has a network choice at the top and reads, deposits, withdraws and claims on the chosen network. Deposits and withdrawals on mainnet wait behind the typed-amount dialog. `GET /api/vault/{address}?network=mainnet` reads the mainnet vault. The flag stays empty in the repo, so production is unchanged until the owner sets it.
+- Hard cap: the guard refuses a mainnet deposit, MUSD approval or new-trove debt above 2,500 MUSD per transaction (`MAINNET_CAP_MUSD` in `web/src/lib/sendSafely.ts`), before any simulation. It also refuses zero or non-numeric amounts on both networks. Top-up, repay, withdraw and claim are not capped.
+- Borrow → Earn, top-up and repay were already built for both networks; they now follow the page's network choice. Checked against Mezo mainnet with read-only `eth_call` on 10 Nov 2026 (`docs/superpowers/plans/2026-11-10-mainnet-actions.md`): `openTrove` with HintHelpers hints, `addColl`, `repayMUSD`, vault `withdraw` and `claimYield` all pass simulation.
+- With the flag on: the Savings Vault card, the trove page and the `/watch` alerts link to `/vault?net=mainnet`; the FAQ says real funds can be used. With the flag off nothing changes, and `?net=mainnet` is ignored.
+- Fixed: a slow read for one network could land after switching to the other; only the newest read fills the page now. A send sequence cannot start twice.
+- "Try to break it" has a fourth button: a 1,000,000 MUSD mainnet deposit, refused by the cap.
+- Tests: guard matrix (every contract and function pair on mainnet, exactly seven pass), cap edges, and `web/e2e/mainnet.spec.ts` with a stand-in wallet and RPC (runs with `MAINNET_E2E=1` against a flag-on build).
+
 ## 0.1.0 — Wave 1 (25 Oct 2026)
 - Borrow → Earn on testnet (26 Oct): `/vault` opens a trove on Mezo testnet's BorrowerOperations with BTC for a 200% ratio, then approves exactly that MUSD and deposits it in the Savings Vault. The guard allows BorrowerOperations for `openTrove` only.
 - Try to break it (26 Oct): a `/vault` panel that runs an unlimited approval, an unknown contract and an oversized deposit for real with no wallet; the guard now refuses unlimited approvals and approvals to anyone but the vault on its own. `docs/evidence.md` lists every transaction and live check.

@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import { erc20Abi, smusdAbi } from "@/lib/chain/abis";
 import { MAINNET, NETWORKS, TESTNET } from "@/lib/chain/addresses";
 import { maxUint256 } from "viem";
-import { gasWithBuffer, guard, mainnetWritesEnabled, sendSafely } from "@/lib/sendSafely";
+import { gasWithBuffer, guard, MAINNET_CAP_MUSD, mainnetWritesEnabled, sendSafely } from "@/lib/sendSafely";
 
 const account = "0xfe21B2782B35BE770DD4a7b05f81cE43790D676C" as const;
 
@@ -175,5 +175,103 @@ describe("mainnetWritesEnabled", () => {
     vi.stubEnv("NEXT_PUBLIC_MAINNET_WRITES", "");
     expect(() => guard({ address: MAINNET.musd, functionName: "approve", args: [MAINNET.smusd, 1n], network: "mainnet", walletChainId: 31612 })).toThrow(/switched off/);
     vi.unstubAllEnvs();
+  });
+});
+
+describe("guard: mainnet cap and amounts", () => {
+  const mainnetOn = { mainnetEnabled: true };
+  const cap = BigInt(MAINNET_CAP_MUSD) * 10n ** 18n;
+  const on = (network: "testnet" | "mainnet", address: string, functionName: string, args: unknown[]) => ({ address: address as `0x${string}`, functionName, args, network, walletChainId: NETWORKS[network].chainId });
+
+  it("the cap is 2,500 MUSD", () => {
+    expect(MAINNET_CAP_MUSD).toBe(2_500);
+  });
+  it("lets a mainnet deposit, approval and new-trove debt through at the cap, and refuses one wei more", () => {
+    const calls = [
+      (v: bigint) => on("mainnet", MAINNET.smusd, "deposit", [v]),
+      (v: bigint) => on("mainnet", MAINNET.musd, "approve", [MAINNET.smusd, v]),
+      (v: bigint) => on("mainnet", MAINNET.borrowerOperations, "openTrove", [v, account, account]),
+    ];
+    for (const c of calls) {
+      expect(() => guard(c(cap), mainnetOn)).not.toThrow();
+      expect(() => guard(c(cap + 1n), mainnetOn)).toThrow(/at most 2,500 MUSD/);
+    }
+  });
+  it("does not cap testnet, or the mainnet actions that lower risk or return funds", () => {
+    const big = 1_000_000n * 10n ** 18n;
+    expect(() => guard(on("testnet", TESTNET.smusd, "deposit", [big]))).not.toThrow();
+    expect(() => guard(on("testnet", TESTNET.borrowerOperations, "openTrove", [big, account, account]))).not.toThrow();
+    expect(() => guard(on("mainnet", MAINNET.smusd, "withdraw", [big]), mainnetOn)).not.toThrow();
+    expect(() => guard(on("mainnet", MAINNET.borrowerOperations, "repayMUSD", [big, account, account]), mainnetOn)).not.toThrow();
+  });
+  it("refuses a deposit, withdrawal or new-trove debt that is zero, negative or not a bigint, on both networks", () => {
+    for (const [network, net, opts] of [["testnet", TESTNET, undefined], ["mainnet", MAINNET, mainnetOn]] as const) {
+      for (const bad of [0n, -1n, "5", 5, undefined]) {
+        expect(() => guard(on(network, net.smusd, "deposit", [bad]), opts)).toThrow(/more than zero/);
+        expect(() => guard(on(network, net.smusd, "withdraw", [bad]), opts)).toThrow(/more than zero/);
+        expect(() => guard(on(network, net.borrowerOperations, "openTrove", [bad, account, account]), opts)).toThrow(/more than zero/);
+      }
+    }
+  });
+  it("refuses an approval amount that is not a bigint above zero", () => {
+    for (const bad of [0n, "100", 100, undefined]) {
+      expect(() => guard(on("mainnet", MAINNET.musd, "approve", [MAINNET.smusd, bad]), mainnetOn)).toThrow(/more than zero/);
+    }
+  });
+  it("the cap cannot be skipped through sendSafely: nothing is simulated or sent", async () => {
+    vi.stubEnv("NEXT_PUBLIC_MAINNET_WRITES", "1");
+    const { publicClient, walletClient } = clients();
+    await expect(
+      sendSafely({ publicClient, walletClient, account, address: MAINNET.smusd, abi: smusdAbi, functionName: "deposit", args: [cap + 1n], network: "mainnet", walletChainId: 31612 } as never),
+    ).rejects.toThrow(/at most 2,500 MUSD/);
+    expect(publicClient.simulateContract).not.toHaveBeenCalled();
+    expect(walletClient.writeContract).not.toHaveBeenCalled();
+    vi.unstubAllEnvs();
+  });
+});
+
+describe("guard: the whole mainnet surface, tried one call at a time", () => {
+  const mainnetOn = { mainnetEnabled: true };
+  const stranger = "0x000000000000000000000000000000000000dEaD";
+  const one = 10n ** 18n;
+  const contracts = { musd: MAINNET.musd, smusd: MAINNET.smusd, borrowerOperations: MAINNET.borrowerOperations, troveManager: MAINNET.troveManager, stabilityPool: MAINNET.stabilityPool, gauge: MAINNET.smusdGauge, ditto: MAINNET.dittoMusdVault, stranger };
+  const functions = ["approve", "transfer", "transferFrom", "permit", "increaseAllowance", "mint", "burn", "deposit", "withdraw", "claimYield", "redeem", "openTrove", "addColl", "repayMUSD", "closeTrove", "adjustTrove", "withdrawColl", "withdrawMUSD", "refinance", "redeemCollateral", "provideToSP", "liquidate", "multicall", "upgradeTo", "transferOwnership"];
+  // The only calls Compass may make, each with arguments shaped the way the page builds them.
+  const allowedArgs: Record<string, unknown[]> = {
+    "musd.approve": [MAINNET.smusd, one],
+    "smusd.deposit": [one],
+    "smusd.withdraw": [one],
+    "smusd.claimYield": [],
+    "borrowerOperations.openTrove": [2000n * one, account, account],
+    "borrowerOperations.addColl": [account, account],
+    "borrowerOperations.repayMUSD": [one, account, account],
+  };
+
+  it("passes exactly seven contract and function pairs out of every combination, and refuses the rest", () => {
+    const passed: string[] = [];
+    for (const [name, address] of Object.entries(contracts)) {
+      for (const fn of functions) {
+        const key = `${name}.${fn}`;
+        for (const args of [allowedArgs[key] ?? [], [stranger, one], [MAINNET.smusd, one], [one], [one, stranger, stranger], [stranger, stranger]]) {
+          try {
+            guard({ address: address as `0x${string}`, functionName: fn, args, network: "mainnet", walletChainId: 31612 }, mainnetOn);
+            if (!passed.includes(key)) passed.push(key);
+          } catch {
+            // refused, as it should be for everything outside the list
+          }
+        }
+      }
+    }
+    expect(passed.sort()).toEqual(Object.keys(allowedArgs).sort());
+  });
+  it("never lets MUSD be approved for anyone but the vault, whatever else is in the call", () => {
+    for (const spender of [stranger, account, MAINNET.borrowerOperations, MAINNET.musd, TESTNET.smusd, "", undefined, MAINNET.smusd + "00"]) {
+      expect(() => guard({ address: MAINNET.musd, functionName: "approve", args: [spender, one], network: "mainnet", walletChainId: 31612 }, mainnetOn)).toThrow();
+    }
+  });
+  it("refuses a mainnet call from a wallet on any other chain, Ethereum included (MUSD has the same address there)", () => {
+    for (const chain of [1, 31611, 8453, 56, 0]) {
+      expect(() => guard({ address: MAINNET.musd, functionName: "approve", args: [MAINNET.smusd, one], network: "mainnet", walletChainId: chain }, mainnetOn)).toThrow(/needs 31612/);
+    }
   });
 });
