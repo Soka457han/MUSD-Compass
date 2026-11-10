@@ -153,4 +153,5 @@ test("the home page and the trove page point at the mainnet vault", async ({ pag
   await page.goto("/trove");
   await page.getByRole("button", { name: "Try a sample" }).click();
   await expect(page.getByRole("link", { name: "Add BTC or repay MUSD here in Compass" })).toHaveAttribute("href", "/vault?net=mainnet");
+  await expect(page.getByText("Do it in the Mezo app.")).toHaveCount(0); // the advice must not send people away from what Compass can now do
 });

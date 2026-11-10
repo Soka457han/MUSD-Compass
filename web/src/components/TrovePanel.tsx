@@ -113,7 +113,7 @@ export function TrovePanel() {
                 <dd className="text-base font-semibold">{n(t.debt, 2)} MUSD</dd>
               </div>
             </dl>
-            <AdviceList advice={troveAdvice(t)} targetPct={t.safeIcrPct} />
+            <AdviceList advice={troveAdvice(t)} targetPct={t.safeIcrPct} footer={mainnetWritesEnabled() ? "Do it in Compass with the link below, or in the Mezo app." : undefined} />
           </>
         )}
       </section>
