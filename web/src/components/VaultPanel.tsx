@@ -459,7 +459,7 @@ export function VaultPanel() {
         )}
         {net === "mainnet" && (
           <p role="note" className="mt-2 rounded-2xl border-2 border-danger-text px-4 py-2 text-sm font-semibold">
-            {REAL}. Every action on this page now uses real MUSD and BTC. A deposit, a withdrawal, a new trove, a top-up, a repayment, a stake and an unstake each ask you to type the amount before any wallet prompt. Deposits and new troves stop at {CAP} MUSD.
+            {REAL}. Every action on this page now uses real MUSD and BTC. A deposit, a withdrawal, a new trove, a top-up, a repayment, a stake and an unstake each ask you to type the amount before any wallet prompt. Compass limits each deposit, stake and new trove to {CAP} MUSD as its own safety limit. Mezo sets no maximum, so use the Mezo app for more.
           </p>
         )}
         {account ? (

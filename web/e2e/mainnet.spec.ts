@@ -109,7 +109,7 @@ async function connectOnMainnet(page: Page, opts: { trove?: boolean } = {}) {
 
 test("mainnet is named everywhere before anything can be sent, and the wallet is moved to chain 31612", async ({ page }) => {
   await connectOnMainnet(page);
-  await expect(page.getByRole("note").filter({ hasText: "Mezo mainnet: real funds" })).toContainText("stop at 2,500 MUSD");
+  await expect(page.getByRole("note").filter({ hasText: "Mezo mainnet: real funds" })).toContainText("Compass limits each deposit, stake and new trove to 2,500 MUSD as its own safety limit. Mezo sets no maximum");
   await expect(page.getByRole("heading", { name: "Savings Vault position on Mezo mainnet" })).toBeVisible();
   await expect(page.getByText("Need test funds?")).toHaveCount(0);
   expect(await asked(page)).toContain("wallet_switchEthereumChain");

@@ -29,7 +29,7 @@ const TRIES = [
   },
   {
     id: "cap",
-    label: `Deposit 1,000,000 MUSD on mainnet (the limit is ${MAINNET_CAP_MUSD.toLocaleString("en-US")})`,
+    label: `Deposit 1,000,000 MUSD on mainnet (Compass's own limit is ${MAINNET_CAP_MUSD.toLocaleString("en-US")})`,
     run: async (): Promise<Result> => {
       // Judged as if mainnet were switched on, so the answer is about the amount.
       guard({ address: MAINNET.smusd, functionName: "deposit", args: [parseUnits("1000000", 18)], network: "mainnet" }, { mainnetEnabled: true });

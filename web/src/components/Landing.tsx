@@ -115,7 +115,7 @@ const LIVE = mainnetWritesEnabled();
 const FAQ = [
   { q: "What is veMEZO?", a: "Mezo's vote-escrowed token. Rewards paid in it are locked for 12 weeks, so Compass shows them beside the cash figure." },
   LIVE
-    ? { q: "Can I use real funds here?", a: `Yes, on the Vault page. Choose Mezo mainnet there to deposit in the Savings Vault, open a trove, add BTC or repay MUSD from your own wallet. Each action is simulated first, asks you to type the amount, and deposits and new troves stop at ${MAINNET_CAP_MUSD.toLocaleString("en-US")} MUSD per transaction. Compass never holds your funds. Testnet stays the default.` }
+    ? { q: "Can I use real funds here?", a: `Yes, on the Vault page. Choose Mezo mainnet there to deposit in the Savings Vault, open a trove, add BTC or repay MUSD from your own wallet. Each action is simulated first, asks you to type the amount. Compass limits each deposit, stake and new trove to ${MAINNET_CAP_MUSD.toLocaleString("en-US")} MUSD as its own safety limit; Mezo sets no maximum. Compass never holds your funds. Testnet stays the default.` }
     : { q: "Why can I only deposit on testnet?", a: "This site sends transactions to Mezo testnet only for now. The rates you see come from mainnet. Mainnet actions are built behind a switch that stays off until they have been reviewed and tried once with real funds." },
   {
     q: "Does it work with a phone wallet?",
