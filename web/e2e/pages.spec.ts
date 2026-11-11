@@ -124,8 +124,9 @@ test("My MUSD: each holding against the best place, plus trove and veMEZO; reach
   const holdings = page.getByRole("region", { name: "Each holding against the best cash place today" });
   const row = (name: string) => holdings.getByRole("listitem").filter({ has: page.getByRole("heading", { name, exact: true }) });
   await expect(row("Idle in your wallet")).toContainText(/1,250 MUSD.*Earns nothing.*more a year/);
-  // Mainnet holdings act in the Mezo app, not on the testnet vault page.
-  await expect(row("Idle in your wallet").getByRole("link", { name: /Stake in the Mezo app/ })).toHaveAttribute("href", "https://mezo.org/earn/vaults");
+  // Mainnet holdings act in the Mezo app, not on the testnet vault page; a build with mainnet writes stakes in Compass.
+  if (process.env.MAINNET_E2E === "1") await expect(row("Idle in your wallet").getByRole("link", { name: "Deposit, then stake", exact: true })).toHaveAttribute("href", "/vault?net=mainnet");
+  else await expect(row("Idle in your wallet").getByRole("link", { name: /Stake in the Mezo app/ })).toHaveAttribute("href", "https://mezo.org/earn/vaults");
   await expect(row("Savings Vault")).toContainText(/Best now: MUSD Savings Vault, staked in the gauge at .*more a year/);
   await expect(row("Savings Vault, staked in the gauge")).toContainText(/paid in MEZO.*This is the best cash place today\./);
   await expect(row("Stability Pool")).toContainText("No steady APR");

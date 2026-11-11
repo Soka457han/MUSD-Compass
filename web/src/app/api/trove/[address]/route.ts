@@ -6,7 +6,7 @@ import { loadSources } from "@/lib/sources";
 import { countCall } from "@/lib/stats";
 import { fetchTroveQueue } from "@/lib/sources/troveQueue";
 import { troveAdvice } from "@/lib/safety";
-import { readTrove, SAFE_ICR, sampleTrove, type TroveView } from "@/lib/trove";
+import { previewTrove, readTrove, SAFE_ICR, sampleTrove, type TroveView } from "@/lib/trove";
 import { isWallet } from "@/lib/vault";
 
 export const maxDuration = 300; // reads loadSources, same cold fill as /api/yields
@@ -25,7 +25,10 @@ const FIXTURE: TroveView = {
   recoveryMode: false,
   safeExtra: 20_068.3, // (100,597.5 ÷ 2 − 30,210.4) ÷ 1.001
   btcUsd: 80_478,
+  nicr: "1250000000000000000",
 };
+
+const AMOUNT = /^\d+(\.\d{1,8})?$/;
 
 /** Mainnet trove for an address, or `sample` for the safest live trove (SortedTroves.getFirst()). */
 export async function GET(req: Request, { params }: { params: Promise<{ address: string }> }) {
@@ -34,7 +37,29 @@ export async function GET(req: Request, { params }: { params: Promise<{ address:
   const { address } = await params;
   if (address !== "sample" && !isWallet(address)) return Response.json({ error: "That is not an EVM address (0x… with 40 hex characters)." }, { status: 400, headers: HEADERS });
   const about = { network: "Mezo mainnet", safeIcrPct: SAFE_ICR * 100, minIcrPct: 110 };
-  if (process.env.COMPASS_FIXTURES === "1") return Response.json({ ...FIXTURE, advice: troveAdvice(FIXTURE), ...about }, { headers: HEADERS });
+  const q = new URL(req.url).searchParams;
+  const change: { addBtc?: number; repayMusd?: number } = {};
+  for (const k of ["addBtc", "repayMusd"] as const) {
+    const v = q.get(k);
+    if (v === null) continue;
+    if (!AMOUNT.test(v)) return Response.json({ error: `${k} must be a plain number with up to 8 decimals.` }, { status: 400, headers: HEADERS });
+    change[k] = Number(v);
+  }
+  const wantsPreview = change.addBtc !== undefined || change.repayMusd !== undefined;
+  const withPreview = (t: TroveView, nicrs: bigint[] | null) => {
+    if (!wantsPreview || !t.active) return {};
+    try {
+      return { preview: previewTrove(t, change, nicrs) };
+    } catch (e) {
+      return { bad: (e as Error).message };
+    }
+  };
+  const reply = (t: TroveView, nicrs: bigint[] | null, market: { musdUsd: number; floorUsd: number; redemptionPct: number } | null) => {
+    const { bad, ...extra } = withPreview(t, nicrs) as { bad?: string; preview?: unknown };
+    if (bad) return Response.json({ error: bad }, { status: 400, headers: HEADERS });
+    return Response.json({ ...t, advice: troveAdvice(t, undefined, undefined, market), market, ...extra, ...about }, { headers: HEADERS });
+  };
+  if (process.env.COMPASS_FIXTURES === "1") return reply(FIXTURE, null, { musdUsd: 0.9951, floorUsd: 0.9925, redemptionPct: 0.75 });
 
   const client = mezoClient as PublicClient;
   try {
@@ -43,8 +68,10 @@ export async function GET(req: Request, { params }: { params: Promise<{ address:
       fetchTroveQueue().catch(() => null), // the position is optional; the rest still answers
       address === "sample" ? sampleTrove(client) : Promise.resolve(address as Address),
     ]);
-    const trove = await readTrove(client, who, sources.borrow.feePct, queue ? queue.map(BigInt) : null);
-    return Response.json({ ...trove, advice: troveAdvice(trove), ...about }, { headers: HEADERS });
+    const nicrs = queue ? queue.map(BigInt) : null;
+    const trove = await readTrove(client, who, sources.borrow.feePct, nicrs);
+    const p = sources.peg;
+    return reply(trove, nicrs, p ? { musdUsd: p.priceUsd, floorUsd: p.floorUsd, redemptionPct: p.redemptionPct } : null);
   } catch {
     return Response.json({ error: "Mezo mainnet is unavailable right now — try again in a minute." }, { status: 503, headers: HEADERS });
   }

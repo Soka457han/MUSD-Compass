@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import type { EIP1193Provider } from "viem";
 import { discoverWallets, injected, type FoundWallet } from "@/lib/wallet";
 import { walletConnectEnabled } from "@/lib/walletconnect";
+import { BITCOIN_WALLETS, detectBitcoinWallets, type BitcoinWalletId } from "@/lib/bitcoinWallet";
 
 // Only wallet-supplied inline images are shown (EIP-6963 icons are data URIs); anything else gets the initial.
 const safeIcon = (icon: string) => (/^data:image\/(png|svg\+xml|webp|jpeg|gif);/.test(icon) ? icon : null);
@@ -34,7 +35,8 @@ function Unavailable({ name, note }: { name: string; note: string }) {
 
 /** "Connect a wallet": every EVM wallet this browser has, plus the ones the vault can't use yet, said plainly. */
 /** provider is null for WalletConnect: it is created after the pick, once the QR window has been scanned. */
-export type Picked = { name: string; icon: string | null; provider: EIP1193Provider | null; walletConnect?: boolean };
+/** It is also null for a Bitcoin wallet, which only tells Compass which Mezo account to show (view only). */
+export type Picked = { name: string; icon: string | null; provider: EIP1193Provider | null; walletConnect?: boolean; bitcoin?: BitcoinWalletId };
 
 export function WalletModal({
   open,
@@ -53,6 +55,7 @@ export function WalletModal({
   const ref = useRef<HTMLDialogElement>(null);
   const [found, setFound] = useState<FoundWallet[]>([]);
   const [legacy, setLegacy] = useState<EIP1193Provider | null>(null);
+  const [btc, setBtc] = useState<BitcoinWalletId[]>([]);
 
   useEffect(() => {
     const d = ref.current;
@@ -64,6 +67,7 @@ export function WalletModal({
   useEffect(() => {
     if (!open) return;
     setLegacy(injected()); // eslint-disable-line react-hooks/set-state-in-effect
+    setBtc(detectBitcoinWallets());
     return discoverWallets((w) => setFound((list) => (list.some((x) => x.uuid === w.uuid) ? list : [...list, w])));
   }, [open]);
 
@@ -144,11 +148,28 @@ export function WalletModal({
             )}
           </ul>
 
-          <h3 className="mt-6 text-[13px] font-semibold text-ink-muted">Bitcoin wallets · not supported yet</h3>
+          <h3 className="mt-6 text-[13px] font-semibold text-ink-muted">Bitcoin wallets · view only for now</h3>
           <ul className="mt-2 flex flex-col gap-1">
-            {["Unisat", "OKX (Bitcoin)", "Xverse"].map((n) => (
-              <Unavailable key={n} name={n} note="The vault needs an EVM wallet for now" />
-            ))}
+            {BITCOIN_WALLETS.map(({ id, name }) =>
+              btc.includes(id) ? (
+                <li key={id}>
+                  <button
+                    type="button"
+                    onClick={() => onPick({ name, icon: null, provider: null, bitcoin: id })}
+                    aria-pressed={picked?.bitcoin === id}
+                    className={`${ROW} hover:bg-surface aria-pressed:bg-accent aria-pressed:text-on-accent`}
+                  >
+                    <Badge name={name} />
+                    <span className="min-w-0 flex-1">
+                      <span className="block font-bold">{name}</span>
+                      <span className="block text-xs">Bitcoin wallet · view only for now</span>
+                    </span>
+                  </button>
+                </li>
+              ) : (
+                <Unavailable key={id} name={name} note="Not found in this browser" />
+              ),
+            )}
           </ul>
         </div>
 
@@ -170,7 +191,11 @@ export function WalletModal({
               ) : (
                 <>
                   <p className="text-xl font-extrabold tracking-tight">Opening {picked.name}…</p>
-                  <p className="max-w-xs text-sm text-ink-muted">Confirm the connection in your wallet. It will then ask to switch to Mezo testnet.</p>
+                  <p className="max-w-xs text-sm text-ink-muted">
+                    {picked.bitcoin
+                      ? "Share your address in your wallet. Compass then shows your Mezo account, view only. Nothing is signed. To deposit or withdraw with a Bitcoin wallet, use the Mezo app at mezo.org."
+                      : "Confirm the connection in your wallet. It will then ask to switch to Mezo testnet."}
+                  </p>
                   <span aria-hidden="true" className="mt-2 size-7 animate-spin rounded-full border-[3px] border-line border-t-accent" />
                 </>
               )}

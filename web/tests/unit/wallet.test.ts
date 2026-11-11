@@ -43,3 +43,10 @@ describe("connect and explorerTx by network", () => {
     expect(explorerTx("0xabc", "mainnet")).toBe("https://explorer.mezo.org/tx/0xabc");
   });
 });
+
+describe("humanError", () => {
+  it("copes with a wallet that rejects with nothing", () => {
+    expect(humanError(undefined)).toBe("Something went wrong.");
+    expect(humanError(null)).toBe("Something went wrong.");
+  });
+});

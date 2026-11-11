@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { erc20Abi, smusdAbi } from "@/lib/chain/abis";
+import { erc20Abi, smusdAbi, vaultGaugeAbi } from "@/lib/chain/abis";
 import { MAINNET, NETWORKS, TESTNET } from "@/lib/chain/addresses";
 import { maxUint256 } from "viem";
 import { gasWithBuffer, guard, MAINNET_CAP_MUSD, mainnetWritesEnabled, sendSafely } from "@/lib/sendSafely";
@@ -97,7 +97,7 @@ describe("guard: networks", () => {
     expect(() => guard({ ...approve, args: [TESTNET.smusd, 1n] }, mainnetOn)).toThrow(/only approves the Savings Vault/);
   });
   it("refuses a testnet contract on mainnet and a mainnet contract on testnet", () => {
-    expect(() => guard({ address: TESTNET.musd, functionName: "approve", args: [MAINNET.smusd, 1n], network: "mainnet", walletChainId: 31612 }, mainnetOn)).toThrow(/only sends to mainnet MUSD, sMUSD and BorrowerOperations/);
+    expect(() => guard({ address: TESTNET.musd, functionName: "approve", args: [MAINNET.smusd, 1n], network: "mainnet", walletChainId: 31612 }, mainnetOn)).toThrow(/only sends to mainnet MUSD, sMUSD, the sMUSD gauge and BorrowerOperations/);
     expect(() => guard({ address: MAINNET.musd, functionName: "approve", args: [TESTNET.smusd, 1n], network: "testnet", walletChainId: 31611 })).toThrow(/only sends to testnet MUSD, sMUSD and BorrowerOperations/);
   });
 });
@@ -235,10 +235,14 @@ describe("guard: the whole mainnet surface, tried one call at a time", () => {
   const stranger = "0x000000000000000000000000000000000000dEaD";
   const one = 10n ** 18n;
   const contracts = { musd: MAINNET.musd, smusd: MAINNET.smusd, borrowerOperations: MAINNET.borrowerOperations, troveManager: MAINNET.troveManager, stabilityPool: MAINNET.stabilityPool, gauge: MAINNET.smusdGauge, ditto: MAINNET.dittoMusdVault, stranger };
-  const functions = ["approve", "transfer", "transferFrom", "permit", "increaseAllowance", "mint", "burn", "deposit", "withdraw", "claimYield", "redeem", "openTrove", "addColl", "repayMUSD", "closeTrove", "adjustTrove", "withdrawColl", "withdrawMUSD", "refinance", "redeemCollateral", "provideToSP", "liquidate", "multicall", "upgradeTo", "transferOwnership"];
+  const functions = ["approve", "transfer", "transferFrom", "permit", "increaseAllowance", "mint", "burn", "deposit", "withdraw", "claimYield", "redeem", "openTrove", "addColl", "repayMUSD", "closeTrove", "adjustTrove", "withdrawColl", "withdrawMUSD", "refinance", "redeemCollateral", "provideToSP", "liquidate", "multicall", "upgradeTo", "transferOwnership", "getReward", "notifyRewardAmount", "depositFor", "withdrawAll"];
   // The only calls Compass may make, each with arguments shaped the way the page builds them.
   const allowedArgs: Record<string, unknown[]> = {
     "musd.approve": [MAINNET.smusd, one],
+    "smusd.approve": [MAINNET.smusdGauge, one],
+    "gauge.deposit": [one],
+    "gauge.withdraw": [one],
+    "gauge.getReward": [account],
     "smusd.deposit": [one],
     "smusd.withdraw": [one],
     "smusd.claimYield": [],
@@ -247,14 +251,14 @@ describe("guard: the whole mainnet surface, tried one call at a time", () => {
     "borrowerOperations.repayMUSD": [one, account, account],
   };
 
-  it("passes exactly seven contract and function pairs out of every combination, and refuses the rest", () => {
+  it("passes exactly eleven contract and function pairs out of every combination, and refuses the rest", () => {
     const passed: string[] = [];
     for (const [name, address] of Object.entries(contracts)) {
       for (const fn of functions) {
         const key = `${name}.${fn}`;
-        for (const args of [allowedArgs[key] ?? [], [stranger, one], [MAINNET.smusd, one], [one], [one, stranger, stranger], [stranger, stranger]]) {
+        for (const args of [allowedArgs[key] ?? [], [stranger, one], [MAINNET.smusd, one], [MAINNET.smusdGauge, one], [one], [account], [one, stranger, stranger], [stranger, stranger]]) {
           try {
-            guard({ address: address as `0x${string}`, functionName: fn, args, network: "mainnet", walletChainId: 31612 }, mainnetOn);
+            guard({ address: address as `0x${string}`, functionName: fn, args, network: "mainnet", walletChainId: 31612, account }, mainnetOn);
             if (!passed.includes(key)) passed.push(key);
           } catch {
             // refused, as it should be for everything outside the list
@@ -263,15 +267,113 @@ describe("guard: the whole mainnet surface, tried one call at a time", () => {
       }
     }
     expect(passed.sort()).toEqual(Object.keys(allowedArgs).sort());
+    expect(passed).toHaveLength(11);
   });
   it("never lets MUSD be approved for anyone but the vault, whatever else is in the call", () => {
-    for (const spender of [stranger, account, MAINNET.borrowerOperations, MAINNET.musd, TESTNET.smusd, "", undefined, MAINNET.smusd + "00"]) {
+    for (const spender of [stranger, account, MAINNET.borrowerOperations, MAINNET.musd, MAINNET.smusdGauge, TESTNET.smusd, "", undefined, MAINNET.smusd + "00"]) {
       expect(() => guard({ address: MAINNET.musd, functionName: "approve", args: [spender, one], network: "mainnet", walletChainId: 31612 }, mainnetOn)).toThrow();
     }
   });
   it("refuses a mainnet call from a wallet on any other chain, Ethereum included (MUSD has the same address there)", () => {
     for (const chain of [1, 31611, 8453, 56, 0]) {
       expect(() => guard({ address: MAINNET.musd, functionName: "approve", args: [MAINNET.smusd, one], network: "mainnet", walletChainId: chain }, mainnetOn)).toThrow(/needs 31612/);
+    }
+  });
+});
+
+describe("guard: the sMUSD gauge (mainnet only)", () => {
+  const mainnetOn = { mainnetEnabled: true };
+  const cap = BigInt(MAINNET_CAP_MUSD) * 10n ** 18n;
+  const stranger = "0x000000000000000000000000000000000000dEaD";
+  const g = (functionName: string, args: unknown[], extra: { account?: `0x${string}` } = {}) => ({ address: MAINNET.smusdGauge as `0x${string}`, functionName, args, network: "mainnet" as const, walletChainId: 31612, ...extra });
+  const approveS = (spender: unknown, amount: unknown) => ({ address: MAINNET.smusd, functionName: "approve", args: [spender, amount], network: "mainnet" as const, walletChainId: 31612 });
+
+  it("lets a stake (deposit) through at the cap and refuses one wei more", () => {
+    expect(() => guard(g("deposit", [cap]), mainnetOn)).not.toThrow();
+    expect(() => guard(g("deposit", [cap + 1n]), mainnetOn)).toThrow(/at most 2,500 MUSD/);
+  });
+  it("does not cap an unstake (withdraw): it returns funds", () => {
+    expect(() => guard(g("withdraw", [1_000_000n * 10n ** 18n]), mainnetOn)).not.toThrow();
+  });
+  it("refuses a stake or unstake that is zero, negative or not a bigint", () => {
+    for (const bad of [0n, -1n, "5", 5, undefined]) {
+      expect(() => guard(g("deposit", [bad]), mainnetOn)).toThrow(/more than zero/);
+      expect(() => guard(g("withdraw", [bad]), mainnetOn)).toThrow(/more than zero/);
+    }
+    expect(() => guard(g("deposit", [1n]), mainnetOn)).not.toThrow();
+    expect(() => guard(g("withdraw", [1n]), mainnetOn)).not.toThrow();
+  });
+  it("lets getReward through only for the caller's own account, in any letter case", () => {
+    expect(() => guard(g("getReward", [account], { account }), mainnetOn)).not.toThrow();
+    expect(() => guard(g("getReward", [account.toLowerCase()], { account }), mainnetOn)).not.toThrow();
+    expect(() => guard(g("getReward", [account], { account: account.toLowerCase() as `0x${string}` }), mainnetOn)).not.toThrow();
+    expect(() => guard(g("getReward", [stranger], { account }), mainnetOn)).toThrow(/only claims MEZO for your own account/);
+    expect(() => guard(g("getReward", [account]), mainnetOn)).toThrow(/only claims MEZO for your own account/);
+    for (const bad of ["0xnope", "", 1n, undefined, null]) {
+      expect(() => guard(g("getReward", [bad], { account }), mainnetOn)).toThrow(/only claims MEZO for your own account/);
+    }
+    expect(() => guard(g("getReward", [], { account }), mainnetOn)).toThrow(/only claims MEZO for your own account/);
+  });
+  it("refuses every other gauge function", () => {
+    for (const fn of ["depositFor", "withdrawAll", "notifyRewardAmount", "transfer", "approve", "getRewardFor", "exit"]) {
+      expect(() => guard(g(fn, [account, 1n], { account }), mainnetOn)).toThrow(/only stakes, unstakes and claims MEZO/);
+    }
+  });
+  it("refuses every gauge call on testnet: there is no testnet gauge", () => {
+    for (const [fn, args] of [["deposit", [1n]], ["withdraw", [1n]], ["getReward", [account]]] as const) {
+      expect(() => guard({ address: MAINNET.smusdGauge, functionName: fn, args: [...args], network: "testnet", walletChainId: 31611, account })).toThrow(/only sends to testnet MUSD, sMUSD and BorrowerOperations/);
+    }
+  });
+  it("refuses every gauge call while mainnet is switched off", () => {
+    expect(() => guard(g("deposit", [1n]), { mainnetEnabled: false })).toThrow(/switched off/);
+  });
+  it("lets sMUSD be approved for the gauge at the cap, and refuses one wei more", () => {
+    expect(() => guard(approveS(MAINNET.smusdGauge, cap), mainnetOn)).not.toThrow();
+    expect(() => guard(approveS(MAINNET.smusdGauge.toUpperCase().replace("0X", "0x"), 1n), mainnetOn)).not.toThrow();
+    expect(() => guard(approveS(MAINNET.smusdGauge, cap + 1n), mainnetOn)).toThrow(/at most 2,500 MUSD/);
+  });
+  it("refuses an sMUSD approval that is zero, negative, not a bigint, or unlimited", () => {
+    for (const bad of [0n, -1n, "5", 5, undefined]) {
+      expect(() => guard(approveS(MAINNET.smusdGauge, bad), mainnetOn)).toThrow(/more than zero/);
+    }
+    expect(() => guard(approveS(MAINNET.smusdGauge, maxUint256), mainnetOn)).toThrow(/never asks for an unlimited approval/);
+    expect(() => guard(approveS(MAINNET.smusdGauge, maxUint256 / 2n), mainnetOn)).toThrow(/never asks for an unlimited approval/);
+  });
+  it("refuses an sMUSD approval to anyone but the gauge: the vault, a stranger, MUSD", () => {
+    for (const spender of [MAINNET.smusd, stranger, MAINNET.musd, account, MAINNET.borrowerOperations, "", undefined, MAINNET.smusdGauge + "00"]) {
+      expect(() => guard(approveS(spender, 1n), mainnetOn)).toThrow(/only approves sMUSD for the sMUSD gauge/);
+    }
+  });
+  it("refuses an sMUSD approval on testnet, even to the mainnet gauge address", () => {
+    expect(() => guard({ address: TESTNET.smusd, functionName: "approve", args: [MAINNET.smusdGauge, 1n], network: "testnet", walletChainId: 31611 })).toThrow(/only approves sMUSD for the sMUSD gauge/);
+  });
+  it("refuses MUSD approved to the gauge", () => {
+    expect(() => guard({ address: MAINNET.musd, functionName: "approve", args: [MAINNET.smusdGauge, 1n], network: "mainnet", walletChainId: 31612 }, mainnetOn)).toThrow(/only approves the Savings Vault/);
+  });
+  it("sendSafely passes its account to the guard: getReward for yourself goes through, for anyone else nothing is simulated", async () => {
+    vi.stubEnv("NEXT_PUBLIC_MAINNET_WRITES", "1");
+    const ok = clients();
+    await sendSafely({ ...ok, account, address: MAINNET.smusdGauge, abi: vaultGaugeAbi, functionName: "getReward", args: [account], network: "mainnet", walletChainId: 31612 } as never);
+    expect(ok.walletClient.writeContract).toHaveBeenCalledOnce();
+    const bad = clients();
+    await expect(
+      sendSafely({ ...bad, account, address: MAINNET.smusdGauge, abi: vaultGaugeAbi, functionName: "getReward", args: [stranger], network: "mainnet", walletChainId: 31612 } as never),
+    ).rejects.toThrow(/your own account/);
+    expect(bad.publicClient.simulateContract).not.toHaveBeenCalled();
+    vi.unstubAllEnvs();
+  });
+});
+
+describe("review fixes: the chain must be known and a spender must be a string", () => {
+  it("sendSafely refuses to send when the wallet's chain is unknown, before any simulation", async () => {
+    const { publicClient, walletClient } = clients();
+    await expect(sendSafely({ publicClient, walletClient, account, address: TESTNET.smusd, abi: smusdAbi, functionName: "deposit", args: [5n], network: "testnet" } as never)).rejects.toThrow(/could not read which network/);
+    expect(publicClient.simulateContract).not.toHaveBeenCalled();
+    expect(walletClient.writeContract).not.toHaveBeenCalled();
+  });
+  it("an approval whose spender is not a string is refused, even if it prints as the vault", () => {
+    for (const spender of [[TESTNET.smusd], { toString: () => TESTNET.smusd }, { toLowerCase: () => TESTNET.smusd.toLowerCase() }]) {
+      expect(() => guard({ address: TESTNET.musd, functionName: "approve", args: [spender, 1n] })).toThrow(/only approves/);
     }
   });
 });

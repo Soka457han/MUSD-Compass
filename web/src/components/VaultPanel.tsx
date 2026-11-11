@@ -8,12 +8,14 @@ import { collateralFor, readBorrowSetup, type BorrowSetup } from "@/lib/borrow";
 import { assertSafeAtSend, buildBorrowEarnSteps, icrAfterOpen } from "@/lib/borrowEarn";
 import { troveAdvice, type Action } from "@/lib/safety";
 import { buildRepayStep, buildTopUpStep } from "@/lib/troveActions";
-import { readTrove, type TroveView } from "@/lib/trove";
+import { previewTrove, readTrove, type TroveView } from "@/lib/trove";
+import { buildClaimMezoStep, buildStakeSteps, buildUnstakeStep } from "@/lib/gaugeActions";
 import { NETWORKS, SAMPLES, type NetworkId } from "@/lib/chain/addresses";
 import { MAINNET_CAP_MUSD, mainnetWritesEnabled, sendSafely } from "@/lib/sendSafely";
 import type { VaultState } from "@/lib/vault";
 import { connect, explorerTx, humanError, injected, publicFor } from "@/lib/wallet";
 import { walletConnectProjectId, walletConnectProvider } from "@/lib/walletconnect";
+import { bitcoinAccount } from "@/lib/bitcoinWallet";
 import { AdviceList } from "./AdviceList";
 import { ArrowUpRightIcon } from "./Icons";
 import { MainnetConfirm, type MainnetPlan } from "./MainnetConfirm";
@@ -25,7 +27,21 @@ type Pending = { view: MainnetPlan; go: () => void };
 
 const CAP = MAINNET_CAP_MUSD.toLocaleString("en-US");
 const REAL = "Mezo mainnet: real funds";
+const troveKey = (t: TroveView) => `${t.address.toLowerCase()}:${t.nicr}`;
 const fmt = (s: string) => Number(s).toLocaleString("en-US", { maximumFractionDigits: 4 });
+const pct = (v: number) => `${v.toLocaleString("en-US", { maximumFractionDigits: 0 })}%`;
+type Market = { musdUsd: number; floorUsd: number };
+type TroveApi = { icrPct?: number; ahead: number | null; troves: number; market: Market | null; preview?: { icrPct: number; ahead: number | null; troves: number } };
+
+/** Compass's mainnet trove read (redemption queue and MUSD price). Any failure is null: the caller then shows what it already knows. */
+async function troveApi(account: Address, query = ""): Promise<TroveApi | null> {
+  try {
+    const r = await fetch(`/api/trove/${account}${query}`, { signal: AbortSignal.timeout(8_000) }); // a slow answer must not hold up the dialog for long
+    return r.ok ? await r.json() : null;
+  } catch {
+    return null;
+  }
+}
 
 function ago(ts: number | null) {
   if (!ts) return "no distribution seen in the last 14 days";
@@ -53,6 +69,8 @@ export function VaultPanel() {
   const [picking, setPicking] = useState(false);
   const [picked, setPicked] = useState<Picked | null>(null);
   const [pickError, setPickError] = useState<string | null>(null);
+  const [connecting, setConnecting] = useState(false);
+  const [btcView, setBtcView] = useState<Address | null>(null); // a Bitcoin wallet's Mezo account: looked up, never "own"
   const [setup, setSetup] = useState<BorrowSetup | null>(null);
   const [borrowAmt, setBorrowAmt] = useState("2000");
   const [net, setNet] = useState<NetworkId>("testnet"); // mainnet is only offered when a deploy switches it on
@@ -60,6 +78,9 @@ export function VaultPanel() {
   const [trove, setTrove] = useState<TroveView | null>(null);
   const [topUpAmt, setTopUpAmt] = useState("");
   const [repayAmt, setRepayAmt] = useState("");
+  const [queue, setQueue] = useState<{ for: string; ahead: number | null; troves: number; market: Market | null } | null>(null); // mainnet only
+  const [stakeAmt, setStakeAmt] = useState("");
+  const [unstakeAmt, setUnstakeAmt] = useState("");
 
   const [loading, setLoading] = useState(false);
   const asked = useRef(0);
@@ -94,6 +115,8 @@ export function VaultPanel() {
     setSetup(null);
     setTrove(null);
     setPending(null);
+    setStakeAmt("");
+    setUnstakeAmt("");
     asked.current++; // drops any answer still on its way for the old network
     setLoading(false);
     if (lookup.trim()) void load(lookup.trim(), n);
@@ -113,6 +136,24 @@ export function VaultPanel() {
   const onConnect = async (w: Picked) => {
     setPicked(w);
     setPickError(null);
+    setConnecting(true); // the network choice is locked until the wallet answers, so the answer cannot land under the other network
+    if (w.bitcoin) {
+      try {
+        const { account: a } = await bitcoinAccount(w.bitcoin);
+        setPicking(false);
+        setPicked(null);
+        setAccount(null); // a Bitcoin view replaces any connected wallet: nothing on the page may act for it
+        setProvider(null);
+        setBtcView(a);
+        setLookup(a);
+        await load(a, net);
+      } catch (e) {
+        setPickError(humanError(e));
+      } finally {
+        setConnecting(false);
+      }
+      return;
+    }
     let c: Awaited<ReturnType<typeof connect>>;
     let p: EIP1193Provider;
     try {
@@ -124,8 +165,11 @@ export function VaultPanel() {
       c = await connect(p, net);
     } catch (e) {
       setPickError(humanError(e));
+      setConnecting(false);
       return;
     }
+    setConnecting(false);
+    setBtcView(null);
     setPicking(false);
     setPicked(null);
     setProvider(p);
@@ -153,6 +197,16 @@ export function VaultPanel() {
       current = false;
     };
   }, [account, setup, net]);
+
+  // Mainnet only: the redemption queue and the MUSD price are not in the browser read, so ask Compass's trove API once per read.
+  useEffect(() => {
+    if (!(account && trove?.active && net === "mainnet")) return;
+    let current = true;
+    troveApi(account).then((j) => current && j && setQueue({ for: troveKey(trove), ahead: j.ahead, troves: j.troves, market: j.market ?? null }));
+    return () => {
+      current = false;
+    };
+  }, [account, trove, net]);
 
   const run = async (
     label: string,
@@ -238,6 +292,11 @@ export function VaultPanel() {
       const btc = formatEther(built.plan.collateral);
       const icrPct = setup ? icrAfterOpen(Number(btc), debt, setup.feePct, setup.gasComp, setup.btcUsd) : 0;
       const fee = setup ? (debt * setup.feePct) / 100 : 0;
+      const m = net === "mainnet" ? (await troveApi(account))?.market : null;
+      const pressure =
+        m && m.musdUsd < m.floorUsd
+          ? [`MUSD trades at $${m.musdUsd.toFixed(4)}, under the $${m.floorUsd.toFixed(4)} redemption floor, so redeeming MUSD for BTC pays right now. Redemptions start with the lowest-ratio troves, and a new trove at 200% can be reached once the troves below it are used up.`]
+          : [];
       gate(
         {
           title: REAL,
@@ -247,6 +306,7 @@ export function VaultPanel() {
             `Locks ${btc} BTC as collateral in a new trove.`,
             `Borrows ${debt.toLocaleString("en-US")} MUSD, plus a ${fee.toFixed(2)} MUSD fee and the 200 MUSD gas deposit added to the debt.`,
             `The trove starts at ${icrPct.toFixed(1)}%. Below 110% it can be liquidated, and any trove can be redeemed against at face value.`,
+            ...pressure,
             "Deposits the borrowed MUSD in the Mezo Savings Vault. Three wallet prompts, each simulated first.",
           ],
         },
@@ -258,14 +318,37 @@ export function VaultPanel() {
       setBusy(false);
     }
   };
+  /** The trove's ratio after a change, computed here from the browser's own read. Null when previewTrove refuses the change. */
+  const localPreview = (change: { addBtc?: number; repayMusd?: number }) => {
+    if (!trove) return null;
+    try {
+      return previewTrove(trove, change, null);
+    } catch {
+      return null;
+    }
+  };
+  const previewHint = (change: { addBtc?: number; repayMusd?: number }) => {
+    const p = localPreview(change);
+    return p && `Ratio after: ${pct(p.icrPct)} (now ${pct(trove!.icrPct)}).`;
+  };
+  /** The confirm dialog's line: with the redemption queue from Compass when it answers, the local ratio alone when it does not. */
+  const ratioLine = async (change: { addBtc?: number; repayMusd?: number }, query: string) => {
+    const p = localPreview(change);
+    if (!p) return null;
+    const ratio = `Your ratio goes from ${pct(trove!.icrPct)} to ${pct(p.icrPct)}.`;
+    const j = await troveApi(account!, query);
+    // The queue is a copy up to 5 minutes old, so the places are stated as about.
+    return j?.preview && j.preview.ahead !== null && j.ahead !== null ? `${ratio} Troves redeemed before yours: about ${j.ahead} now, about ${j.preview.ahead} after, of ${j.preview.troves}.` : ratio;
+  };
   const topUp = async () => {
     const btc = Number(topUpAmt);
     if (!account) return;
     setBusy(true);
     try {
       const step = await buildTopUpStep(publicFor(net) as never, net, account, btc);
+      const after = net === "mainnet" ? await ratioLine({ addBtc: btc }, `?addBtc=${encodeURIComponent(topUpAmt.trim())}`) : null;
       gate(
-        { title: REAL, amount: btc, button: "Add on mainnet", lines: [`Adds ${btc} BTC to your trove as collateral.`, "One wallet prompt, simulated first. The ratio goes up; the BTC stays in the trove until it is closed."] },
+        { title: REAL, amount: btc, button: "Add on mainnet", lines: [`Adds ${btc} BTC to your trove as collateral.`, ...(after ? [after] : []), "One wallet prompt, simulated first. The ratio goes up; the BTC stays in the trove until it is closed."] },
         () => void run("Add BTC", [step], net),
       );
     } catch (e) {
@@ -280,8 +363,9 @@ export function VaultPanel() {
     setBusy(true);
     try {
       const step = await buildRepayStep(publicFor(net) as never, net, account, musd);
+      const after = net === "mainnet" ? await ratioLine({ repayMusd: musd }, `?repayMusd=${encodeURIComponent(repayAmt.trim())}`) : null;
       gate(
-        { title: REAL, amount: musd, button: "Repay on mainnet", lines: [`Repays ${musd.toLocaleString("en-US")} MUSD of this trove's debt from your wallet.`, "One wallet prompt, simulated first. The MUSD is burned, and the debt and your ratio improve."] },
+        { title: REAL, amount: musd, button: "Repay on mainnet", lines: [`Repays ${musd.toLocaleString("en-US")} MUSD of this trove's debt from your wallet.`, ...(after ? [after] : []), "One wallet prompt, simulated first. The MUSD is burned, and the debt and your ratio improve."] },
         () => void run("Repay MUSD", [step], net),
       );
     } catch (e) {
@@ -290,6 +374,48 @@ export function VaultPanel() {
       setBusy(false);
     }
   };
+  const stake = async () => {
+    const wei = toWei(stakeAmt);
+    if (!account || !wei) return;
+    setBusy(true);
+    try {
+      const steps = await buildStakeSteps(publicFor("mainnet") as never, account, wei);
+      gate(
+        {
+          title: REAL,
+          amount: Number(stakeAmt),
+          button: "Stake on mainnet",
+          lines: [
+            `Moves ${stakeAmt} sMUSD from your wallet into Mezo's Savings Vault gauge.`,
+            steps.length > 1 ? "Two wallet prompts: an approval for exactly this amount, then the stake. Each is simulated first." : "One wallet prompt, simulated first.",
+            "Staked sMUSD earns MEZO and stops earning the vault's fee yield, which goes to veBTC voters instead (Mezo docs).",
+          ],
+        },
+        () => void run("Stake", steps, "mainnet"),
+      );
+    } catch (e) {
+      failed("Stake", e);
+    } finally {
+      setBusy(false);
+    }
+  };
+  const unstake = async () => {
+    const wei = toWei(unstakeAmt);
+    if (!account || !wei) return;
+    setBusy(true);
+    try {
+      const step = await buildUnstakeStep(publicFor("mainnet") as never, account, wei);
+      gate(
+        { title: REAL, amount: Number(unstakeAmt), button: "Unstake on mainnet", lines: [`Takes ${unstakeAmt} sMUSD out of the gauge and back to your wallet.`, "One wallet prompt, simulated first. Back in your wallet, the sMUSD earns the vault's fee yield again and no more MEZO."] },
+        () => void run("Unstake", [step], "mainnet"),
+      );
+    } catch (e) {
+      failed("Unstake", e);
+    } finally {
+      setBusy(false);
+    }
+  };
+  const claimMezo = () => account && run("Claim MEZO", [buildClaimMezoStep(account)], "mainnet"); // only pays the account itself, so no typed amount
   const suggestion = (a: Action) => (a.kind === "addColl" ? setTopUpAmt(String(a.btc)) : setRepayAmt(String(a.musd)));
   const claim = () => run("Claim yield", [{ label: "Claim yield", address: NETWORKS[net].smusd, abi: smusdAbi, functionName: "claimYield", args: [] }], net);
 
@@ -301,6 +427,16 @@ export function VaultPanel() {
   const depositOverCap = net === "mainnet" && Number(depositAmt) > MAINNET_CAP_MUSD;
   const borrowOverCap = net === "mainnet" && Number(borrowAmt) > MAINNET_CAP_MUSD;
   const sample = net === "mainnet" ? SAMPLES.positions : SAMPLES.devWallet;
+  const gaugeRead = Boolean(state && state.staked != null && state.earnedMezo != null);
+  const stakeWei = toWei(stakeAmt);
+  const unstakeWei = toWei(unstakeAmt);
+  const stakeTooBig = Boolean(state && stakeWei && stakeWei > parseUnits(state.smusd, 18));
+  const stakeOverCap = Number(stakeAmt) > MAINNET_CAP_MUSD;
+  const unstakeTooBig = Boolean(gaugeRead && unstakeWei && unstakeWei > parseUnits(state!.staked!, 18));
+  const q = queue && trove && queue.for === troveKey(trove) ? queue : null; // an answer for another trove, or for this one before it changed, is not used
+  const advice = trove ? troveAdvice(q ? { ...trove, ahead: q.ahead, troves: q.troves } : trove, undefined, undefined, q?.market) : [];
+  const topUpHint = Number(topUpAmt) > 0 ? previewHint({ addBtc: Number(topUpAmt) }) : null;
+  const repayHint = Number(repayAmt) > 0 ? previewHint({ repayMusd: Number(repayAmt) }) : null;
 
   return (
     <div className="mx-auto w-full max-w-3xl flex-1 space-y-5 px-4 py-5">
@@ -309,7 +445,7 @@ export function VaultPanel() {
           Wallet
         </h2>
         {mainnetWritesEnabled() && (
-          <fieldset disabled={busy} className="mt-2 flex flex-wrap gap-x-5 gap-y-1 text-sm">
+          <fieldset disabled={busy || connecting} className="mt-2 flex flex-wrap gap-x-5 gap-y-1 text-sm">
             <legend className="sr-only">Network</legend>
             {(["testnet", "mainnet"] as const).map((n) => (
               <label key={n} className="flex min-h-11 items-center gap-2 font-semibold">
@@ -321,7 +457,7 @@ export function VaultPanel() {
         )}
         {net === "mainnet" && (
           <p role="note" className="mt-2 rounded-2xl border-2 border-danger-text px-4 py-2 text-sm font-semibold">
-            {REAL}. Every action on this page now uses real MUSD and BTC. A deposit, a withdrawal, a new trove, a top-up and a repayment each ask you to type the amount before any wallet prompt. Deposits and new troves stop at {CAP} MUSD.
+            {REAL}. Every action on this page now uses real MUSD and BTC. A deposit, a withdrawal, a new trove, a top-up, a repayment, a stake and an unstake each ask you to type the amount before any wallet prompt. Deposits and new troves stop at {CAP} MUSD.
           </p>
         )}
         {account ? (
@@ -336,6 +472,11 @@ export function VaultPanel() {
             {!picking && pickError && (
               <p role="alert" className="mt-3 text-sm font-semibold text-danger-text">
                 {pickError}
+              </p>
+            )}
+            {btcView && state?.address.toLowerCase() === btcView.toLowerCase() && (
+              <p className="mt-3 max-w-prose text-sm">
+                Showing the Mezo account of your Bitcoin wallet ({btcView.slice(0, 6)}…{btcView.slice(-4)}), view only. To deposit or withdraw with a Bitcoin wallet, use the Mezo app at mezo.org.
               </p>
             )}
             {!hasWallet && (
@@ -415,9 +556,15 @@ export function VaultPanel() {
         {state && (
           <dl className="mt-4 grid grid-cols-2 gap-x-4 gap-y-3 sm:grid-cols-4">
             <div>
-              <dt className="text-xs text-ink-muted">In vault (sMUSD)</dt>
+              <dt className="text-xs text-ink-muted">{state.staked != null ? "In vault, not staked (sMUSD)" : "In vault (sMUSD)"}</dt>
               <dd className="price text-[2rem]">{fmt(state.smusd)}</dd>
             </div>
+            {state.staked != null && (
+              <div>
+                <dt className="text-xs text-ink-muted">Staked in the gauge (sMUSD)</dt>
+                <dd className="price text-[2rem]">{fmt(state.staked)}</dd>
+              </div>
+            )}
             <div>
               <dt className="text-xs text-ink-muted">Pending yield</dt>
               <dd className="price text-[2rem]">{fmt(state.pendingYield)}</dd>
@@ -479,6 +626,54 @@ export function VaultPanel() {
           </div>
           <button type="button" onClick={claim} disabled={busy} className="mt-4 inline-flex min-h-11 items-center rounded-full border border-line px-4 text-sm font-bold disabled:opacity-50">
             Claim yield
+          </button>
+        </section>
+      )}
+
+      {own && net === "mainnet" && state && (
+        <section aria-labelledby="gauge-h" className="rounded-[20px] border border-line bg-card px-5 py-5">
+          <h2 id="gauge-h" className="text-base font-bold">
+            Stake in Mezo&apos;s gauge to earn MEZO
+          </h2>
+          <p className="mt-1 text-sm font-semibold">{gaugeRead ? `Staked: ${fmt(state.staked!)} sMUSD. MEZO to claim: ${fmt(state.earnedMezo!)}.` : "Could not read the gauge right now."}</p>
+          <p className="mt-1 max-w-prose text-sm text-ink-muted">
+            Staking moves sMUSD from your wallet into Mezo&apos;s Savings Vault gauge. The staked part earns MEZO and stops earning the vault&apos;s fee yield, which goes to veBTC voters (Mezo docs). Unstake returns the sMUSD to your wallet.
+          </p>
+          <div className="mt-4 grid gap-5 sm:grid-cols-2">
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                void stake();
+              }}
+            >
+              <label htmlFor="stake" className="mb-1 block text-xs font-semibold">
+                Stake sMUSD
+              </label>
+              <input id="stake" inputMode="decimal" value={stakeAmt} onChange={(e) => setStakeAmt(e.target.value)} placeholder="100" disabled={!gaugeRead} aria-invalid={stakeTooBig || stakeOverCap} className="block h-11 w-full rounded-full border border-field bg-card px-4 text-sm" />
+              {stakeTooBig && <p className="mt-1 text-xs font-semibold text-danger-text">More than your wallet holds ({fmt(state.smusd)} sMUSD).</p>}
+              {stakeOverCap && <p className="mt-1 text-xs font-semibold text-danger-text">Compass stakes at most {CAP} sMUSD per transaction on mainnet. Stake less, or use the Mezo app for more.</p>}
+              <button type="submit" disabled={busy || !gaugeRead || !stakeWei || stakeTooBig || stakeOverCap} className="mt-2 inline-flex min-h-11 items-center rounded-full bg-accent px-4 text-sm font-bold text-on-accent disabled:opacity-50">
+                Stake
+              </button>
+            </form>
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                void unstake();
+              }}
+            >
+              <label htmlFor="unstake" className="mb-1 block text-xs font-semibold">
+                Unstake sMUSD
+              </label>
+              <input id="unstake" inputMode="decimal" value={unstakeAmt} onChange={(e) => setUnstakeAmt(e.target.value)} placeholder="10" disabled={!gaugeRead} aria-invalid={unstakeTooBig} className="block h-11 w-full rounded-full border border-field bg-card px-4 text-sm" />
+              {unstakeTooBig && <p className="mt-1 text-xs font-semibold text-danger-text">More than you have staked ({fmt(state.staked!)} sMUSD).</p>}
+              <button type="submit" disabled={busy || !gaugeRead || !unstakeWei || unstakeTooBig} className="mt-2 inline-flex min-h-11 items-center rounded-full border border-line px-4 text-sm font-bold disabled:opacity-50">
+                Unstake
+              </button>
+            </form>
+          </div>
+          <button type="button" onClick={claimMezo} disabled={busy || !gaugeRead || !(Number(state.earnedMezo) > 0)} className="mt-4 inline-flex min-h-11 items-center rounded-full border border-line px-4 text-sm font-bold disabled:opacity-50">
+            Claim MEZO
           </button>
         </section>
       )}
@@ -556,10 +751,10 @@ export function VaultPanel() {
               <dd className="text-base font-semibold">{trove.ratePct.toLocaleString("en-US", { maximumFractionDigits: 2 })}%</dd>
             </div>
           </dl>
-          <AdviceList advice={troveAdvice(trove)} targetPct={200} footer="Use the boxes below." />
-          {troveAdvice(trove).flatMap((a) => a.actions ?? []).length > 0 && (
+          <AdviceList advice={advice} targetPct={200} footer="Use the boxes below." />
+          {advice.flatMap((a) => a.actions ?? []).length > 0 && (
             <p className="mt-2 text-xs">
-              {troveAdvice(trove)
+              {advice
                 .flatMap((a) => a.actions ?? [])
                 .map((a) => (
                   <button key={a.kind} type="button" onClick={() => suggestion(a)} className="mr-3 min-h-11 font-semibold underline">
@@ -579,6 +774,7 @@ export function VaultPanel() {
                 Add BTC to the trove
               </label>
               <input id="topup" inputMode="decimal" value={topUpAmt} onChange={(e) => setTopUpAmt(e.target.value)} placeholder="0.01" className="block h-11 w-full rounded-full border border-field bg-card px-4 text-sm" />
+              {topUpHint && <p className="mt-1 text-xs text-ink-muted">{topUpHint}</p>}
               <button type="submit" disabled={busy || !(Number(topUpAmt) > 0)} className="mt-2 inline-flex min-h-11 items-center rounded-full bg-accent px-4 text-sm font-bold text-on-accent disabled:opacity-50">
                 Add BTC
               </button>
@@ -593,6 +789,7 @@ export function VaultPanel() {
                 Repay MUSD
               </label>
               <input id="repay" inputMode="decimal" value={repayAmt} onChange={(e) => setRepayAmt(e.target.value)} placeholder="100" className="block h-11 w-full rounded-full border border-field bg-card px-4 text-sm" />
+              {repayHint && <p className="mt-1 text-xs text-ink-muted">{repayHint}</p>}
               <button type="submit" disabled={busy || !(Number(repayAmt) > 0)} className="mt-2 inline-flex min-h-11 items-center rounded-full border border-line px-4 text-sm font-bold disabled:opacity-50">
                 Repay
               </button>

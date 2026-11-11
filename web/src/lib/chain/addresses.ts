@@ -63,6 +63,8 @@ export const NETWORKS = {
     priceFeed: MAINNET.priceFeed,
     troveManager: MAINNET.troveManager,
     sortedTroves: MAINNET.sortedTroves,
+    // Mainnet only: no testnet gauge is known. stakingToken() = sMUSD, rewardToken() = MEZO (read 11 Nov 2026).
+    smusdGauge: MAINNET.smusdGauge,
   },
 } as const;
 

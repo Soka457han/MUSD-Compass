@@ -58,7 +58,7 @@ export async function connect(
 
 /** Wallet and RPC errors in words a person can act on. */
 export function humanError(e: unknown): string {
-  const err = e as { shortMessage?: string; message?: string; code?: number; cause?: { code?: number } };
+  const err = (e ?? {}) as { shortMessage?: string; message?: string; code?: number; cause?: { code?: number } }; // some wallets reject with nothing
   const code = err.code ?? err.cause?.code;
   if (code === 4001 || /user rejected|denied/i.test(err.message ?? "")) return "You cancelled in your wallet. Nothing was sent.";
   const text = `${err.shortMessage ?? ""} ${err.message ?? ""}`;

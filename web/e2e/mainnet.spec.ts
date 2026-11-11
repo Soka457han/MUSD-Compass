@@ -9,6 +9,7 @@ test.skip(process.env.MAINNET_E2E !== "1", "needs a build with mainnet writes sw
 const ACCOUNT = "0xfe21b2782b35be770dd4a7b05f81ce43790d676c";
 const MUSD = "0xdd468a1ddc392dcdbef6db6e34e89aa338f9f186";
 const SMUSD = "0xb4d498029af77680cd1ef828b967f010d06c51cc";
+const GAUGE = "0x677817bf3e44b90e8f95222f75e2950b7904a401";
 const word = (v: bigint | string) => (typeof v === "bigint" ? v.toString(16) : v.replace("0x", "")).padStart(64, "0");
 const E18 = 10n ** 18n;
 
@@ -16,7 +17,17 @@ type Sent = { to: string; data: string; value?: string };
 const sent = (page: Page) => page.evaluate(() => (window as unknown as { __sent: Sent[] }).__sent);
 const asked = (page: Page) => page.evaluate(() => (window as unknown as { __asked: string[] }).__asked);
 
-async function setUp(page: Page) {
+// An open trove for the RPC stand-in: 0.29 BTC against 20,000 MUSD at $80,000 is 116%.
+const TROVE_WORDS: Record<string, string> = {
+  "0x21e37801": word(1n), // getTroveStatus: active
+  "0xb91af97c": [29n * 10n ** 16n, 20_000n * E18, 0n, 0n, 0n, 0n].map(word).join(""), // getEntireDebtAndColl
+  "0xd293c710": word(116n * 10n ** 16n), // getCurrentICR: 1.16
+  "0x92b7659b": word(100n), // getTroveInterestRate: 1%
+  "0xb0d8e181": word(145n * 10n ** 16n), // getNominalICR
+  "0x4e443d9e": word(0n), // checkRecoveryMode: no
+};
+
+async function setUp(page: Page, { trove = false } = {}) {
   // A wallet that connects, switches chain when asked, and records every transaction instead of sending it.
   await page.addInitScript((account) => {
     const w = window as unknown as { __sent: unknown[]; __asked: string[] };
@@ -59,7 +70,10 @@ async function setUp(page: Page) {
         if (sel === "0x969c2452") return `0x${word(1_800n * E18)}`; // minNetDebt
         if (sel === "0xb5b8453e") return `0x${word(10n ** 15n)}`; // borrowingRate
         if (sel === "0x7af110ba") return `0x${word(200n * E18)}`; // gas compensation
+        if (trove && sel && TROVE_WORDS[sel]) return `0x${TROVE_WORDS[sel]}`;
         if (sel === "0x21e37801") return `0x${word(0n)}`; // getTroveStatus: none
+        if (sel === "0x70a08231") return `0x${word(500n * E18)}`; // balanceOf (MUSD, sMUSD, gauge): 500
+        if (sel === "0xdd62ed3e") return `0x${word(0n)}`; // allowance: none
         return `0x${word(1n)}`;
       }
       default: return null;
@@ -72,8 +86,19 @@ async function setUp(page: Page) {
   });
 }
 
-async function connectOnMainnet(page: Page) {
-  await setUp(page);
+// The vault read as /api/vault answers on mainnet, with sMUSD in the wallet and some staked in the gauge.
+const mockVault = (page: Page, gauge: { staked: string | null; earnedMezo: string | null } = { staked: "200", earnedMezo: "12.5" }) =>
+  page.route("**/api/vault/*", (route) => {
+    const address = decodeURIComponent(new URL(route.request().url()).pathname.split("/").pop()!);
+    return route.fulfill({ json: { address, musd: "157.31", allowance: "0", smusd: "500", pendingYield: "0", lastDistribution: 1792675011, lastDistributionPending: false, network: "Mezo mainnet", ...gauge } });
+  });
+
+// Compass's trove API for the account: the redemption queue, the MUSD price and, when asked, the after-preview.
+const TROVE_API = { address: ACCOUNT, active: true, collateralBtc: 0.29, collateralUsd: 23_200, debt: 20_000, icrPct: 116, ratePct: 1, ahead: 0, troves: 4, recoveryMode: false, safeExtra: 0, btcUsd: 80_000, nicr: "1450000000000000000", safeIcrPct: 200, minIcrPct: 110, network: "Mezo mainnet" };
+const mockTroveApi = (page: Page, extra: Record<string, unknown>) => page.route("**/api/trove/*", (route) => route.fulfill({ json: { ...TROVE_API, ...extra } }));
+
+async function connectOnMainnet(page: Page, opts: { trove?: boolean } = {}) {
+  await setUp(page, opts);
   await page.goto("/vault?net=mainnet");
   await expect(page.getByRole("radio", { name: "Mezo mainnet (real funds)" })).toBeChecked();
   await page.getByRole("button", { name: "Connect wallet" }).click();
@@ -155,3 +180,128 @@ test("the home page and the trove page point at the mainnet vault", async ({ pag
   await expect(page.getByRole("link", { name: "Add BTC or repay MUSD here in Compass" })).toHaveAttribute("href", "/vault?net=mainnet");
   await expect(page.getByText("Do it in the Mezo app.")).toHaveCount(0); // the advice must not send people away from what Compass can now do
 });
+
+test.describe("gauge staking (mocked vault read: 500 sMUSD in the wallet, 200 staked, 12.5 MEZO to claim)", () => {
+  test.beforeEach(async ({ page }) => {
+    await mockVault(page);
+    await connectOnMainnet(page);
+    await expect(page.getByRole("heading", { name: "Stake in Mezo's gauge to earn MEZO" })).toBeVisible();
+    await expect(page.getByText("Staked: 200 sMUSD. MEZO to claim: 12.5.")).toBeVisible();
+  });
+
+  test("stake 100 sends nothing until the amount is typed, then approves exactly 100 sMUSD for the gauge and stakes it", async ({ page }) => {
+    await page.getByLabel("Stake sMUSD", { exact: true }).fill("100");
+    await page.getByRole("button", { name: "Stake", exact: true }).click();
+    const dialog = page.getByRole("dialog", { name: "Mezo mainnet: real funds" });
+    await expect(dialog).toContainText("Moves 100 sMUSD from your wallet into Mezo's Savings Vault gauge.");
+    await expect(dialog).toContainText("Two wallet prompts");
+    await expect(dialog).toContainText("stops earning the vault's fee yield");
+    const go = dialog.getByRole("button", { name: "Stake on mainnet" });
+    await expect(go).toBeDisabled();
+    expect(await sent(page)).toEqual([]);
+    await dialog.getByLabel("Type 100 to confirm").fill("100");
+    await go.click();
+    await expect(page.getByText("Confirmed")).toHaveCount(2);
+    const txs = await sent(page);
+    expect(txs).toHaveLength(2);
+    expect(txs[0].to.toLowerCase()).toBe(SMUSD);
+    expect(txs[0].data).toBe(`0x095ea7b3${word(GAUGE)}${word(100n * E18)}`); // approve(gauge, exactly 100 sMUSD)
+    expect(txs[1].to.toLowerCase()).toBe(GAUGE);
+    expect(txs[1].data).toBe(`0xb6b55f25${word(100n * E18)}`); // deposit(100 sMUSD)
+  });
+
+  test("unstake 50 sends one withdraw, only after the typed confirmation", async ({ page }) => {
+    await page.getByLabel("Unstake sMUSD").fill("50");
+    await page.getByRole("button", { name: "Unstake", exact: true }).click();
+    const dialog = page.getByRole("dialog", { name: "Mezo mainnet: real funds" });
+    await dialog.getByLabel("Type 50 to confirm").fill("5");
+    await expect(dialog.getByRole("button", { name: "Unstake on mainnet" })).toBeDisabled();
+    expect(await sent(page)).toEqual([]);
+    await dialog.getByLabel("Type 50 to confirm").fill("50");
+    await dialog.getByRole("button", { name: "Unstake on mainnet" }).click();
+    await expect(page.getByText("Confirmed")).toHaveCount(1);
+    const txs = await sent(page);
+    expect(txs).toHaveLength(1);
+    expect(txs[0].to.toLowerCase()).toBe(GAUGE);
+    expect(txs[0].data).toBe(`0x2e1a7d4d${word(50n * E18)}`); // withdraw(50 sMUSD)
+  });
+
+  test("Claim MEZO sends getReward for the connected account", async ({ page }) => {
+    await page.getByRole("button", { name: "Claim MEZO" }).click();
+    await expect(page.getByText("Confirmed")).toHaveCount(1);
+    const txs = await sent(page);
+    expect(txs).toHaveLength(1);
+    expect(txs[0].to.toLowerCase()).toBe(GAUGE);
+    expect(txs[0].data).toBe(`0xc00007b0${word(ACCOUNT)}`); // getReward(account)
+  });
+
+  test("a stake over the cap or over the wallet's sMUSD cannot be started", async ({ page }) => {
+    const button = page.getByRole("button", { name: "Stake", exact: true });
+    await page.getByLabel("Stake sMUSD", { exact: true }).fill("3000");
+    await expect(page.getByText("Compass stakes at most 2,500 sMUSD per transaction on mainnet.")).toBeVisible();
+    await expect(button).toBeDisabled();
+    await page.getByLabel("Stake sMUSD", { exact: true }).fill("600");
+    await expect(page.getByText("More than your wallet holds (500 sMUSD).")).toBeVisible();
+    await expect(button).toBeDisabled();
+    expect(await sent(page)).toEqual([]);
+  });
+
+  test("the section is accessible, fits 360 px, and is gone on testnet", async ({ page }) => {
+    expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBe(0);
+    const r = await new AxeBuilder({ page: page as unknown as ConstructorParameters<typeof AxeBuilder>[0]["page"] }).analyze();
+    expect(r.violations.filter((v) => v.impact === "serious" || v.impact === "critical").map((v) => v.id)).toEqual([]);
+    await page.getByRole("radio", { name: "Mezo testnet (test funds)" }).check();
+    await expect(page.getByText("on Mezo testnet.")).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Stake in Mezo's gauge to earn MEZO" })).toHaveCount(0);
+  });
+});
+
+test("a gauge read that failed says so and turns the gauge controls off", async ({ page }) => {
+  await mockVault(page, { staked: null, earnedMezo: null });
+  await connectOnMainnet(page);
+  await expect(page.getByText("Could not read the gauge right now.")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Claim MEZO" })).toBeDisabled();
+  await expect(page.getByLabel("Stake sMUSD", { exact: true })).toBeDisabled();
+  await expect(page.getByLabel("Unstake sMUSD")).toBeDisabled();
+});
+
+test("the top-up dialog shows the ratio and the redemption line before and after, and still works when Compass does not answer", async ({ page }) => {
+  await mockTroveApi(page, { market: { musdUsd: 0.9924, floorUsd: 0.9925, redemptionPct: 0.75 }, preview: { icrPct: 150, collateralBtc: 0.5, debt: 20_000, ahead: 1, troves: 4 } });
+  await connectOnMainnet(page, { trove: true });
+  await expect(page.getByRole("heading", { name: "Your mainnet trove" })).toBeVisible();
+  // The queue and the MUSD price from Compass's trove API reach the advice.
+  await expect(page.getByText("MUSD is below the redemption floor")).toBeVisible();
+  await expect(page.getByText("0 of 4 troves would be redeemed before yours.")).toBeVisible();
+  await expect(page.getByText("Your trove is first in line for redemptions")).toHaveCount(0); // the pressure warning says it already
+  await page.getByLabel("Add BTC to the trove").fill("0.1");
+  await expect(page.getByText("Ratio after: 156% (now 116%).")).toBeVisible(); // (0.29 + 0.1) × 80,000 ÷ 20,000
+  await page.getByRole("button", { name: "Add BTC", exact: true }).click();
+  const dialog = page.getByRole("dialog", { name: "Mezo mainnet: real funds" });
+  await expect(dialog).toContainText("Your ratio goes from 116% to 156%. Troves redeemed before yours: about 0 now, about 1 after, of 4.");
+  await dialog.getByRole("button", { name: "Cancel" }).click();
+  // Compass unreachable: the dialog falls back to the local ratio, and the action is still offered.
+  await page.unroute("**/api/trove/*");
+  await page.route("**/api/trove/*", (route) => route.abort());
+  await page.getByRole("button", { name: "Add BTC", exact: true }).click();
+  await expect(dialog).toContainText("Your ratio goes from 116% to 156%.");
+  await expect(dialog).not.toContainText("Troves redeemed before yours");
+  await expect(dialog.getByRole("button", { name: "Add on mainnet" })).toBeVisible();
+  await dialog.getByRole("button", { name: "Cancel" }).click();
+  await page.getByLabel("Repay MUSD").fill("4000");
+  await expect(page.getByText("Ratio after: 145% (now 116%).")).toBeVisible(); // 0.29 × 80,000 ÷ 16,000
+  expect(await sent(page)).toEqual([]);
+});
+
+for (const [musdUsd, shows] of [[0.9924, true], [0.9951, false]] as const) {
+  test(`the Borrow → Earn dialog ${shows ? "warns" : "does not warn"} about redemptions when MUSD is at $${musdUsd}`, async ({ page }) => {
+    await mockTroveApi(page, { active: false, market: { musdUsd, floorUsd: 0.9925, redemptionPct: 0.75 } });
+    await connectOnMainnet(page);
+    await page.getByRole("button", { name: /Borrow 2000 MUSD and deposit it/ }).click();
+    const dialog = page.getByRole("dialog", { name: "Mezo mainnet: real funds" });
+    await expect(dialog).toContainText("Locks");
+    const line = "MUSD trades at $0.9924, under the $0.9925 redemption floor, so redeeming MUSD for BTC pays right now. Redemptions start with the lowest-ratio troves, and a new trove at 200% can be reached once the troves below it are used up.";
+    if (shows) await expect(dialog).toContainText(line);
+    else await expect(dialog).not.toContainText("redemption floor");
+    expect(await sent(page)).toEqual([]);
+  });
+}

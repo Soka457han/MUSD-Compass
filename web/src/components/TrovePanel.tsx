@@ -9,7 +9,7 @@ import { mainnetWritesEnabled } from "@/lib/sendSafely";
 import { isWallet } from "@/lib/vault";
 import type { TroveView } from "@/lib/trove";
 
-type Trove = TroveView & { safeIcrPct: number; minIcrPct: number };
+type Trove = TroveView & { safeIcrPct: number; minIcrPct: number; market: { musdUsd: number; floorUsd: number; redemptionPct: number } | null };
 
 const n = (v: number, d = 0) => v.toLocaleString("en-US", { maximumFractionDigits: d });
 
@@ -113,7 +113,7 @@ export function TrovePanel() {
                 <dd className="text-base font-semibold">{n(t.debt, 2)} MUSD</dd>
               </div>
             </dl>
-            <AdviceList advice={troveAdvice(t)} targetPct={t.safeIcrPct} footer={mainnetWritesEnabled() ? "Do it in Compass with the link below, or in the Mezo app." : undefined} />
+            <AdviceList advice={troveAdvice(t, undefined, undefined, t.market)} targetPct={t.safeIcrPct} footer={mainnetWritesEnabled() ? "Do it in Compass with the link below, or in the Mezo app." : undefined} />
           </>
         )}
       </section>

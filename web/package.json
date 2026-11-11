@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@fontsource-variable/plus-jakarta-sans": "5.3.0",
+    "@scure/base": "1.2.6",
     "@walletconnect/ethereum-provider": "2.26.0",
     "@x402/core": "2.28.0",
     "@x402/evm": "2.28.0",

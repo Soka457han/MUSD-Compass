@@ -11,6 +11,9 @@ export type VaultState = {
   smusd: string; // deposited (1 sMUSD = 1 MUSD)
   pendingYield: string; // what claimYield would pay now
   lastDistribution: number | null; // unix seconds
+  // Mainnet only (the sMUSD gauge). null when the gauge read failed; absent on testnet.
+  staked?: string | null; // sMUSD staked in the gauge
+  earnedMezo?: string | null; // MEZO the gauge would pay now
 };
 
 export const isWallet = (a: string): a is Address => isAddress(a, { strict: false });

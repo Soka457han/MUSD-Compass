@@ -14,8 +14,11 @@ const up = (v: number, decimals: number) => Math.ceil(v * 10 ** decimals - 1e-6)
 /** Mezo's floor: net debt (debt without the gas deposit) cannot drop under minNetDebt, so a repay is impossible past it. */
 export const DEFAULT_DEBT_RULES = { minNetDebt: 1800, gasComp: 200 };
 
-/** What a trove's owner should know and do, most urgent first. Pure: it only reads the TroveView. */
-export function troveAdvice(t: TroveView, target = SAFE_ICR, rules = DEFAULT_DEBT_RULES): Advice[] {
+export const REDEMPTION_PRESSURE_TITLE = "MUSD is below the redemption floor";
+const usd4 = (v: number) => `$${v.toFixed(4)}`;
+
+/** What a trove's owner should know and do, most urgent first. Pure: it only reads the TroveView (and the MUSD market price, when given). */
+export function troveAdvice(t: TroveView, target = SAFE_ICR, rules = DEFAULT_DEBT_RULES, market?: { musdUsd: number; floorUsd: number } | null): Advice[] {
   if (!t.active) return [];
   const fall = Math.round((1 - MIN_ICR / t.icrPct) * 100); // % BTC can fall before the ratio reaches the liquidation line
   const out: Advice[] = [];
@@ -50,12 +53,24 @@ export function troveAdvice(t: TroveView, target = SAFE_ICR, rules = DEFAULT_DEB
     );
   }
 
-  if (t.ahead === 0) {
+  // Redemptions take the lowest-ratio troves first, so only the front quarter of the queue is at risk when MUSD trades under the floor.
+  const pressure = Boolean(market && market.musdUsd < market.floorUsd && t.ahead !== null && t.ahead < Math.max(1, Math.ceil(t.troves * 0.25)));
+
+  // The pressure warning below says the same and more, so the two never show together.
+  if (t.ahead === 0 && !pressure) {
     out.push({
       level: "watch",
       title: "Your trove is first in line for redemptions",
       detail:
         "Anyone holding MUSD can redeem it for BTC at $1 per MUSD, starting with the lowest-ratio troves. A redemption repays part of your debt and takes the matching BTC. It is not a penalty, and it does not mean the trove is unsafe.",
+    });
+  }
+
+  if (pressure && market) {
+    out.push({
+      level: "watch",
+      title: REDEMPTION_PRESSURE_TITLE,
+      detail: `MUSD trades at ${usd4(market.musdUsd)} on Mezo's MUSD/mUSDC pool, under the ${usd4(market.floorUsd)} floor (1 minus the redemption fee). Redeeming MUSD for BTC pays right now, and redemptions start with the lowest-ratio troves. ${t.ahead} of ${t.troves} troves would be redeemed before yours. A redemption repays part of your debt and takes the matching BTC. A higher ratio moves you back in the line.`,
     });
   }
 

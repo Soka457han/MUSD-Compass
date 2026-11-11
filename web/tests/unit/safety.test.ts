@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { troveAdvice } from "@/lib/safety";
+import { REDEMPTION_PRESSURE_TITLE, troveAdvice } from "@/lib/safety";
 import type { TroveView } from "@/lib/trove";
 
 const trove = (o: Partial<TroveView> = {}): TroveView => ({
@@ -15,6 +15,7 @@ const trove = (o: Partial<TroveView> = {}): TroveView => ({
   recoveryMode: false,
   safeExtra: 0,
   btcUsd: 80_000,
+  nicr: "1800000000000000000",
   ...o,
 });
 
@@ -77,5 +78,44 @@ describe("troveAdvice", () => {
 
   it("offers a repay when the trove stays above the minimum afterwards", () => {
     expect(troveAdvice(trove({ debt: 20_000, collateralUsd: 36_000 }))[0].actions).toContainEqual({ kind: "repay", musd: 2000 });
+  });
+});
+
+describe("redemption pressure", () => {
+  const below = { musdUsd: 0.9924, floorUsd: 0.9925 };
+  const comfy = (o: Partial<TroveView> = {}) => trove({ icrPct: 300, collateralUsd: 60_000, ahead: 0, troves: 4, ...o });
+  const pressure = (t: TroveView, m: typeof below | null = below) => troveAdvice(t, undefined, undefined, m).find((a) => a.title === REDEMPTION_PRESSURE_TITLE);
+
+  it("shows for the first in line of 4 when MUSD is under the floor, with real numbers and no actions", () => {
+    const a = pressure(comfy())!;
+    expect(a.level).toBe("watch");
+    expect(a.detail).toBe("MUSD trades at $0.9924 on Mezo's MUSD/mUSDC pool, under the $0.9925 floor (1 minus the redemption fee). Redeeming MUSD for BTC pays right now, and redemptions start with the lowest-ratio troves. 0 of 4 troves would be redeemed before yours. A redemption repays part of your debt and takes the matching BTC. A higher ratio moves you back in the line.");
+    expect(a.actions).toBeUndefined();
+  });
+  it("not above the floor, at the floor, or with no market", () => {
+    expect(pressure(comfy(), { musdUsd: 0.9951, floorUsd: 0.9925 })).toBeUndefined();
+    expect(pressure(comfy(), { musdUsd: 0.9925, floorUsd: 0.9925 })).toBeUndefined();
+    expect(pressure(comfy(), null)).toBeUndefined();
+  });
+  it("not when ahead is unknown, not for position 1 of 4, not for an inactive trove", () => {
+    expect(pressure(comfy({ ahead: null }))).toBeUndefined();
+    expect(pressure(comfy({ ahead: 1 }))).toBeUndefined();
+    expect(pressure(comfy({ active: false }))).toBeUndefined();
+  });
+  it("front quarter of 100: position 10 yes, position 30 no", () => {
+    expect(pressure(comfy({ ahead: 10, troves: 100 }))).toBeDefined();
+    expect(pressure(comfy({ ahead: 30, troves: 100 }))).toBeUndefined();
+  });
+  it("an omitted market gives exactly today's output", () => {
+    const t = comfy();
+    expect(troveAdvice(t, undefined, undefined, undefined)).toEqual(troveAdvice(t));
+    expect(troveAdvice(t).map((a) => a.title)).toEqual(["Your trove is first in line for redemptions", "Your ratio is comfortable"]);
+  });
+  it("the pressure warning replaces first in line, so the two never show together", () => {
+    const first = trove({ ahead: 0, troves: 4, icrPct: 300, collateralUsd: 60_000 });
+    const under = troveAdvice(first, undefined, undefined, { musdUsd: 0.9924, floorUsd: 0.9925 }).map((a) => a.title);
+    expect(under).toContain(REDEMPTION_PRESSURE_TITLE);
+    expect(under).not.toContain("Your trove is first in line for redemptions");
+    expect(troveAdvice(first, undefined, undefined, { musdUsd: 0.9951, floorUsd: 0.9925 }).map((a) => a.title)).toContain("Your trove is first in line for redemptions");
   });
 });

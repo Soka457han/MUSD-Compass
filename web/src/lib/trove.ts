@@ -14,6 +14,28 @@ export function redemptionPosition(nicrs: bigint[], mine: bigint): number {
   return nicrs.filter((n) => n < mine).length;
 }
 
+/** What a top-up or repay would do to the ratio and the place in the redemption line. Pure. */
+export function previewTrove(t: TroveView, change: { addBtc?: number; repayMusd?: number }, nicrs: bigint[] | null): { icrPct: number; collateralBtc: number; debt: number; ahead: number | null; troves: number } {
+  const add = change.addBtc ?? 0;
+  const repay = change.repayMusd ?? 0;
+  if (!Number.isFinite(add) || !Number.isFinite(repay) || add < 0 || repay < 0) throw new Error("The change must be a positive number.");
+  const collateralBtc = t.collateralBtc + add;
+  const debt = t.debt - repay;
+  if (!(debt > 0)) throw new Error("That repay would leave no debt.");
+  let ahead: number | null = null;
+  if (nicrs && t.nicr) {
+    const S = 10n ** 12n;
+    const own = BigInt(t.nicr);
+    const collRatio = BigInt(Math.round((collateralBtc / t.collateralBtc) * 1e12));
+    const debtRatio = BigInt(Math.round((t.debt / debt) * 1e12));
+    const next = (((own * collRatio) / S) * debtRatio) / S;
+    const i = nicrs.indexOf(own); // the trove's own entry must not count against itself
+    // Not found: the cached queue predates this trove's last change, so its place cannot be told. Unknown beats one too high.
+    if (i >= 0) ahead = nicrs.filter((n, j) => j !== i && n < next).length;
+  }
+  return { icrPct: ((collateralBtc * t.btcUsd) / debt) * 100, collateralBtc, debt, ahead, troves: nicrs?.length ?? 0 };
+}
+
 export type TroveView = {
   address: Address;
   active: boolean;
@@ -27,6 +49,7 @@ export type TroveView = {
   recoveryMode: boolean;
   safeExtra: number;
   btcUsd: number;
+  nicr: string; // this trove's own nominal ICR (bigint as decimal string), for previewTrove
 };
 
 const f = (v: bigint) => Number(formatUnits(v, 18));
@@ -75,5 +98,6 @@ export async function readTrove(client: PublicClient, address: Address, feePct: 
     recoveryMode: recovery,
     safeExtra: active ? safeExtraBorrow(collateralBtc * btcUsd, debt, feePct) : 0,
     btcUsd,
+    nicr: nicr.toString(),
   };
 }

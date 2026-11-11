@@ -15,6 +15,9 @@ export const smusdAbi = parseAbi([
   "function deposit(uint256 amount)",
   "function withdraw(uint256 amount)",
   "function claimYield() returns (uint256)",
+  // Read-only calls on mainnet, 11 Nov 2026: approve(gauge, amount) simulates and returns true; the gauge needs it before deposit.
+  "function approve(address spender, uint256 amount) returns (bool)",
+  "function allowance(address owner, address spender) view returns (uint256)",
   "event ProtocolYieldReceived(uint256 amount)",
   "event StrategyYieldReceived(uint256 amount)",
 ]);
@@ -59,6 +62,12 @@ export const vaultGaugeAbi = parseAbi([
   "function totalSupply() view returns (uint256)",
   "function rewardRate() view returns (uint256)",
   "function periodFinish() view returns (uint256)",
+  // sMUSD gauge, read-only calls on mainnet 11 Nov 2026: deposit (0xb6b55f25) pulls sMUSD with transferFrom, so it needs an approval;
+  // withdraw (0x2e1a7d4d) passes for a staker; getReward (0xc00007b0) passes only for the caller's own account; earned (0x008cc262) is MEZO, 18 decimals.
+  "function deposit(uint256 amount)",
+  "function withdraw(uint256 amount)",
+  "function getReward(address account)",
+  "function earned(address account) view returns (uint256)",
 ]);
 
 export const erc4626Abi = parseAbi(["function totalAssets() view returns (uint256)"]);

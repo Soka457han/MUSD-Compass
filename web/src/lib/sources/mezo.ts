@@ -5,6 +5,7 @@ import type { BorrowParams } from "@/lib/carry/carry";
 import { borrowerOperationsAbi, clPoolAbi, erc20Abi, erc4626Abi, interestRateManagerAbi, poolAbi, poolsVoterAbi, priceFeedAbi, stabilityPoolAbi, vaultGaugeAbi } from "@/lib/chain/abis";
 import { MAINNET } from "@/lib/chain/addresses";
 import { mezoClient } from "@/lib/chain/clients";
+import { mainnetWritesEnabled } from "@/lib/sendSafely";
 import type { Venue } from "@/lib/venue";
 
 // Values read live on 24 Oct 2026; used only if the chain read fails.
@@ -243,7 +244,7 @@ export function savingsGaugeVenue(g: { rewardRate: string; periodFinish: string;
     rates: { liquidApr: 0, lockedApr: null, fixedCostUsd: 0, tvl: stakedUsd, emissionsApr: aprPct },
     tvlUsd: stakedUsd,
     ends: endsAt.toISOString(),
-    action: { label: "Stake in the Mezo app", url: "https://mezo.org/earn/vaults" },
+    action: mainnetWritesEnabled() ? { label: "Deposit, then stake", url: "/vault?net=mainnet" } : { label: "Stake in the Mezo app", url: "https://mezo.org/earn/vaults" },
     source: { label: "Mezo chain: MUSD Savings gauge", url: `https://explorer.mezo.org/address/${MAINNET.smusdGauge}` },
     routes: [],
     tags: ["Mezo-native", "Paid in MEZO", "No vault fee yield while staked"],

@@ -48,7 +48,7 @@ test.describe("vault (360 px, fixture data)", () => {
   });
 });
 
-test("Connect wallet opens the wallet picker: detected EVM wallets, what is not supported yet, and how to close it", async ({ page }) => {
+test("Connect wallet opens the wallet picker: detected EVM wallets, what is not available here, and how to close it", async ({ page }) => {
   // A stand-in wallet extension that announces itself the EIP-6963 way.
   await page.addInitScript(() => {
     const provider = { request: async () => { throw Object.assign(new Error("User rejected the request."), { code: 4001 }); } };
@@ -62,7 +62,9 @@ test("Connect wallet opens the wallet picker: detected EVM wallets, what is not 
   await expect(dialog).toBeVisible();
   await expect(dialog.getByRole("button", { name: /Test Wallet/ })).toBeVisible();
   await expect(dialog.getByText("Phone wallets by QR code, not switched on in this deployment")).toBeVisible();
+  await expect(dialog.getByText("Bitcoin wallets · view only for now")).toBeVisible();
   await expect(dialog.getByText("Unisat")).toBeVisible();
+  await expect(dialog.getByText("Not found in this browser")).toHaveCount(3); // Unisat, OKX, Xverse: none injected here
   await expect(dialog.getByRole("button", { name: /Unisat|WalletConnect/ })).toHaveCount(0); // listed, not clickable
   await expect(dialog.getByRole("heading", { name: "What is a wallet?" })).toBeVisible();
   // Picking the wallet keeps the picker open while the wallet asks; a refusal is explained there, with a retry.
@@ -104,4 +106,49 @@ test("Try to break it: unlimited approval and an unknown contract are refused wi
   await expect(panel.getByText(/Refused before any wallet is asked: Compass never asks for an unlimited approval/)).toBeVisible();
   await panel.getByRole("button", { name: "Send to a contract that is not the vault" }).click();
   await expect(panel.getByText(/Refused before any wallet is asked: Compass only sends to testnet MUSD, sMUSD and BorrowerOperations/)).toBeVisible();
+});
+
+test("a Bitcoin wallet (Unisat) shows its Mezo account, view only, with no actions", async ({ page }) => {
+  // Stand-in Unisat: a native SegWit address and a 33-byte public key. Nothing can be signed or sent.
+  await page.addInitScript(() => {
+    (window as unknown as { unisat: unknown }).unisat = {
+      requestAccounts: async () => ["bc1qr2gzwarzhv2r2r70v7522w67rt8n6azcklup4z"],
+      getPublicKey: async () => "0301c3a0b3e1a18d0e04a455e2fbed97d97352cfc35ad272cdc8dcb0fc8dee6707",
+    };
+  });
+  await page.goto("/vault");
+  await page.getByRole("button", { name: "Connect wallet" }).click();
+  const dialog = page.getByRole("dialog", { name: "Connect a wallet" });
+  await expect(dialog.getByText("Bitcoin wallets · view only for now")).toBeVisible();
+  await dialog.getByRole("button", { name: /Unisat/ }).click();
+  await expect(dialog).toBeHidden();
+  // CREATE2 at the OrangeKit factory for this address's key hash (keyHash vector in tests/unit/bitcoinWallet.test.ts).
+  await expect(page.getByLabel("Address")).toHaveValue("0x83120d096814eb9A0E7dfAE4d43ef8C6A9f5c1B2");
+  await expect(page.getByText(/Showing the Mezo account of your Bitcoin wallet \(0x8312…c1B2\), view only/)).toBeVisible();
+  await expect(page.getByText("157.31")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Actions" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Deposit", exact: true })).toHaveCount(0);
+});
+
+test("with mainnet switched off, a connected wallet gets no gauge staking", async ({ page }) => {
+  test.skip(process.env.MAINNET_E2E === "1", "this build has mainnet switched on");
+  await page.route("https://rpc.test.mezo.org/**", (route) => route.abort()); // no network in tests; the trove inputs just stay unread
+  await page.addInitScript(() => {
+    const provider = {
+      request: async ({ method }: { method: string }) => {
+        if (method === "eth_requestAccounts" || method === "eth_accounts") return ["0xfe21b2782b35be770dd4a7b05f81ce43790d676c"];
+        if (method === "eth_chainId") return "0x7b7b";
+        throw Object.assign(new Error(`unexpected ${method}`), { code: 4200 });
+      },
+    };
+    window.addEventListener("eip6963:requestProvider", () =>
+      window.dispatchEvent(new CustomEvent("eip6963:announceProvider", { detail: Object.freeze({ info: { uuid: "off-1", name: "Test Wallet", icon: "", rdns: "test.wallet" }, provider }) })),
+    );
+  });
+  await page.goto("/vault?net=mainnet");
+  await page.getByRole("button", { name: "Connect wallet" }).click();
+  await page.getByRole("dialog", { name: "Connect a wallet" }).getByRole("button", { name: /Test Wallet/ }).click();
+  await expect(page.getByRole("heading", { name: "Actions" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /gauge/ })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Claim MEZO" })).toHaveCount(0);
 });

@@ -7,8 +7,11 @@ vi.mock("@/lib/trove", async (orig) => ({ ...(await orig<typeof import("@/lib/tr
 vi.mock("@/lib/sources", () => ({ loadSources: vi.fn() }));
 vi.mock("@/lib/sources/troveQueue", () => ({ fetchTroveQueue: vi.fn() }));
 vi.mock("@/lib/chain/clients", () => ({ mezoClient: {} }));
+vi.mock("next/server", () => ({ after: () => {} })); // the trove route schedules a stats call outside a request scope
 
 import { alertKey, alertText, sendTelegram } from "@/lib/alerts";
+import { REDEMPTION_PRESSURE_TITLE } from "@/lib/safety";
+import { GET as getTrove } from "@/app/api/trove/[address]/route";
 import { GET } from "@/app/api/watch/run/route";
 import { readTrove } from "@/lib/trove";
 import { loadSources } from "@/lib/sources";
@@ -18,7 +21,7 @@ import { allWatches, getState, removeWatch, setState } from "@/lib/watch";
 const ADDR = "0x593c000000000000000000000000000000005bb5";
 const watchAdv: Advice = { level: "watch", title: "Your ratio is under 200%", detail: "Add <BTC> & repay." };
 const okAdv: Advice = { level: "ok", title: "Your ratio is comfortable", detail: "fine" };
-const view = (o: Partial<TroveView> = {}) => ({ address: ADDR, active: true, icrPct: 180, ahead: 5, recoveryMode: false, debt: 5000, collateralUsd: 9000, btcUsd: 80000, ...o }) as TroveView;
+const view = (o: Partial<TroveView> = {}) => ({ address: ADDR, active: true, icrPct: 180, ahead: 5, recoveryMode: false, debt: 5000, collateralUsd: 9000, btcUsd: 80000, nicr: "1", ...o }) as TroveView;
 
 describe("alertKey", () => {
   it("is stable, sorted, and quiet for ok and closed", () => {
@@ -163,5 +166,89 @@ describe("GET /api/watch/run", () => {
     expect(r).toEqual({ checked: 0, sent: 0, failed: 1 });
     expect(setState).not.toHaveBeenCalled();
     expect(tg).not.toHaveBeenCalled();
+  });
+});
+
+describe("redemption pressure alert hysteresis", () => {
+  const req = new Request("https://x.test/api/watch/run", { headers: { authorization: "Bearer s3cret" } });
+  const peg = (priceUsd: number) => ({ borrow: { feePct: 0.1 }, peg: { priceUsd, floorUsd: 0.9925, redemptionPct: 0.75 } }) as never;
+  const FIRST = "watch:Your trove is first in line for redemptions";
+  const first = view({ icrPct: 300, collateralUsd: 60_000, ahead: 0, troves: 4 });
+  let tg: ReturnType<typeof vi.fn>;
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.stubEnv("CRON_SECRET", "s3cret");
+    vi.stubEnv("TELEGRAM_BOT_TOKEN", "T");
+    tg = vi.fn().mockResolvedValue(new Response("{}", { status: 200 }));
+    vi.stubGlobal("fetch", tg);
+    vi.mocked(allWatches).mockResolvedValue([{ chatId: 7, address: ADDR }]);
+    vi.mocked(fetchTroveQueue).mockResolvedValue([]);
+    vi.mocked(readTrove).mockResolvedValue(first);
+  });
+  afterEach(() => { vi.unstubAllGlobals(); vi.unstubAllEnvs(); });
+
+  it("a new alert needs the 0.002 margin: just under the floor stays quiet", async () => {
+    vi.mocked(getState).mockResolvedValue(FIRST); // first in line of 4 always has this alert
+    vi.mocked(loadSources).mockResolvedValue(peg(0.9924));
+    await GET(req);
+    expect(tg).not.toHaveBeenCalled();
+    vi.mocked(loadSources).mockResolvedValue(peg(0.9904));
+    await GET(req);
+    expect(tg).toHaveBeenCalledTimes(1);
+    expect(setState).toHaveBeenCalledWith(7, ADDR, expect.stringContaining(REDEMPTION_PRESSURE_TITLE));
+  });
+  it("an existing alert stays while under the floor and clears at the floor", async () => {
+    vi.mocked(getState).mockResolvedValue(`watch:${REDEMPTION_PRESSURE_TITLE}`); // the pressure warning stands in for "first in line"
+    vi.mocked(loadSources).mockResolvedValue(peg(0.9924));
+    await GET(req);
+    expect(tg).not.toHaveBeenCalled(); // same key
+    vi.mocked(loadSources).mockResolvedValue(peg(0.9925));
+    await GET(req);
+    expect(tg).toHaveBeenCalledTimes(1);
+    expect(setState).toHaveBeenCalledWith(7, ADDR, FIRST);
+  });
+  it("a trove near 200% still hears that the pressure cleared, so the next dip can alert again", async () => {
+    // 6th of 100, at 205%: only the pressure alert is standing. The quiet rule for ratios hovering at 200% must not swallow its all clear.
+    vi.mocked(readTrove).mockResolvedValue(view({ icrPct: 205, collateralUsd: 10_250, ahead: 5, troves: 100 }));
+    vi.mocked(getState).mockResolvedValue(`watch:${REDEMPTION_PRESSURE_TITLE}`);
+    vi.mocked(loadSources).mockResolvedValue(peg(0.9951));
+    await GET(req);
+    expect(tg).toHaveBeenCalledTimes(1);
+    expect(setState).toHaveBeenCalledWith(7, ADDR, "ok");
+  });
+  it("a failed price or queue read leaves a standing pressure alert alone: no false all clear", async () => {
+    vi.mocked(getState).mockResolvedValue(`watch:${REDEMPTION_PRESSURE_TITLE}`);
+    vi.mocked(loadSources).mockResolvedValue({ borrow: { feePct: 0.1 }, peg: null } as never);
+    expect(await (await GET(req)).json()).toEqual({ checked: 1, sent: 0, failed: 0 });
+    vi.mocked(loadSources).mockResolvedValue(peg(0.9951));
+    vi.mocked(fetchTroveQueue).mockRejectedValue(new Error("rpc"));
+    await GET(req);
+    expect(tg).not.toHaveBeenCalled();
+    expect(setState).not.toHaveBeenCalled();
+  });
+});
+
+describe("GET /api/trove/[address]", () => {
+  const sample = (qs = "") => getTrove(new Request(`https://x.test/api/trove/sample${qs}`), { params: Promise.resolve({ address: "sample" }) });
+  beforeEach(() => vi.stubEnv("COMPASS_FIXTURES", "1"));
+  afterEach(() => vi.unstubAllEnvs());
+
+  it("returns market and nicr, and no preview without a query", async () => {
+    const b = await (await sample()).json();
+    expect(b.market).toEqual({ musdUsd: 0.9951, floorUsd: 0.9925, redemptionPct: 0.75 });
+    expect(typeof b.nicr).toBe("string");
+    expect(b.preview).toBeUndefined();
+  });
+  it("returns a preview for addBtc and repayMusd", async () => {
+    const b = await (await sample("?addBtc=0.5&repayMusd=100.5")).json();
+    expect(b.preview).toMatchObject({ collateralBtc: 1.75, debt: 30_109.9, ahead: null, troves: 0 });
+  });
+  it("400s on a malformed query or a change previewTrove rejects", async () => {
+    for (const qs of ["?addBtc=abc", "?repayMusd=-1", "?addBtc=1.123456789", "?addBtc=1e3"]) {
+      const r = await sample(qs);
+      expect(r.status).toBe(400);
+      expect((await r.json()).error).toEqual(expect.any(String));
+    }
+    expect((await sample("?repayMusd=99999")).status).toBe(400);
   });
 });
