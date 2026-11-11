@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { EIP1193Provider } from "viem";
+import { NETWORKS, type NetworkId } from "@/lib/chain/addresses";
 import { discoverWallets, injected, type FoundWallet } from "@/lib/wallet";
 import { walletConnectEnabled } from "@/lib/walletconnect";
 import { BITCOIN_WALLETS, detectBitcoinWallets, type BitcoinWalletId } from "@/lib/bitcoinWallet";
@@ -44,7 +45,10 @@ export function WalletModal({
   onPick,
   picked,
   error,
+  network = "testnet",
 }: {
+  /** The Mezo network the page is on, so the texts name the network the wallet will be asked to switch to. */
+  network?: NetworkId;
   open: boolean;
   onClose: () => void;
   onPick: (w: Picked) => void;
@@ -93,7 +97,7 @@ export function WalletModal({
             </button>
           </div>
 
-          <h3 className="mt-6 text-[13px] font-semibold text-ink-muted">EVM wallets · work on Mezo testnet</h3>
+          <h3 className="mt-6 text-[13px] font-semibold text-ink-muted">EVM wallets · work on Mezo {network}</h3>
           <ul className="mt-2 flex flex-col gap-1">
             {found.map((w) => (
               <li key={w.uuid}>
@@ -194,7 +198,7 @@ export function WalletModal({
                   <p className="max-w-xs text-sm text-ink-muted">
                     {picked.bitcoin
                       ? "Share your address in your wallet. Compass then shows your Mezo account, view only. Nothing is signed. To deposit or withdraw with a Bitcoin wallet, use the Mezo app at mezo.org."
-                      : "Confirm the connection in your wallet. It will then ask to switch to Mezo testnet."}
+                      : `Confirm the connection in your wallet. It will then ask to switch to Mezo ${network}.`}
                   </p>
                   <span aria-hidden="true" className="mt-2 size-7 animate-spin rounded-full border-[3px] border-line border-t-accent" />
                 </>
@@ -224,7 +228,7 @@ export function WalletModal({
               </div>
             </dl>
             <p className="mt-6 text-sm text-ink-muted md:mx-auto md:max-w-sm md:text-center">
-              Compass asks your wallet to switch to Mezo testnet (chain 31611). It never asks for your seed phrase and never holds your funds.
+              Compass asks your wallet to switch to Mezo {network} (chain {NETWORKS[network].chainId}). It never asks for your seed phrase and never holds your funds.
             </p>
             <p className="mt-5 flex flex-col items-start gap-2 md:items-center">
               <a href="https://ethereum.org/en/wallets/find-wallet/" target="_blank" rel="noreferrer" className="inline-flex h-11 items-center rounded-full bg-accent px-5 font-bold text-on-accent no-underline">

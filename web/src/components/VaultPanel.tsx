@@ -208,13 +208,15 @@ export function VaultPanel() {
     };
   }, [account, trove, net]);
 
+  // The sections below also show for an address that was only looked up, with every control off. Acting needs the connected wallet to own it.
+  const own = Boolean(account && state && state.address.toLowerCase() === account.toLowerCase());
   const run = async (
     label: string,
     steps: { label: string; address: Address; abi: Abi; functionName: string; args: readonly unknown[]; value?: bigint }[],
     network: NetworkId, // always stated by the caller: a forgotten argument must never fall back to another network
     before?: (step: { functionName: string }) => Promise<void>,
   ) => {
-    if (!provider || !account || sending.current) return; // one sequence at a time, even if a button fires twice
+    if (!own || !provider || !account || sending.current) return; // only for the wallet's own address, and one sequence at a time even if a button fires twice
     sending.current = true;
     setBusy(true);
     try {
@@ -419,7 +421,6 @@ export function VaultPanel() {
   const suggestion = (a: Action) => (a.kind === "addColl" ? setTopUpAmt(String(a.btc)) : setRepayAmt(String(a.musd)));
   const claim = () => run("Claim yield", [{ label: "Claim yield", address: NETWORKS[net].smusd, abi: smusdAbi, functionName: "claimYield", args: [] }], net);
 
-  const own = Boolean(account && state && state.address.toLowerCase() === account.toLowerCase());
   const depositWei = toWei(depositAmt);
   const withdrawWei = toWei(withdrawAmt);
   const depositTooBig = Boolean(state && depositWei && depositWei > parseUnits(state.musd, 18));
@@ -428,6 +429,7 @@ export function VaultPanel() {
   const borrowOverCap = net === "mainnet" && Number(borrowAmt) > MAINNET_CAP_MUSD;
   const sample = net === "mainnet" ? SAMPLES.positions : SAMPLES.devWallet;
   const gaugeRead = Boolean(state && state.staked != null && state.earnedMezo != null);
+  const isBtcView = Boolean(btcView && state && state.address.toLowerCase() === btcView.toLowerCase());
   const stakeWei = toWei(stakeAmt);
   const unstakeWei = toWei(unstakeAmt);
   const stakeTooBig = Boolean(state && stakeWei && stakeWei > parseUnits(state.smusd, 18));
@@ -495,6 +497,7 @@ export function VaultPanel() {
           onPick={onConnect}
           picked={picked}
           error={pickError}
+          network={net}
         />
         {net === "testnet" && (
           <p className="mt-3 text-xs text-ink-muted">
@@ -584,13 +587,20 @@ export function VaultPanel() {
         )}
       </section>
 
-      {own && (
+      {state && (
         <section aria-labelledby="actions-h" className="rounded-[20px] border border-line bg-card px-5 py-5">
           <h2 id="actions-h" className="text-base font-bold">
             Actions
           </h2>
+          {!own && (
+            <p role="note" className="mt-2 rounded-2xl bg-surface px-4 py-2 text-sm">
+              {isBtcView ? "These are the real numbers for your Bitcoin wallet's Mezo account. Bitcoin-wallet accounts act in the Mezo app, so the buttons here stay off." : "These are the real numbers for this address. The buttons stay off until you connect the wallet that owns it."}
+            </p>
+          )}
           <p className="mt-1 max-w-prose text-xs text-ink-muted">Every action is simulated first, sent with a gas limit of the estimate × 1.2, and approvals are for the exact amount only.</p>
 
+          <fieldset disabled={!own} className="m-0 min-w-0 border-0 p-0">
+          <legend className="sr-only">Savings Vault actions</legend>
           <div className="mt-4 grid gap-5 sm:grid-cols-2">
             <form
               onSubmit={(e) => {
@@ -627,10 +637,11 @@ export function VaultPanel() {
           <button type="button" onClick={claim} disabled={busy} className="mt-4 inline-flex min-h-11 items-center rounded-full border border-line px-4 text-sm font-bold disabled:opacity-50">
             Claim yield
           </button>
+          </fieldset>
         </section>
       )}
 
-      {own && net === "mainnet" && state && (
+      {net === "mainnet" && state && (
         <section aria-labelledby="gauge-h" className="rounded-[20px] border border-line bg-card px-5 py-5">
           <h2 id="gauge-h" className="text-base font-bold">
             Stake in Mezo&apos;s gauge to earn MEZO
@@ -639,6 +650,13 @@ export function VaultPanel() {
           <p className="mt-1 max-w-prose text-sm text-ink-muted">
             Staking moves sMUSD from your wallet into Mezo&apos;s Savings Vault gauge. The staked part earns MEZO and stops earning the vault&apos;s fee yield, which goes to veBTC voters (Mezo docs). Unstake returns the sMUSD to your wallet.
           </p>
+          {!own && (
+            <p role="note" className="mt-2 rounded-2xl bg-surface px-4 py-2 text-sm">
+              {isBtcView ? "These are the real numbers for your Bitcoin wallet's Mezo account. Bitcoin-wallet accounts act in the Mezo app, so the buttons here stay off." : "These are the real numbers for this address. The buttons stay off until you connect the wallet that owns it."}
+            </p>
+          )}
+          <fieldset disabled={!own} className="m-0 min-w-0 border-0 p-0">
+          <legend className="sr-only">Gauge actions</legend>
           <div className="mt-4 grid gap-5 sm:grid-cols-2">
             <form
               onSubmit={(e) => {
@@ -675,6 +693,7 @@ export function VaultPanel() {
           <button type="button" onClick={claimMezo} disabled={busy || !gaugeRead || !(Number(state.earnedMezo) > 0)} className="mt-4 inline-flex min-h-11 items-center rounded-full border border-line px-4 text-sm font-bold disabled:opacity-50">
             Claim MEZO
           </button>
+          </fieldset>
         </section>
       )}
 

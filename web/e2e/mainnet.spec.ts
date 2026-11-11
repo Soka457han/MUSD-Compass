@@ -172,6 +172,31 @@ test("switching back to testnet clears the mainnet numbers and the warning", asy
   await expect(page.getByRole("heading", { name: "Savings Vault position on Mezo testnet" })).toBeVisible();
 });
 
+test("without a wallet, the mainnet page shows the gauge section for a looked-up address with every control off", async ({ page }) => {
+  await page.goto("/vault?net=mainnet");
+  await page.getByRole("button", { name: "Try a sample" }).click();
+  await expect(page.getByRole("heading", { name: "Stake in Mezo's gauge to earn MEZO" })).toBeVisible();
+  await expect(page.getByText("Staked: 0 sMUSD. MEZO to claim: 0.")).toBeVisible();
+  await expect(page.getByText("The buttons stay off until you connect the wallet that owns it.")).toHaveCount(2); // Actions and the gauge
+  for (const name of ["Deposit", "Withdraw", "Claim yield", "Stake", "Unstake", "Claim MEZO"]) await expect(page.getByRole("button", { name, exact: true })).toBeDisabled();
+  await expect(page.getByLabel("Stake sMUSD", { exact: true })).toBeDisabled();
+  // The wallet picker names the network the page is on.
+  await page.getByRole("button", { name: "Connect wallet" }).click();
+  const dialog = page.getByRole("dialog", { name: "Connect a wallet" });
+  await expect(dialog.getByText("EVM wallets · work on Mezo mainnet")).toBeVisible();
+  await expect(dialog.getByText("Compass asks your wallet to switch to Mezo mainnet (chain 31612).")).toBeVisible();
+});
+
+test("a connected wallet cannot act on another address it only looked up", async ({ page }) => {
+  await connectOnMainnet(page);
+  await page.getByLabel("Address").fill("0x292356A36c9eDe4b3DBDadd4B7A6837257fB169b");
+  await page.getByRole("button", { name: "Look up" }).click();
+  await expect(page.getByText("The buttons stay off until you connect the wallet that owns it.").first()).toBeVisible();
+  for (const name of ["Deposit", "Withdraw", "Claim yield", "Stake", "Unstake", "Claim MEZO"]) await expect(page.getByRole("button", { name, exact: true })).toBeDisabled();
+  await expect(page.getByRole("heading", { name: "Borrow MUSD against BTC, then earn" })).toHaveCount(0);
+  expect(await sent(page)).toEqual([]);
+});
+
 test("the home page and the trove page point at the mainnet vault", async ({ page }) => {
   await page.goto("/");
   await expect(page.getByText("Can I use real funds here?")).toBeVisible();

@@ -60,6 +60,17 @@ test("trove planner: sample → ratio, safe borrow, queue; 'Use in calculator' o
   await expect(page.getByText("333%", { exact: true })).toBeVisible(); // exact: the advice sentence also says "At 333%"
   await expect(page.getByText("20,068 MUSD")).toBeVisible();
   await expect(page.getByText("≈ 812 of 1,204 troves are redeemed before yours")).toBeVisible();
+  // The redemption floor is always stated, with both prices, whether or not redeeming pays.
+  await expect(page.getByText("MUSD trades at $0.9951 on Mezo's MUSD/mUSDC pool. The redemption floor is $0.9925 (1 minus the 0.75% redemption fee), so redeeming MUSD for BTC does not pay right now.")).toBeVisible();
+  // What-if needs no wallet: (1.25 + 0.5) BTC × $80,478 ÷ 30,210.4 MUSD = 466%.
+  await page.getByRole("button", { name: "Show the result" }).click();
+  await expect(page.getByText("Type an amount of BTC to add or MUSD to repay.")).toBeVisible();
+  await page.getByLabel("Add BTC").fill("0.5");
+  await page.getByRole("button", { name: "Show the result" }).click();
+  await expect(page.getByText("Ratio after: 466% (now 333%).")).toBeVisible();
+  await page.getByLabel("Add BTC").fill("abc");
+  await page.getByRole("button", { name: "Show the result" }).click();
+  await expect(page.getByRole("status").filter({ hasText: /./ })).toHaveClass(/text-danger-text/);
   await expect(page.getByRole("list", { name: "What to do about this trove" }).getByText("BTC would have to fall about 67%")).toBeVisible();
   await expect(page.getByText("Your ratio is comfortable")).toBeVisible();
   await page.getByRole("link", { name: "Use in calculator" }).click();

@@ -26,6 +26,27 @@ export function TrovePanel() {
   const [t, setT] = useState<Trove | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [addBtc, setAddBtc] = useState("");
+  const [repay, setRepay] = useState("");
+  const [whatIf, setWhatIf] = useState<{ text: string; bad?: boolean } | null>(null);
+
+  /** What a top-up or a repay would do to this trove, from the same mainnet read the page shows. Nothing is sent: no wallet is involved. */
+  const preview = async () => {
+    if (!t) return;
+    const q = new URLSearchParams();
+    if (addBtc.trim()) q.set("addBtc", addBtc.trim());
+    if (repay.trim()) q.set("repayMusd", repay.trim());
+    if (![...q].length) return setWhatIf({ text: "Type an amount of BTC to add or MUSD to repay.", bad: true });
+    try {
+      const r = await fetch(`/api/trove/${encodeURIComponent(t.address)}?${q}`, { signal: AbortSignal.timeout(25_000) });
+      const j = await r.json();
+      if (!r.ok || !j.preview) return setWhatIf({ text: j.error ?? "Could not work that out. Try again in a minute.", bad: true });
+      const line = j.preview.ahead !== null && j.ahead !== null ? ` Troves redeemed before this one: about ${n(j.ahead)} now, about ${n(j.preview.ahead)} after, of ${n(j.preview.troves)}.` : "";
+      setWhatIf({ text: `Ratio after: ${n(j.preview.icrPct)}% (now ${n(j.icrPct)}%).${line}` });
+    } catch {
+      setWhatIf({ text: "Could not reach Compass. Check your connection and try again.", bad: true });
+    }
+  };
 
   const load = async (addr: string) => {
     setError(null);
@@ -38,6 +59,7 @@ export function TrovePanel() {
         setError(j.error ?? "Could not read the trove.");
       } else {
         setT(j);
+        setWhatIf(null);
         if (addr === "sample") setLookup(j.address);
       }
     } catch (e) {
@@ -137,8 +159,43 @@ export function TrovePanel() {
                 {t.ahead === null ? "Unavailable right now" : `≈ ${n(t.ahead)} of ${n(t.troves)} troves are redeemed before yours`}
               </dd>
               <dd className="mt-1 text-xs text-ink-muted">Redemptions take collateral from the lowest-ratio troves first. A higher ratio puts you further back.</dd>
+              {t.market && (
+                <dd className="mt-1 text-xs text-ink-muted">
+                  MUSD trades at ${t.market.musdUsd.toFixed(4)} on Mezo&apos;s MUSD/mUSDC pool. The redemption floor is ${t.market.floorUsd.toFixed(4)} (1 minus the {Number(t.market.redemptionPct.toFixed(2))}% redemption fee), so redeeming MUSD for BTC {t.market.musdUsd < t.market.floorUsd ? "pays right now" : "does not pay right now"}.
+                </dd>
+              )}
             </div>
           </dl>
+          <form
+            className="mt-4 border-t border-line pt-4"
+            onSubmit={(e) => {
+              e.preventDefault();
+              void preview();
+            }}
+          >
+            <h3 className="text-sm font-bold">What if you add BTC or repay MUSD?</h3>
+            <p className="mt-1 text-xs text-ink-muted">Worked out from this trove&apos;s live numbers. Nothing is sent and no wallet is needed.</p>
+            <div className="mt-2 flex flex-wrap items-end gap-2">
+              <div>
+                <label htmlFor="whatif-btc" className="mb-1 block text-xs font-semibold">
+                  Add BTC
+                </label>
+                <input id="whatif-btc" inputMode="decimal" value={addBtc} onChange={(e) => setAddBtc(e.target.value)} placeholder="0.1" className="block h-11 w-32 rounded-full border border-field bg-card px-4 text-sm" />
+              </div>
+              <div>
+                <label htmlFor="whatif-musd" className="mb-1 block text-xs font-semibold">
+                  Repay MUSD
+                </label>
+                <input id="whatif-musd" inputMode="decimal" value={repay} onChange={(e) => setRepay(e.target.value)} placeholder="1000" className="block h-11 w-32 rounded-full border border-field bg-card px-4 text-sm" />
+              </div>
+              <button type="submit" className="min-h-11 rounded-full border border-line px-4 text-sm font-bold">
+                Show the result
+              </button>
+            </div>
+            <p role="status" className={`mt-2 text-sm ${whatIf?.bad ? "font-semibold text-danger-text" : "font-semibold"}`}>
+              {whatIf?.text ?? ""}
+            </p>
+          </form>
           <Link href={calculatorHref(t)} className="mt-4 inline-flex min-h-11 items-center rounded-full bg-accent px-4 text-sm font-bold text-on-accent no-underline">
             Use in calculator
           </Link>

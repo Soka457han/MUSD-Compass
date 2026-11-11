@@ -126,8 +126,22 @@ test("a Bitcoin wallet (Unisat) shows its Mezo account, view only, with no actio
   await expect(page.getByLabel("Address")).toHaveValue("0x83120d096814eb9A0E7dfAE4d43ef8C6A9f5c1B2");
   await expect(page.getByText(/Showing the Mezo account of your Bitcoin wallet \(0x8312…c1B2\), view only/)).toBeVisible();
   await expect(page.getByText("157.31")).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Actions" })).toHaveCount(0);
-  await expect(page.getByRole("button", { name: "Deposit", exact: true })).toHaveCount(0);
+  // The sections show the account's real numbers, but nothing on the page can act for a Bitcoin-wallet account.
+  await expect(page.getByRole("heading", { name: "Actions" })).toBeVisible();
+  await expect(page.getByText("Bitcoin-wallet accounts act in the Mezo app, so the buttons here stay off.")).toBeVisible();
+  for (const name of ["Deposit", "Withdraw", "Claim yield"]) await expect(page.getByRole("button", { name, exact: true })).toBeDisabled();
+  await expect(page.getByLabel("Deposit MUSD")).toBeDisabled();
+});
+
+test("without a wallet, a looked-up address shows the action sections with every control off", async ({ page }) => {
+  await page.goto("/vault");
+  await page.getByRole("button", { name: "Try a sample" }).click();
+  await expect(page.getByText("157.31")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Actions" })).toBeVisible();
+  await expect(page.getByText("The buttons stay off until you connect the wallet that owns it.")).toBeVisible();
+  for (const name of ["Deposit", "Withdraw", "Claim yield"]) await expect(page.getByRole("button", { name, exact: true })).toBeDisabled();
+  await expect(page.getByLabel("Deposit MUSD")).toBeDisabled();
+  await expect(page.getByLabel(/Withdraw sMUSD/)).toBeDisabled();
 });
 
 test("with mainnet switched off, a connected wallet gets no gauge staking", async ({ page }) => {
