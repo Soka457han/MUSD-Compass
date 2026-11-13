@@ -104,6 +104,11 @@ Mezo testnet (chain 31611), made through [/vault](https://musd-compass.vercel.ap
 | *Borrow → Earn* 1 of 3: `openTrove` with test BTC as collateral | 1,800 MUSD borrowed | [`0x82f0ddf6…1fe0`](https://explorer.test.mezo.org/tx/0x82f0ddf6fd1598a1a89eaf3652f69323e5fdc69151ef08209e6c5a5e8ed81fe0) |
 | *Borrow → Earn* 2 of 3: approve the vault for exactly that amount | 1,800 MUSD | [`0xafbff33a…641d`](https://explorer.test.mezo.org/tx/0xafbff33ad670be5565928aaf481e6e6159d55a9d510cca06627d43ccc1fd641d) |
 | *Borrow → Earn* 3 of 3: deposit the borrowed MUSD into the Savings Vault | 1,800 MUSD → 1,800 sMUSD | [`0x53da2a83…a135`](https://explorer.test.mezo.org/tx/0x53da2a8307efecc5d71eaeda40dfd172f43be82a05ef7f3c55168917c34ea135) |
+| *Borrow → Earn* again from a second wallet (13 Nov 2026), 1 of 3: openTrove with test BTC | 2,000 MUSD borrowed against 0.06419851 BTC | [`0xf200e224…a3a0`](https://explorer.test.mezo.org/tx/0xf200e2240b49ea22f7ebbb0f37952b8307334761595bdf09c9e8d6bcf74aa3a0) |
+| *Borrow → Earn* again from a second wallet (13 Nov 2026), 2 of 3: exact approval | 2,000 MUSD | [`0x97b53558…c015`](https://explorer.test.mezo.org/tx/0x97b535581ba19c3a5c54a943bdcf25355e7fc10d666445005dccf7198841c015) |
+| *Borrow → Earn* again from a second wallet (13 Nov 2026), 3 of 3: deposit into the Savings Vault | 2,000 MUSD → 2,000 sMUSD | [`0x4e666ca9…f12e`](https://explorer.test.mezo.org/tx/0x4e666ca9b86b60c073550a4dec4ebd656ae9674f34d31570f292fe0d3c90f12e) |
+| Top-up on that trove (13 Nov 2026): add BTC to that trove (addColl) | 0.01 test BTC | [`0xbbf4c340…ca8b`](https://explorer.test.mezo.org/tx/0xbbf4c340132cc13f77fd3edb8d22a8e2858a576859d63ea948baf81bbf99ca8b) |
+| Repay on that trove (13 Nov 2026): Repay part of that trove's debt (repayMUSD, needs no approval) | 100 MUSD | [`0x06fd03a8…c6d4`](https://explorer.test.mezo.org/tx/0x06fd03a8bcb371ab2b6273216c84efa70ac928e4a453750e09601c23304bc6d4) |
 
 The dev wallet now holds 1,890 sMUSD and 67.41 MUSD with a vault allowance of 0, and [`/api/vault/0xfe21…676C`](https://musd-compass.vercel.app/api/vault/0xfe21B2782B35BE770DD4a7b05f81cE43790D676C) shows the same. Every transaction and live check is listed in [docs/evidence.md](docs/evidence.md).
 

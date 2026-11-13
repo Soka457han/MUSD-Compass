@@ -25,7 +25,9 @@ This page takes the Wave 1 review one ask at a time. Each row says what was buil
 
 **Live alert.** On 13 Nov 2026 the bot's `/watch` was pointed at the mainnet trove with the lowest ratio (`0xA7F5…f738`, 115%) and the Telegram chat received the alert at 23:14 Dhaka time: "Your ratio is close to the liquidation line" and "Your trove is first in line for redemptions", with links to the trove page, Compass and the Mezo app ([screenshot](docs/screenshots/watch-alert-2026-11-13.png), [evidence](docs/evidence.md)). The trove belongs to someone else; `/watch` takes any public address, and the chat is the builder's own.
 
-**Pending:** a real mainnet top-up or repay transaction.
+**Top-up and repay on chain (Mezo testnet, 13 Nov 2026).** On the trove that Borrow → Earn opened (2,000 MUSD borrowed against 0.06419851 test BTC), Compass sent an `addColl` of 0.01 test BTC ([transaction](https://explorer.test.mezo.org/tx/0xbbf4c340132cc13f77fd3edb8d22a8e2858a576859d63ea948baf81bbf99ca8b)) and a `repayMUSD` of 100 MUSD ([transaction](https://explorer.test.mezo.org/tx/0x06fd03a8bcb371ab2b6273216c84efa70ac928e4a453750e09601c23304bc6d4)). The same buttons exist on mainnet.
+
+**Pending:** a real mainnet top-up or repay transaction. A mainnet trove needs about 0.058 BTC locked; the builder's wallet holds 0.02 BTC.
 
 ## 3. Users outside your own wallets
 

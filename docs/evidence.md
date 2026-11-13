@@ -15,6 +15,11 @@ Every on-chain action Compass has taken, in one place. All writes are on Mezo te
 | 6b | Borrow → Earn: exact approval | 1,800 MUSD | dev wallet | [`0xafbff33a…641d`](https://explorer.test.mezo.org/tx/0xafbff33ad670be5565928aaf481e6e6159d55a9d510cca06627d43ccc1fd641d) |
 | 6c | Borrow → Earn: deposit into the Savings Vault | 1,800 MUSD → 1,800 sMUSD | dev wallet | [`0x53da2a83…a135`](https://explorer.test.mezo.org/tx/0x53da2a8307efecc5d71eaeda40dfd172f43be82a05ef7f3c55168917c34ea135) |
 | 7 | Claim yield after a distribution (26 Oct) | 0.1031 MUSD | dev wallet | [`0xe79ae272…7734`](https://explorer.test.mezo.org/tx/0xe79ae272024d2fe8998a1891ad07166d9a72c8093e17fdf7d6cee8007d6f7734) |
+| 8a | Borrow → Earn again, second wallet: `openTrove` with test BTC | 2,000 MUSD borrowed against 0.06419851 BTC | wallet `0x9126…6976` (13 Nov 2026) | [`0xf200e224…a3a0`](https://explorer.test.mezo.org/tx/0xf200e2240b49ea22f7ebbb0f37952b8307334761595bdf09c9e8d6bcf74aa3a0) |
+| 8b | Borrow → Earn again, second wallet: exact approval | 2,000 MUSD | wallet `0x9126…6976` (13 Nov 2026) | [`0x97b53558…c015`](https://explorer.test.mezo.org/tx/0x97b535581ba19c3a5c54a943bdcf25355e7fc10d666445005dccf7198841c015) |
+| 8c | Borrow → Earn again, second wallet: deposit into the Savings Vault | 2,000 MUSD → 2,000 sMUSD | wallet `0x9126…6976` (13 Nov 2026) | [`0x4e666ca9…f12e`](https://explorer.test.mezo.org/tx/0x4e666ca9b86b60c073550a4dec4ebd656ae9674f34d31570f292fe0d3c90f12e) |
+| 9a | Top-up: add BTC to that trove (`addColl`) | 0.01 test BTC | wallet `0x9126…6976` (13 Nov 2026) | [`0xbbf4c340…ca8b`](https://explorer.test.mezo.org/tx/0xbbf4c340132cc13f77fd3edb8d22a8e2858a576859d63ea948baf81bbf99ca8b) |
+| 9b | Repay part of that trove's debt (`repayMUSD`, needs no approval) | 100 MUSD | wallet `0x9126…6976` (13 Nov 2026) | [`0x06fd03a8…c6d4`](https://explorer.test.mezo.org/tx/0x06fd03a8bcb371ab2b6273216c84efa70ac928e4a453750e09601c23304bc6d4) |
 
 ## Safety, checkable without a wallet
 

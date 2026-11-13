@@ -11,6 +11,11 @@ export const TESTNET_PROOF: ProofTx[] = [
   { what: "Borrow → Earn: exact approval", amount: "1,800 MUSD", from: "dev wallet", hash: "0xafbff33ad670be5565928aaf481e6e6159d55a9d510cca06627d43ccc1fd641d" },
   { what: "Borrow → Earn: deposit into the Savings Vault", amount: "1,800 MUSD → 1,800 sMUSD", from: "dev wallet", hash: "0x53da2a8307efecc5d71eaeda40dfd172f43be82a05ef7f3c55168917c34ea135" },
   { what: "Claim yield after a distribution (26 Oct)", amount: "0.1031 MUSD", from: "dev wallet", hash: "0xe79ae272024d2fe8998a1891ad07166d9a72c8093e17fdf7d6cee8007d6f7734" },
+  { what: "Borrow → Earn again, second wallet: openTrove with test BTC", amount: "2,000 MUSD borrowed against 0.06419851 BTC", from: "wallet 0x9126…6976", date: "13 Nov 2026", hash: "0xf200e2240b49ea22f7ebbb0f37952b8307334761595bdf09c9e8d6bcf74aa3a0" },
+  { what: "Borrow → Earn again, second wallet: exact approval", amount: "2,000 MUSD", from: "wallet 0x9126…6976", date: "13 Nov 2026", hash: "0x97b535581ba19c3a5c54a943bdcf25355e7fc10d666445005dccf7198841c015" },
+  { what: "Borrow → Earn again, second wallet: deposit into the Savings Vault", amount: "2,000 MUSD → 2,000 sMUSD", from: "wallet 0x9126…6976", date: "13 Nov 2026", hash: "0x4e666ca9b86b60c073550a4dec4ebd656ae9674f34d31570f292fe0d3c90f12e" },
+  { what: "Top-up: add BTC to that trove (addColl)", amount: "0.01 test BTC", from: "wallet 0x9126…6976", date: "13 Nov 2026", hash: "0xbbf4c340132cc13f77fd3edb8d22a8e2858a576859d63ea948baf81bbf99ca8b" },
+  { what: "Repay part of that trove's debt (repayMUSD; needs no approval)", amount: "100 MUSD", from: "wallet 0x9126…6976", date: "13 Nov 2026", hash: "0x06fd03a8bcb371ab2b6273216c84efa70ac928e4a453750e09601c23304bc6d4" },
 ];
 
 // Mezo mainnet (chain 31612), 12 Nov 2026, 17:34 to 17:42 UTC, one wallet. Each row was checked on chain: status success, 5 MUSD (0x4563918244f40000), selector matches the label.
