@@ -49,6 +49,15 @@ One payment through the Pay & fetch button on `/developers`, network set to Mezo
 
 Payer and payee are different wallets, and both belong to the builder, so this proves the mainnet payment path, not outside demand.
 
+## Live `/watch` alert on a real mainnet trove, 13 Nov 2026
+
+Steps: `/watch 0xA7F5Dc5955a599524A28DFf21389D88c49DBf738` was sent to `@musd_compass_bot` (reply at 23:13 Dhaka time, 17:13 UTC), then the **Watch troves** workflow was started by hand in GitHub Actions. The alert reached the chat at 23:14 Dhaka time. Screenshot: [`docs/screenshots/watch-alert-2026-11-13.png`](screenshots/watch-alert-2026-11-13.png).
+
+- The address is the lowest-ratio trove of the 4 on Mezo mainnet (read from SortedTroves `getLast`, 13 Nov 2026). At the time Compass's own trove API showed 115%, 0 troves ahead of it for redemptions, and the advice "close to the liquidation line" and "first in line for redemptions".
+- The message text matches that advice, names 115%, and links to the trove page, to Compass (`/vault?net=mainnet`) and to the Mezo app.
+- The trove is not the builder's: `/watch` takes any public address, and the alert went to the builder's own Telegram chat. This shows the alert path works end to end. It does not show outside users.
+- The first alert for a new watch is sent as soon as the next check finds advice to give. The scheduled check runs late on GitHub (the 6 runs from 12 to 13 Nov were 4 to 8 hours apart), so this alert was triggered by a manual run.
+
 ## Mezo mainnet dry run (simulated, not executed), 3 Nov 2026
 
 On 3 Nov no mainnet transaction had been sent. The dry run exercises Compass's own Borrow → Earn code against Mezo mainnet with read-only calls and `eth_call` simulation. Run it with `LIVE_MAINNET=1 npx vitest run tests/live` (it is skipped otherwise). It uses a dummy address with no funds and lends it 1 BTC inside the simulation only.

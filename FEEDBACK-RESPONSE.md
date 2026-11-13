@@ -17,13 +17,15 @@ This page takes the Wave 1 review one ask at a time. Each row says what was buil
 ## 2. Monitoring, top-up or repay, redemption and Recovery Mode warnings
 
 **Built.**
-- **Monitoring:** `/watch` in the Telegram bot checks a trove on a schedule set to every 15 minutes and sends an alert when its advice changes, with a margin so it does not flip near 200%. GitHub Actions starts scheduled runs late: the last 6 runs (12 to 13 Nov 2026) were 4 to 7 hours apart, so in practice an alert can take hours unless the run is started by hand.
+- **Monitoring:** `/watch` in the Telegram bot checks a trove on a schedule set to every 15 minutes and sends an alert when its advice changes, with a margin so it does not flip near 200%. GitHub Actions starts scheduled runs late: the last 6 runs (12 to 13 Nov 2026) were 4 to 8 hours apart, so in practice an alert can take hours unless the run is started by hand.
 - **Warnings:** the trove page and the alerts say when a trove is close to the liquidation line, when it is near the front of the redemption line, and when the system is in Recovery Mode. The page also states the MUSD price against the redemption floor every time.
 - **Top-up and repay:** on `/vault`, mainnet, with a before and after preview (new ratio, and place in the redemption line now and after).
 
 **Checked.** A real mainnet trove at 116% shows both warnings live. Recovery Mode cannot be shown live because Mezo is not in it; it is covered by a unit test.
 
-**Pending:** a live `/watch` alert from a real trove in a real Telegram chat, and a real mainnet top-up or repay transaction.
+**Live alert.** On 13 Nov 2026 the bot's `/watch` was pointed at the mainnet trove with the lowest ratio (`0xA7F5…f738`, 115%) and the Telegram chat received the alert at 23:14 Dhaka time: "Your ratio is close to the liquidation line" and "Your trove is first in line for redemptions", with links to the trove page, Compass and the Mezo app ([screenshot](docs/screenshots/watch-alert-2026-11-13.png), [evidence](docs/evidence.md)). The trove belongs to someone else; `/watch` takes any public address, and the chat is the builder's own.
+
+**Pending:** a real mainnet top-up or repay transaction.
 
 ## 3. Users outside your own wallets
 
