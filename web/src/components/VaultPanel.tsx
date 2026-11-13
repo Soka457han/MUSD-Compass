@@ -14,7 +14,7 @@ import { NETWORKS, SAMPLES, type NetworkId } from "@/lib/chain/addresses";
 import { MAINNET_CAP_MUSD, mainnetWritesEnabled, sendSafely } from "@/lib/sendSafely";
 import type { VaultState } from "@/lib/vault";
 import { connect, explorerTx, humanError, injected, publicFor, remember, restoreWallet } from "@/lib/wallet";
-import { walletConnectProjectId, walletConnectProvider } from "@/lib/walletconnect";
+import { walletConnectEnabled, walletConnectProjectId, walletConnectProvider } from "@/lib/walletconnect";
 import { bitcoinAccount } from "@/lib/bitcoinWallet";
 import { AdviceList } from "./AdviceList";
 import { ArrowUpRightIcon } from "./Icons";
@@ -497,9 +497,9 @@ export function VaultPanel() {
                 Showing the Mezo account of your Bitcoin wallet ({btcView.slice(0, 6)}…{btcView.slice(-4)}), view only. To deposit or withdraw with a Bitcoin wallet, use the Mezo app at mezo.org.
               </p>
             )}
-            {!hasWallet && (
+            {!hasWallet && !btcView && (
               <p className="mt-3 max-w-prose text-sm">
-                No wallet in this browser. Open this page inside MetaMask, Rabby or another wallet&apos;s browser to deposit. You can still look up any address below.
+                No browser wallet found. Press Connect wallet to use {walletConnectEnabled() ? "WalletConnect or a Bitcoin wallet (view only)" : "a Bitcoin wallet (view only)"}, or open this page inside MetaMask, Rabby or another wallet&apos;s browser to deposit. You can still look up any address below.
               </p>
             )}
           </>

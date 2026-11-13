@@ -6,7 +6,7 @@ test.describe("vault (360 px, fixture data)", () => {
     test.skip(process.env.MAINNET_E2E === "1", "this build has mainnet switched on");
     await page.goto("/vault");
     await expect(page.getByRole("note")).toContainText("Testnet action");
-    await expect(page.getByText("No wallet in this browser. Open this page inside")).toBeVisible();
+    await expect(page.getByText(/No browser wallet found\. Press Connect wallet to use .+, or open this page inside MetaMask, Rabby/)).toBeVisible();
     await page.getByRole("button", { name: "Try a sample" }).click();
     await expect(page.getByText("157.31")).toBeVisible();
     await expect(page.getByText(/Pending yield is 0 until the next distribution/)).toBeVisible();
@@ -125,6 +125,7 @@ test("a Bitcoin wallet (Unisat) shows its Mezo account, view only, with no actio
   // CREATE2 at the OrangeKit factory for this address's key hash (keyHash vector in tests/unit/bitcoinWallet.test.ts).
   await expect(page.getByLabel("Address")).toHaveValue("0x83120d096814eb9A0E7dfAE4d43ef8C6A9f5c1B2");
   await expect(page.getByText(/Showing the Mezo account of your Bitcoin wallet \(0x8312…c1B2\), view only/)).toBeVisible();
+  await expect(page.getByText("to deposit. You can still look up any address below.")).toHaveCount(0); // a connected Bitcoin wallet is a wallet; the two notes must not contradict
   await expect(page.getByText("157.31")).toBeVisible();
   // The sections show the account's real numbers, but nothing on the page can act for a Bitcoin-wallet account.
   await expect(page.getByRole("heading", { name: "Actions" })).toBeVisible();
