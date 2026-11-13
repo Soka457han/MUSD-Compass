@@ -145,7 +145,7 @@ export default function DevelopersPage() {
                 <td className="py-2 pr-3">Mezo mainnet</td>
                 <td className="py-2 pr-3">0.01 MUSD</td>
                 <td className="py-2 pr-3">10 MUSD</td>
-                <td className="py-2">Live. Listed in the 402 response next to testnet; pay it from your own x402 client. The curl above shows both.</td>
+                <td className="py-2">Live. Listed in the 402 response next to testnet; pay it with the button above (choose Mezo mainnet) or from your own x402 client. The curl above shows both.</td>
               </tr>
             </tbody>
           </table>

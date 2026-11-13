@@ -197,6 +197,26 @@ test("a connected wallet cannot act on another address it only looked up", async
   expect(await sent(page)).toEqual([]);
 });
 
+test("developers: the mainnet Pay button asks for the typed 0.01 first and touches the wallet only after that", async ({ page }) => {
+  await setUp(page);
+  await page.goto("/developers");
+  await page.getByLabel("Mezo mainnet (real funds)").check();
+  await expect(page.getByText("only mainnet MUSD, at most 0.01")).toBeVisible();
+  await page.getByRole("button", { name: "Pay 0.01 MUSD & fetch" }).click();
+  const dialog = page.getByRole("dialog", { name: "Pay 0.01 MUSD on Mezo mainnet" });
+  await expect(dialog).toBeVisible();
+  await expect(dialog.getByRole("button", { name: "Pay 0.01 MUSD", exact: true })).toBeDisabled();
+  await dialog.getByLabel("Type 0.01 to confirm").fill("0.02");
+  await expect(dialog.getByRole("button", { name: "Pay 0.01 MUSD", exact: true })).toBeDisabled();
+  await dialog.getByLabel("Type 0.01 to confirm").fill("0.01");
+  await expect(dialog.getByRole("button", { name: "Pay 0.01 MUSD", exact: true })).toBeEnabled();
+  expect(await asked(page)).toEqual([]); // nothing reached the wallet yet
+  await dialog.getByRole("button", { name: "Cancel" }).click();
+  await expect(dialog).toBeHidden();
+  expect(await asked(page)).toEqual([]);
+  expect(await sent(page)).toEqual([]);
+});
+
 test("the home page and the trove page point at the mainnet vault", async ({ page }) => {
   await page.goto("/");
   await expect(page.getByText("Can I use real funds here?")).toBeVisible();

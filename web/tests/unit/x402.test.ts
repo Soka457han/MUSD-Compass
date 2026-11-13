@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { TESTNET } from "@/lib/chain/addresses";
+import { MAINNET, TESTNET } from "@/lib/chain/addresses";
 import { pickMusdRequirement, PAY_TO, PREMIUM_PRICES, premiumAccepts, X402_NETWORKS } from "@/lib/x402";
 
 const MAINNET_PAYEE = "0xc20f00000000000000000000000000000000aaaa"; // any valid address; the real one is set per deploy
@@ -40,5 +40,29 @@ describe("pickMusdRequirement (checked before the wallet signs)", () => {
     ["mainnet", { network: "eip155:31612" }],
   ])("refuses %s", (_, change) => {
     expect(() => pickMusdRequirement([{ ...ok, ...change }], PAY_TO)).toThrow(/nothing was signed/);
+  });
+});
+
+const okMain = { scheme: "exact", network: "eip155:31612", asset: MAINNET.musd, amount: "10000000000000000", payTo: PAY_TO };
+
+describe("pickMusdRequirement on mainnet (real MUSD)", () => {
+  it("accepts exactly 0.01 mainnet MUSD to the Compass payee", () => {
+    expect(pickMusdRequirement([okMain], PAY_TO, "mainnet")).toBe(okMain);
+  });
+  it("picks the mainnet offer out of the 402's list of both networks", () => {
+    expect(pickMusdRequirement([ok, okMain], PAY_TO, "mainnet")).toBe(okMain);
+    expect(pickMusdRequirement([ok, okMain], PAY_TO)).toBe(ok);
+  });
+  it.each([
+    ["more than 0.01 MUSD", { amount: "10000000000000001" }],
+    ["testnet MUSD", { asset: TESTNET.musd }],
+    ["another token", { asset: "0x7b7C000000000000000000000000000000000000" }],
+    ["another payee", { payTo: "0x0000000000000000000000000000000000000001" }],
+    ["the testnet network", { network: "eip155:31611" }],
+  ])("refuses %s", (_, change) => {
+    expect(() => pickMusdRequirement([{ ...okMain, ...change }], PAY_TO, "mainnet")).toThrow(/nothing was signed/);
+  });
+  it("a testnet button never signs a mainnet offer", () => {
+    expect(() => pickMusdRequirement([okMain], PAY_TO)).toThrow(/nothing was signed/);
   });
 });
