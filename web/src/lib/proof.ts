@@ -25,6 +25,7 @@ export const MAINNET_PROOF: ProofTx[] = [
   { what: "Claim MEZO from the gauge", amount: "gauge reward", from: W, date: D, hash: "0xf99b3d22d1f89ba1fb3214c23cfaff1b5709bdb702b0e75554a74e4b89f6e75b" },
   { what: "Claim vault yield (nothing was due yet, so no MUSD moved)", amount: "0 MUSD", from: W, date: D, hash: "0x5a2f84c4c051957587050c812ae17aa0f9592dfd4eab12996c7b0e583d9c387c" },
   { what: "Withdraw from the Savings Vault", amount: "5 sMUSD → 5 MUSD", from: W, date: D, hash: "0xd6c84c65ddacef5e52f1411c5f1cb21ca122e74d7abce9831372230527954543" },
+  { what: "x402 payment for /api/premium/yields (facilitator sent it and paid gas; exact-amount permit)", amount: "0.01 MUSD", from: "wallet 0x9126…6976 to dev wallet 0xfe21…676C (payer is not the payee)", date: "13 Nov 2026", hash: "0x794f8b211352068d2474dc4a2c5ec042d48476c27fbebd1272f4601f245c09cf" },
 ];
 
 export const explorerTxUrl = (hash: string, network: "testnet" | "mainnet") =>

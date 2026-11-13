@@ -34,7 +34,7 @@ export default function ProofPage() {
       <main id="main" className="mx-auto w-full max-w-3xl flex-1 space-y-5 px-4 py-5">
         <div>
           <h1 className="text-[30px] leading-tight font-extrabold tracking-tight md:text-[40px]">Proof: every transaction Compass has sent</h1>
-          <p className="mt-1 max-w-prose text-sm text-ink-muted">Compass deploys no contract and holds no funds. Each transaction below was signed by the wallet named in its row. The two x402 payments were put on chain by the payment facilitator, which also paid their gas.</p>
+          <p className="mt-1 max-w-prose text-sm text-ink-muted">Compass deploys no contract and holds no funds. Each transaction below was signed by the wallet named in its row. The x402 payments were put on chain by the payment facilitator, which also paid their gas.</p>
         </div>
         <section aria-labelledby="main-h" className="space-y-3">
           <h2 id="main-h" className="text-base font-bold">Mezo mainnet (real funds)</h2>

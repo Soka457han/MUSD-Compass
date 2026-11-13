@@ -33,9 +33,11 @@ This page takes the Wave 1 review one ask at a time. Each row says what was buil
 
 ## 4. A real mainnet x402 price, and who would pay
 
-**Built.** The premium API is priced at 0.01 MUSD per call on Mezo mainnet (10 MUSD per 1,000), and 0.001 test MUSD on testnet ([`x402.ts`](web/src/lib/x402.ts)). [/developers](https://musd-compass.vercel.app/developers) names who pays and why: servers that need the ranking for many amounts or addresses, agents that cannot sign up for an API key, wallets that show where to put MUSD, and alert bots. Two x402 payments are on testnet, one from a second wallet ([proof](https://musd-compass.vercel.app/proof)).
+**Built.** The premium API is priced at 0.01 MUSD per call on Mezo mainnet (10 MUSD per 1,000), and 0.001 test MUSD on testnet ([`x402.ts`](web/src/lib/x402.ts)). [/developers](https://musd-compass.vercel.app/developers) names who pays and why: servers that need the ranking for many amounts or addresses, agents that cannot sign up for an API key, wallets that show where to put MUSD, and alert bots. The pay button on `/developers` works on both networks; on mainnet it asks you to type 0.01 first and refuses any other token, amount or payee before the wallet signs.
 
-**Pending:** a first paid mainnet call.
+**On chain.** A real mainnet payment: 0.01 MUSD from the builder's wallet `0x9126…6976` to the payee `0xfe21…676C` on 13 Nov 2026, sent by the facilitator, which paid the gas ([transaction](https://explorer.mezo.org/tx/0x794f8b211352068d2474dc4a2c5ec042d48476c27fbebd1272f4601f245c09cf)). Two testnet payments are also listed, one from a second wallet ([proof](https://musd-compass.vercel.app/proof)).
+
+**Pending:** a paid mainnet call from someone outside the team. The mainnet payment above is the builder's own wallet.
 
 ## 5. WalletConnect or Mezo Passport
 

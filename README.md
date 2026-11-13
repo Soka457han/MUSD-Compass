@@ -78,13 +78,13 @@ People come back because Mezo's reward campaigns renew every 7 days and rates ju
 | PriceFeed, BorrowerOperations, InterestRateManager | Live BTC price, borrow rate, fee and minimum debt; opens a trove | mainnet read · testnet write |
 | TroveManager, SortedTroves | Trove planner and redemption-queue position | mainnet |
 | veMEZO (via Merkl) | Campaign APRs and per-address unclaimed rewards | mainnet |
-| MUSD over x402 | Pay-per-call API: 0.001 test MUSD on testnet (used so far), 0.01 MUSD on mainnet (offered once a payee is set) | testnet and mainnet |
+| MUSD over x402 | Pay-per-call API: 0.001 test MUSD on testnet (used so far), 0.01 MUSD on mainnet (one real payment made, [proof](https://musd-compass.vercel.app/proof)) | testnet and mainnet |
 
 ## What is real and what is not
 
 | Real | Not real, or not done yet |
 |---|---|
-| Every venue number is read live from Mezo, Ethereum or Merkl and kept for 5 minutes | **Mainnet is proven only for the Savings Vault and gauge.** Eight real mainnet transactions made through Compass's `/vault` page (5 MUSD in and out of the vault, staked and unstaked in the gauge, MEZO claimed; [proof](https://musd-compass.vercel.app/proof)). Borrow → Earn, top-up and repay have not run on mainnet, and troves in the demo flow are testnet only; testnet MUSD has no market value |
+| Every venue number is read live from Mezo, Ethereum or Merkl and kept for 5 minutes | **Mainnet is proven for the Savings Vault, the gauge and one x402 payment.** Nine real mainnet transactions: eight made through Compass's `/vault` page (5 MUSD in and out of the vault, staked and unstaked in the gauge, MEZO claimed) and one 0.01 MUSD x402 payment from `/developers` ([proof](https://musd-compass.vercel.app/proof)). Borrow → Earn, top-up and repay have not run on mainnet, and troves in the demo flow are testnet only; testnet MUSD has no market value |
 | Approve, deposit, withdraw, claim, a trove opened to borrow and deposit, and two x402 payments are real Mezo testnet transactions ([below](#testnet-proof)) | Compass has no contract of its own to audit |
 | `/my`, `/vault`, `/rewards` and `/trove` samples are read from the chain | Mezo pools and the Stability Pool are listed by size; their APR lives in the Mezo app |
 | The bot, widget and API return the same numbers as the web app (bot checked 26 Oct, all six buttons) | Uniswap V4 trading fees are not reported by Merkl, so they count as 0 |

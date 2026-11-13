@@ -43,6 +43,12 @@ One wallet, `0x912697ed3feef6ca700ba18e008fdf990b6d6976`, 17:34 to 17:42 UTC, bl
 
 Not covered by a real transaction: Borrow → Earn (open trove), top-up and repay on mainnet. Sent through Compass's `/vault` page: the page's own Transactions list (screenshot taken 12 Nov 2026, 23:43 Dhaka time, 17:43 UTC) shows the same 8 steps, all "Confirmed", with labels such as "Approve exactly 5 MUSD" and "Stake 5 sMUSD in the gauge". The chain itself shows only the wallet and the calls, not the website used, so the screenshot is the evidence for that.
 
+## Mezo mainnet x402 payment (real funds), 13 Nov 2026
+
+One payment through the Pay & fetch button on `/developers`, network set to Mezo mainnet: [`0x794f8b21…09cf`](https://explorer.mezo.org/tx/0x794f8b211352068d2474dc4a2c5ec042d48476c27fbebd1272f4601f245c09cf), block 13203891, 16:48:09 UTC. Read back from Mezo mainnet on 13 Nov 2026: status success. The facilitator `0x9984…7f6a` sent it (and paid the gas) to the x402 contract `0x4020…0001`. The logs show an exact 0.01 MUSD permit from `0x912697ed3feef6ca700ba18e008fdf990b6d6976` and a MUSD `Transfer` of 0.01 MUSD (`10000000000000000`) from that wallet to `0xfe21b2782b35be770dd4a7b05f81ce43790d676c`, the payee in the 402 response.
+
+Payer and payee are different wallets, and both belong to the builder, so this proves the mainnet payment path, not outside demand.
+
 ## Mezo mainnet dry run (simulated, not executed), 3 Nov 2026
 
 On 3 Nov no mainnet transaction had been sent. The dry run exercises Compass's own Borrow → Earn code against Mezo mainnet with read-only calls and `eth_call` simulation. Run it with `LIVE_MAINNET=1 npx vitest run tests/live` (it is skipped otherwise). It uses a dummy address with no funds and lends it 1 BTC inside the simulation only.
