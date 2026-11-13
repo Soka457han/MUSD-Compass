@@ -11,7 +11,8 @@ Mezo Buildathon, Wave 1 · Track 1 (DeFi) and Track 2 (Access & Distribution) ·
 | **Deck** | [musd-compass-deck.pdf](https://musd-compass.vercel.app/musd-compass-deck.pdf) (also [in the repo](docs/submission/musd-compass-deck.pdf)) |
 | **Telegram bot** | [@musd_compass_bot](https://t.me/musd_compass_bot) |
 | **API and widget** | [/developers](https://musd-compass.vercel.app/developers) |
-| **Proof** | [Testnet transactions](#testnet-proof) · [all evidence](docs/evidence.md) |
+| **Changed since Wave 1** | [FEEDBACK-RESPONSE.md](FEEDBACK-RESPONSE.md): the Wave 1 review answered point by point |
+| **Proof** | [Mainnet and testnet transactions](https://musd-compass.vercel.app/proof) · [testnet table](#testnet-proof) · [all evidence](docs/evidence.md) |
 
 ## Judge fast path (60 seconds, no wallet)
 
