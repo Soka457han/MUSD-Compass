@@ -26,9 +26,26 @@ Every on-chain action Compass has taken, in one place. All writes are on Mezo te
 
 Guard code: [`web/src/lib/sendSafely.ts`](../web/src/lib/sendSafely.ts). The allowlist is MUSD, sMUSD and BorrowerOperations on each network, and per contract only the functions Compass uses: MUSD `approve`; vault `deposit`, `withdraw`, `claimYield`; BorrowerOperations `openTrove`, `addColl`, `repayMUSD`. Approvals go only to the vault and never for an unlimited amount.
 
+## Mezo mainnet transactions (real funds), 12 Nov 2026
+
+One wallet, `0x912697ed3feef6ca700ba18e008fdf990b6d6976`, 17:34 to 17:42 UTC, blocks 13181993 to 13182111. Each row was read back from Mezo mainnet on 13 Nov 2026 (`eth_getTransactionReceipt` and `eth_getTransactionByHash`): status success, and the function selector and the 5 MUSD argument (`0x4563918244f40000`) match the label.
+
+| Step | Amount | Transaction |
+|---|---|---|
+| MUSD `approve` to the Savings Vault | 5 MUSD | [`0xa62ad1e7…7c5d`](https://explorer.mezo.org/tx/0xa62ad1e79c9ed6eaae5cf107b28663894695678c51b4c7d87c16a0a6119b7c5d) |
+| Vault `deposit` | 5 MUSD | [`0x3bb81d68…b1c9`](https://explorer.mezo.org/tx/0x3bb81d682918f0312f7bbebd6a26611e076a9dc973e1008b2ff98330f876b1c9) |
+| sMUSD `approve` to the gauge | 5 sMUSD | [`0x9c6f43f7…63e5`](https://explorer.mezo.org/tx/0x9c6f43f75fdb200c94345e7bcfe1ae97d00018cc8897bc5bef2b114a5bcd63e5) |
+| Gauge `deposit` (stake) | 5 sMUSD | [`0x767c7cce…599f`](https://explorer.mezo.org/tx/0x767c7cce3f02e4cd4b6f72b6d18e2a751356dde4792f2e93ab1e50a93725599f) |
+| Gauge `withdraw` (unstake) | 5 sMUSD | [`0x5f1fcf9b…f8a0`](https://explorer.mezo.org/tx/0x5f1fcf9b7828ad10e169cb6f83c8002dfd3b0b11295fe01c605ba0b10e95f8a0) |
+| Gauge `getReward` (claim MEZO) | gauge reward | [`0xf99b3d22…e75b`](https://explorer.mezo.org/tx/0xf99b3d22d1f89ba1fb3214c23cfaff1b5709bdb702b0e75554a74e4b89f6e75b) |
+| Vault `claimYield` (no logs: nothing was due, so no MUSD moved) | 0 MUSD | [`0x5a2f84c4…387c`](https://explorer.mezo.org/tx/0x5a2f84c4c051957587050c812ae17aa0f9592dfd4eab12996c7b0e583d9c387c) |
+| Vault `withdraw` | 5 MUSD | [`0xd6c84c65…4543`](https://explorer.mezo.org/tx/0xd6c84c65ddacef5e52f1411c5f1cb21ca122e74d7abce9831372230527954543) |
+
+Not covered by a real transaction: Borrow → Earn (open trove), top-up and repay on mainnet. Sent through Compass's `/vault` page: the page's own Transactions list (screenshot taken 12 Nov 2026, 23:43 Dhaka time, 17:43 UTC) shows the same 8 steps, all "Confirmed", with labels such as "Approve exactly 5 MUSD" and "Stake 5 sMUSD in the gauge". The chain itself shows only the wallet and the calls, not the website used, so the screenshot is the evidence for that.
+
 ## Mezo mainnet dry run (simulated, not executed), 3 Nov 2026
 
-No mainnet transaction has been sent. The dry run exercises Compass's own Borrow → Earn code against Mezo mainnet with read-only calls and `eth_call` simulation. Run it with `LIVE_MAINNET=1 npx vitest run tests/live` (it is skipped otherwise). It uses a dummy address with no funds and lends it 1 BTC inside the simulation only.
+On 3 Nov no mainnet transaction had been sent. The dry run exercises Compass's own Borrow → Earn code against Mezo mainnet with read-only calls and `eth_call` simulation. Run it with `LIVE_MAINNET=1 npx vitest run tests/live` (it is skipped otherwise). It uses a dummy address with no funds and lends it 1 BTC inside the simulation only.
 
 - For 2,000 MUSD of debt Compass computed 0.05707053 BTC of collateral (a 200% start at the BTC price read from PriceFeed that moment) and real HintHelpers hints: `0x593c…5bb5` and `0x467F…3Fb4`.
 - The three steps (`openTrove`, an exact `approve`, `deposit`) pass Compass's guard on mainnet, and the price re-check before sending passes.
@@ -65,3 +82,11 @@ Assumptions for 1,000 premium calls answered from the warm cache: 50 ms active C
 The x402 facilitator pays the settlement gas, not Compass. Price charged: 0.01 MUSD per call on Mezo mainnet (10 MUSD per 1,000), 0.001 test MUSD on testnet (1 test MUSD per 1,000), from `web/src/lib/x402.ts`.
 
 Do-it-yourself cost: one refresh needs 34 `eth_getLogs` requests for 14 days of sMUSD yield events (Mezo RPCs cap a request at 10,000 blocks), plus pool, trove, gauge and Merkl reads; measured 7 to 37 s per cold refresh on 4 Nov 2026, depending on the RPC.
+
+## Is 2,500 MUSD a Mezo rule? Checked 12 Nov 2026
+
+No. The 2,500 MUSD per-transaction limit on Compass's mainnet deposits, stakes and new troves is Compass's own safety limit (`MAINNET_CAP_MUSD` in `web/src/lib/sendSafely.ts`). Mezo sets no maximum.
+
+- Mezo docs, read 12 Nov 2026: the only loan threshold is a minimum, "The minimum loan size is 1,800 MUSD of borrowed debt" plus the 200 MUSD gas deposit (https://mezo.org/docs/users/borrow/mint-musd/). No maximum loan size is stated. The Savings Vault page states no deposit minimum, maximum or cap, "Withdrawal fee: None" and "Withdrawal time-lock: 0h" (https://mezo.org/docs/users/mezo-earn/vaults/musd-savings-vault/). The number 2,500 appears on none of the pages read.
+- Mezo's dApp requirements (https://mezo.org/docs/developers/getting-started/dapp-requirements/) ask for no caps. To be featured in the Mezo Market a dApp must integrate MUSD, be live on mainnet and have "completed a third-party security audit". Compass has had no third-party audit, which is the reason it keeps its own limit.
+- On Mezo mainnet, read-only `eth_call` through `https://rpc-http.mezo.boar.network`, 12 Nov 2026: the Savings Vault and its gauge have no `maxDeposit`, `depositCap`, `cap`, `depositLimit`, `maxTotalSupply` or `paused` function (each call reverts); the vault holds about 1,314,741 sMUSD and the gauge about 142,385. `openTrove` simulates successfully for 2,500, 50,000 and 1,000,000 MUSD of debt at a 200% ratio, so BorrowerOperations refuses none of them by size.

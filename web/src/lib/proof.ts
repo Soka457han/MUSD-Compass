@@ -13,8 +13,19 @@ export const TESTNET_PROOF: ProofTx[] = [
   { what: "Claim yield after a distribution (26 Oct)", amount: "0.1031 MUSD", from: "dev wallet", hash: "0xe79ae272024d2fe8998a1891ad07166d9a72c8093e17fdf7d6cee8007d6f7734" },
 ];
 
-// The owner adds entries here after each real mainnet transaction.
-export const MAINNET_PROOF: ProofTx[] = [];
+// Mezo mainnet (chain 31612), 12 Nov 2026, 17:34 to 17:42 UTC, one wallet. Each row was checked on chain: status success, 5 MUSD (0x4563918244f40000), selector matches the label.
+const W = "wallet 0x9126…6976";
+const D = "12 Nov 2026";
+export const MAINNET_PROOF: ProofTx[] = [
+  { what: "Approve the Savings Vault (exact amount, not unlimited)", amount: "5 MUSD", from: W, date: D, hash: "0xa62ad1e79c9ed6eaae5cf107b28663894695678c51b4c7d87c16a0a6119b7c5d" },
+  { what: "Deposit into the Savings Vault", amount: "5 MUSD → 5 sMUSD", from: W, date: D, hash: "0x3bb81d682918f0312f7bbebd6a26611e076a9dc973e1008b2ff98330f876b1c9" },
+  { what: "Approve the sMUSD gauge (exact amount)", amount: "5 sMUSD", from: W, date: D, hash: "0x9c6f43f75fdb200c94345e7bcfe1ae97d00018cc8897bc5bef2b114a5bcd63e5" },
+  { what: "Stake sMUSD in the gauge", amount: "5 sMUSD", from: W, date: D, hash: "0x767c7cce3f02e4cd4b6f72b6d18e2a751356dde4792f2e93ab1e50a93725599f" },
+  { what: "Unstake sMUSD from the gauge", amount: "5 sMUSD", from: W, date: D, hash: "0x5f1fcf9b7828ad10e169cb6f83c8002dfd3b0b11295fe01c605ba0b10e95f8a0" },
+  { what: "Claim MEZO from the gauge", amount: "gauge reward", from: W, date: D, hash: "0xf99b3d22d1f89ba1fb3214c23cfaff1b5709bdb702b0e75554a74e4b89f6e75b" },
+  { what: "Claim vault yield (nothing was due yet, so no MUSD moved)", amount: "0 MUSD", from: W, date: D, hash: "0x5a2f84c4c051957587050c812ae17aa0f9592dfd4eab12996c7b0e583d9c387c" },
+  { what: "Withdraw from the Savings Vault", amount: "5 sMUSD → 5 MUSD", from: W, date: D, hash: "0xd6c84c65ddacef5e52f1411c5f1cb21ca122e74d7abce9831372230527954543" },
+];
 
 export const explorerTxUrl = (hash: string, network: "testnet" | "mainnet") =>
   `${network === "testnet" ? "https://explorer.test.mezo.org" : "https://explorer.mezo.org"}/tx/${hash}`;

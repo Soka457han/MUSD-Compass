@@ -21,7 +21,12 @@ describe("proof", () => {
     expect(explorerTxUrl(h, "testnet")).toBe(`https://explorer.test.mezo.org/tx/${h}`);
     expect(explorerTxUrl(h, "mainnet")).toBe(`https://explorer.mezo.org/tx/${h}`);
   });
-  it("mainnet entries, if any, have valid hashes", () => {
-    for (const t of MAINNET_PROOF) expect(t.hash).toMatch(HASH);
+  it("has the 8 mainnet rows with full, unique hashes, all in docs/evidence.md", () => {
+    expect(MAINNET_PROOF).toHaveLength(8);
+    expect(new Set(MAINNET_PROOF.map((t) => t.hash)).size).toBe(8);
+    for (const t of MAINNET_PROOF) {
+      expect(t.hash).toMatch(HASH);
+      expect(evidence).toContain(`explorer.mezo.org/tx/${t.hash}`);
+    }
   });
 });
