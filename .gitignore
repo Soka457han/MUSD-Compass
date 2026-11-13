@@ -17,3 +17,7 @@ Thumbs.db
 
 # impeccable review captures (local only)
 web/.impeccable/review/
+
+# chat exports and Claude output folders
+musd-compass-*-chat.md
+Claude outputs/
