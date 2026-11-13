@@ -87,7 +87,7 @@ async function setUp(page: Page, { trove = false } = {}) {
 }
 
 // The vault read as /api/vault answers on mainnet, with sMUSD in the wallet and some staked in the gauge.
-const mockVault = (page: Page, gauge: { staked: string | null; earnedMezo: string | null } = { staked: "200", earnedMezo: "12.5" }) =>
+const mockVault = (page: Page, gauge: { staked: string | null; earnedMezo: string | null; pendingYield?: string } = { staked: "200", earnedMezo: "12.5" }) =>
   page.route("**/api/vault/*", (route) => {
     const address = decodeURIComponent(new URL(route.request().url()).pathname.split("/").pop()!);
     return route.fulfill({ json: { address, musd: "157.31", allowance: "0", smusd: "500", pendingYield: "0", lastDistribution: 1792675011, lastDistributionPending: false, network: "Mezo mainnet", ...gauge } });
@@ -204,6 +204,23 @@ test("the home page and the trove page point at the mainnet vault", async ({ pag
   await page.getByRole("button", { name: "Try a sample" }).click();
   await expect(page.getByRole("link", { name: "Add BTC or repay MUSD here in Compass" })).toHaveAttribute("href", "/vault?net=mainnet");
   await expect(page.getByText("Do it in the Mezo app.")).toHaveCount(0); // the advice must not send people away from what Compass can now do
+});
+
+test("Claim yield stays off with 0 pending yield and sends nothing; it turns on once yield is pending", async ({ page }) => {
+  await mockVault(page); // pendingYield "0"
+  await connectOnMainnet(page);
+  const claim = page.getByRole("button", { name: "Claim yield", exact: true });
+  await expect(claim).toBeDisabled();
+  await expect(page.getByText("Nothing to claim yet, so Claim yield stays off and costs you no gas.")).toBeVisible();
+  await claim.click({ force: true });
+  expect(await sent(page)).toEqual([]);
+});
+
+test("Claim yield is on when yield is pending", async ({ page }) => {
+  await mockVault(page, { staked: "200", earnedMezo: "12.5", pendingYield: "0.25" });
+  await connectOnMainnet(page);
+  await expect(page.getByRole("button", { name: "Claim yield", exact: true })).toBeEnabled();
+  await expect(page.getByText("Nothing to claim yet, so Claim yield stays off and costs you no gas.")).toHaveCount(0);
 });
 
 test.describe("gauge staking (mocked vault read: 500 sMUSD in the wallet, 200 staked, 12.5 MEZO to claim)", () => {

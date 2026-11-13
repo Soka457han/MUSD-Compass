@@ -583,7 +583,7 @@ export function VaultPanel() {
           </dl>
         )}
         {state && Number(state.pendingYield) === 0 && (
-          <p className="mt-3 max-w-prose text-xs text-ink-muted">Pending yield is 0 until the next distribution reaches this position; claiming now pays 0.</p>
+          <p className="mt-3 max-w-prose text-xs text-ink-muted">Pending yield is 0 until the next distribution reaches this position, so there is nothing to claim yet.</p>
         )}
       </section>
 
@@ -634,9 +634,10 @@ export function VaultPanel() {
               </button>
             </form>
           </div>
-          <button type="button" onClick={claim} disabled={busy} className="mt-4 inline-flex min-h-11 items-center rounded-full border border-line px-4 text-sm font-bold disabled:opacity-50">
+          <button type="button" onClick={claim} disabled={busy || !(Number(state.pendingYield) > 0)} className="mt-4 inline-flex min-h-11 items-center rounded-full border border-line px-4 text-sm font-bold disabled:opacity-50">
             Claim yield
           </button>
+          {!(Number(state.pendingYield) > 0) && <p className="mt-1 text-xs text-ink-muted">Nothing to claim yet, so Claim yield stays off and costs you no gas.</p>}
           </fieldset>
         </section>
       )}
