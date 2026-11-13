@@ -6,6 +6,7 @@ import { usd } from "@/lib/format";
 import { AdviceList } from "./AdviceList";
 import { troveAdvice } from "@/lib/safety";
 import { mainnetWritesEnabled } from "@/lib/sendSafely";
+import { useOwnWallet } from "@/lib/useOwnWallet";
 import { isWallet } from "@/lib/vault";
 import type { TroveView } from "@/lib/trove";
 
@@ -29,6 +30,7 @@ export function TrovePanel() {
   const [addBtc, setAddBtc] = useState("");
   const [repay, setRepay] = useState("");
   const [whatIf, setWhatIf] = useState<{ text: string; bad?: boolean } | null>(null);
+  const own = useOwnWallet();
 
   /** What a top-up or a repay would do to this trove, from the same mainnet read the page shows. Nothing is sent: no wallet is involved. */
   const preview = async () => {
@@ -49,6 +51,7 @@ export function TrovePanel() {
   };
 
   const load = async (addr: string) => {
+    if (!addr) return setError("Paste a 0x address first, or press Try a sample.");
     setError(null);
     setBusy(true);
     try {
@@ -79,13 +82,21 @@ export function TrovePanel() {
     }
   }, []);
 
+  // Your connected wallet's trove shows as soon as the wallet is known, unless an alert link already named an address.
+  useEffect(() => {
+    if (!own.account || new URLSearchParams(window.location.search).get("address")) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- fills the address box from the wallet, which only exists on the client
+    setLookup(own.account);
+    void load(own.account);
+  }, [own.account]);
+
   return (
     <div className="mx-auto w-full max-w-3xl flex-1 space-y-5 px-4 py-5">
       <section aria-labelledby="lookup-h" className="rounded-[20px] border border-line bg-card px-5 py-5">
         <h2 id="lookup-h" className="text-base font-bold">
           Your MUSD trove on Mezo
         </h2>
-        <p className="mt-1 max-w-prose text-sm text-ink-muted">Read only, Mezo mainnet. Paste the public address that owns the trove.</p>
+        <p className="mt-1 max-w-prose text-sm text-ink-muted">Read only, Mezo mainnet. Use your wallet, or paste the public address that owns the trove.</p>
         <form
           className="mt-2 flex flex-wrap items-end gap-2"
           onSubmit={(e) => {
@@ -102,14 +113,22 @@ export function TrovePanel() {
           <button type="submit" disabled={busy} className="min-h-11 rounded-full border border-line px-4 text-sm font-bold disabled:opacity-60">
             Look up
           </button>
+          <button
+            type="button"
+            disabled={busy}
+            onClick={() => (own.account ? (setLookup(own.account), void load(own.account)) : void own.connect())}
+            className="min-h-11 rounded-full bg-accent px-4 text-sm font-bold text-on-accent disabled:opacity-60"
+          >
+            Use my wallet
+          </button>
           <button type="button" disabled={busy} onClick={() => load("sample")} className="min-h-11 px-2 text-sm font-semibold underline">
             Try a sample
           </button>
         </form>
         {busy && <p className="mt-2 text-sm">Reading Mezo…</p>}
-        {error && (
+        {(error ?? own.error) && (
           <p role="alert" className="mt-2 text-sm font-semibold text-danger-text">
-            {error}
+            {error ?? own.error}
           </p>
         )}
         {t && !t.active && <p className="mt-4 text-sm">This address has no open trove.</p>}

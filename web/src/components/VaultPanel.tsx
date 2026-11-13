@@ -13,7 +13,7 @@ import { buildClaimMezoStep, buildStakeSteps, buildUnstakeStep } from "@/lib/gau
 import { NETWORKS, SAMPLES, type NetworkId } from "@/lib/chain/addresses";
 import { MAINNET_CAP_MUSD, mainnetWritesEnabled, sendSafely } from "@/lib/sendSafely";
 import type { VaultState } from "@/lib/vault";
-import { connect, explorerTx, humanError, injected, publicFor } from "@/lib/wallet";
+import { connect, explorerTx, humanError, injected, publicFor, remember, restoreWallet } from "@/lib/wallet";
 import { walletConnectProjectId, walletConnectProvider } from "@/lib/walletconnect";
 import { bitcoinAccount } from "@/lib/bitcoinWallet";
 import { AdviceList } from "./AdviceList";
@@ -87,6 +87,7 @@ export function VaultPanel() {
   const sending = useRef(false);
   const load = useCallback(async (addr: string, network: NetworkId) => {
     // Only the newest request may fill the page: an answer for the other network must never show under this one's label.
+    if (!addr) return setLoadError("Paste a 0x address first, or press Try a sample.");
     const mine = ++asked.current;
     setLoadError(null);
     setLoading(true);
@@ -175,8 +176,23 @@ export function VaultPanel() {
     setProvider(p);
     setAccount(c.account);
     setLookup(c.account);
+    remember(w.walletConnect ? null : w.name); // a browser wallet comes back after a refresh; WalletConnect needs its QR again
     await load(c.account, net);
   };
+
+  // After a refresh, reconnect the browser wallet used last time. eth_accounts never opens a wallet popup: it answers only if the site is already allowed.
+  useEffect(() => {
+    let done = false;
+    return restoreWallet((p, a) => {
+      if (done) return;
+      done = true;
+      const n: NetworkId = new URLSearchParams(window.location.search).get("net") === "mainnet" && mainnetWritesEnabled() ? "mainnet" : "testnet";
+      setProvider(p);
+      setAccount(a);
+      setLookup(a);
+      void load(a, n);
+    });
+  }, [load]);
 
   // Re-read the trove inputs whenever the vault position is re-read (after connecting and after every transaction).
   useEffect(() => {

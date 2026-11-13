@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { SAMPLES } from "@/lib/chain/addresses";
+import { useOwnWallet } from "@/lib/useOwnWallet";
 import { musd, pct, usd } from "@/lib/format";
 import { compare, placesFor, type Positions, type Row } from "@/lib/positions";
 import type { Sources, VenueOut } from "@/lib/yields";
@@ -85,8 +86,10 @@ export function MyPanel({ sources }: { sources: Sources }) {
   const [data, setData] = useState<Positions | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const own = useOwnWallet();
 
   const load = async (addr: string) => {
+    if (!addr) return setError("Paste a 0x address first, or press Try a sample.");
     setError(null);
     setBusy(true);
     try {
@@ -103,6 +106,14 @@ export function MyPanel({ sources }: { sources: Sources }) {
     }
   };
 
+  // Your connected wallet's numbers show as soon as the wallet is known (after Use my wallet, or on a refresh when the site is already allowed).
+  useEffect(() => {
+    if (!own.account) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- fills the address box from the wallet, which only exists on the client
+    setLookup(own.account);
+    void load(own.account);
+  }, [own.account]);
+
   const rows = data ? compare(data, sources) : [];
   const vaultApr = sources.venues.find((v) => v.id === sources.benchmarkId && v.status === "ok")?.rates.liquidApr ?? null;
   const total = rows.reduce((s, r) => s + r.amount, 0);
@@ -114,7 +125,7 @@ export function MyPanel({ sources }: { sources: Sources }) {
         <h2 id="my-h" className="text-base font-bold">
           Where your MUSD sits, and where it would earn more
         </h2>
-        <p className="mt-1 max-w-prose text-sm text-ink-muted">Wallet, Savings Vault (staked or not), Stability Pool, trove and unclaimed veMEZO on Mezo mainnet. Read only: paste any public address.</p>
+        <p className="mt-1 max-w-prose text-sm text-ink-muted">Wallet, Savings Vault (staked or not), Stability Pool, trove and unclaimed veMEZO on Mezo mainnet. Read only: use your wallet, or paste any public address.</p>
         <form
           className="mt-2 flex flex-wrap items-end gap-2"
           onSubmit={(e) => {
@@ -134,6 +145,14 @@ export function MyPanel({ sources }: { sources: Sources }) {
           <button
             type="button"
             disabled={busy}
+            onClick={() => (own.account ? (setLookup(own.account), void load(own.account)) : void own.connect())}
+            className="min-h-11 rounded-full bg-accent px-4 text-sm font-bold text-on-accent disabled:opacity-60"
+          >
+            Use my wallet
+          </button>
+          <button
+            type="button"
+            disabled={busy}
             onClick={() => {
               setLookup(SAMPLES.positions);
               load(SAMPLES.positions);
@@ -144,9 +163,9 @@ export function MyPanel({ sources }: { sources: Sources }) {
           </button>
         </form>
         {busy && <p className="mt-2 text-sm">Reading Mezo mainnet…</p>}
-        {error && (
+        {(error ?? own.error) && (
           <p role="alert" className="mt-2 text-sm font-semibold text-danger-text">
-            {error}
+            {error ?? own.error}
           </p>
         )}
         {data && rows.length > 0 && (

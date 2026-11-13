@@ -26,6 +26,7 @@ export function RewardsPanel() {
   const [busy, setBusy] = useState(false);
 
   const load = async (addr: string) => {
+    if (!addr) return setError("Paste a 0x address first, or press Try a sample.");
     setError(null);
     setBusy(true);
     try {

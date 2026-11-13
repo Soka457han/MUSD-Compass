@@ -144,6 +144,33 @@ test("without a wallet, a looked-up address shows the action sections with every
   await expect(page.getByLabel(/Withdraw sMUSD/)).toBeDisabled();
 });
 
+test("a browser wallet reconnects after a refresh without a popup; once the wallet stops allowing the site it does not", async ({ page }) => {
+  test.skip(process.env.MAINNET_E2E === "1", "this build has mainnet switched on");
+  await page.route("https://rpc.test.mezo.org/**", (route) => route.abort());
+  await page.addInitScript(() => {
+    const provider = {
+      request: async ({ method }: { method: string }) => {
+        if (method === "eth_requestAccounts") return ["0xfe21b2782b35be770dd4a7b05f81ce43790d676c"];
+        if (method === "eth_accounts") return localStorage.getItem("test:revoked") ? [] : ["0xfe21b2782b35be770dd4a7b05f81ce43790d676c"];
+        if (method === "eth_chainId") return "0x7b7b";
+        throw Object.assign(new Error(`unexpected ${method}`), { code: 4200 });
+      },
+    };
+    window.addEventListener("eip6963:requestProvider", () =>
+      window.dispatchEvent(new CustomEvent("eip6963:announceProvider", { detail: Object.freeze({ info: { uuid: "re-1", name: "Test Wallet", icon: "", rdns: "test.wallet" }, provider }) })),
+    );
+  });
+  await page.goto("/vault");
+  await page.getByRole("button", { name: "Connect wallet" }).click();
+  await page.getByRole("dialog", { name: "Connect a wallet" }).getByRole("button", { name: /Test Wallet/ }).click();
+  await expect(page.getByText(/Connected 0xfe21…676c/i)).toBeVisible();
+  await page.reload();
+  await expect(page.getByText(/Connected 0xfe21…676c/i)).toBeVisible();
+  await page.evaluate(() => localStorage.setItem("test:revoked", "1"));
+  await page.reload();
+  await expect(page.getByRole("button", { name: "Connect wallet" })).toBeVisible();
+});
+
 test("with mainnet switched off, a connected wallet gets no gauge staking", async ({ page }) => {
   test.skip(process.env.MAINNET_E2E === "1", "this build has mainnet switched on");
   await page.route("https://rpc.test.mezo.org/**", (route) => route.abort()); // no network in tests; the trove inputs just stay unread
@@ -166,3 +193,27 @@ test("with mainnet switched off, a connected wallet gets no gauge staking", asyn
   await expect(page.getByRole("heading", { name: /gauge/ })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Claim MEZO" })).toHaveCount(0);
 });
+
+for (const [path, box] of [["/my", "#my-address"], ["/trove", "#lookup"]] as const) {
+  test(`${path}: Use my wallet looks up the connected wallet, and a refresh brings it back; Try a sample still works`, async ({ page }) => {
+    test.skip(process.env.MAINNET_E2E === "1", "this build has mainnet switched on");
+    const ACCOUNT = "0xfe21b2782b35be770dd4a7b05f81ce43790d676c";
+    await page.addInitScript((a) => {
+      const provider = {
+        request: async ({ method }: { method: string }) => {
+          if (method === "eth_requestAccounts" || method === "eth_accounts") return [a];
+          throw Object.assign(new Error(`unexpected ${method}`), { code: 4200 }); // reading must never switch networks or send
+        },
+      };
+      (window as unknown as { ethereum: unknown }).ethereum = provider;
+    }, ACCOUNT);
+    await page.goto(path);
+    await expect(page.locator(box)).toHaveValue("");
+    await page.getByRole("button", { name: "Use my wallet" }).click();
+    await expect(page.locator(box)).toHaveValue(ACCOUNT);
+    await page.reload();
+    await expect(page.locator(box)).toHaveValue(ACCOUNT); // restored without pressing anything
+    await page.getByRole("button", { name: "Try a sample" }).click();
+    await expect(page.getByRole("button", { name: "Try a sample" })).toBeEnabled();
+  });
+}

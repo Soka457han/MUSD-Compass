@@ -37,6 +37,42 @@ export function discoverWallets(onFound: (w: FoundWallet) => void): () => void {
   return () => window.removeEventListener("eip6963:announceProvider", on);
 }
 
+const WALLET_KEY = "compass:wallet"; // which browser wallet was used last: its name (or "injected"), never an address
+const remembered = () => {
+  try {
+    return localStorage.getItem(WALLET_KEY);
+  } catch {
+    return null;
+  }
+};
+export const remember = (name: string | null) => {
+  try {
+    if (name) localStorage.setItem(WALLET_KEY, name);
+    else localStorage.removeItem(WALLET_KEY);
+  } catch {}
+};
+
+/** After a refresh, finds the wallet used last time and asks it for the accounts this site is already allowed to see. eth_accounts opens no popup. Returns a stop function. */
+export function restoreWallet(onFound: (provider: EIP1193Provider, account: Address) => void): () => void {
+  const want = remembered();
+  if (!want) return () => {};
+  const ask = async (p: EIP1193Provider) => {
+    try {
+      const [a] = (await p.request({ method: "eth_accounts" })) as Address[];
+      if (a) onFound(p, a);
+      else remember(null); // the wallet no longer allows this site
+    } catch {}
+  };
+  if (want === "injected") {
+    const p = injected();
+    if (p) void ask(p);
+    return () => {};
+  }
+  return discoverWallets((w) => {
+    if (w.name === want) void ask(w.provider);
+  });
+}
+
 /** Ask the wallet for an account and make sure it is on the Mezo network of the action (adds the network if the wallet lacks it). */
 export async function connect(
   provider: EIP1193Provider | null = injected(),
