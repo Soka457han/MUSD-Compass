@@ -17,7 +17,7 @@ This page takes the Wave 1 review one ask at a time. Each row says what was buil
 ## 2. Monitoring, top-up or repay, redemption and Recovery Mode warnings
 
 **Built.**
-- **Monitoring:** `/watch` in the Telegram bot checks a trove every 15 minutes and sends an alert when the ratio drops, with a margin so it does not flip near 200%.
+- **Monitoring:** `/watch` in the Telegram bot checks a trove on a schedule set to every 15 minutes and sends an alert when its advice changes, with a margin so it does not flip near 200%. GitHub Actions starts scheduled runs late: the last 6 runs (12 to 13 Nov 2026) were 4 to 7 hours apart, so in practice an alert can take hours unless the run is started by hand.
 - **Warnings:** the trove page and the alerts say when a trove is close to the liquidation line, when it is near the front of the redemption line, and when the system is in Recovery Mode. The page also states the MUSD price against the redemption floor every time.
 - **Top-up and repay:** on `/vault`, mainnet, with a before and after preview (new ratio, and place in the redemption line now and after).
 

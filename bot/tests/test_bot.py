@@ -257,7 +257,7 @@ def test_watch_posts_the_chat_and_address_with_the_bot_header(post):
     assert post.calls[0]["url"].endswith("/api/watch")
     assert post.calls[0]["json"] == {"chatId": 42, "action": "add", "address": SAMPLE}
     assert post.calls[0]["headers"] == {"x-compass-bot": "k", "x-compass-user": hashlib.sha256(b"k42").hexdigest()[:16]}
-    assert f"Watching <code>{SAMPLE}</code>. Compass checks it about every 15 minutes" in text
+    assert f"Watching <code>{SAMPLE}</code>. Compass checks it on a schedule, so an alert can take a few hours" in text
     assert f"Stop with /unwatch {SAMPLE}" in text
 
 

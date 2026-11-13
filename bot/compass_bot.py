@@ -39,7 +39,7 @@ HELP = (
     "/rewards &lt;address&gt; — unclaimed veMEZO from Merkl\n"
     "/trove &lt;address&gt; — your trove: ratio, rate, safe extra borrow (or <code>/trove sample</code>)\n"
     f"   try: <code>/rewards {SAMPLE_REWARDS}</code>\n"
-    "/watch &lt;address&gt;: message me here when your trove's advice changes (checked every 15 minutes)\n"
+    "/watch &lt;address&gt;: message me here when your trove's advice changes (checked on a schedule, not instantly)\n"
     "/unwatch &lt;address&gt;: stop watching\n"
     "/watching: the addresses you watch\n\n"
     "Cash carry ranks; 🔒 = locked veMEZO, shown beside it, never counted as cash.\n"
@@ -267,7 +267,7 @@ def cmd_trove(args: list[str]) -> str:
 
 
 WATCH_REPLIES = {
-    "added": "Watching <code>{a}</code>. Compass checks it about every 15 minutes and messages you here when its advice changes. Stop with /unwatch {a}",
+    "added": "Watching <code>{a}</code>. Compass checks it on a schedule, so an alert can take a few hours, and messages you here when its advice changes. Stop with /unwatch {a}",
     "exists": "Already watching <code>{a}</code>.",
     "limit": "You can watch up to 3 addresses. Remove one with /unwatch, see them with /watching.",
     "full": "Alerts are full right now. Try again later.",
