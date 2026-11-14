@@ -1,4 +1,4 @@
-# Wave 2b research gate: venues and the MUSD peg (8 Nov 2026)
+# Wave 2b research gate: venues and the MUSD peg 
 
 Every value below was read live on Mezo mainnet (chain 31612) through `https://rpc-http.mezo.boar.network`, block 13087625 to 13087631 (8 Nov 2026, 13:38 to 13:39 UTC), unless marked otherwise.
 
