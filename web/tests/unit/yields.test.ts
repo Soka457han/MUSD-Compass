@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import listings from "../fixtures/merkl-opportunities-2026-10-24.json";
+import { fixtureSources } from "@/lib/sources/fixture"; // static: a dynamic import inside the test ran past the 5 s timeout under parallel load
 import { parseMerkl, type MerklListing } from "@/lib/sources/merkl";
 import { unavailable, type Venue } from "@/lib/venue";
 import { buildYields, parseQuery, type Sources } from "@/lib/yields";
@@ -96,8 +97,7 @@ describe("buildYields", () => {
 });
 
 describe("pools that also need BTC or MEZO", () => {
-  it("rank after every MUSD-only place, even with a higher rate", async () => {
-    const { fixtureSources } = await import("@/lib/sources/fixture");
+  it("rank after every MUSD-only place, even with a higher rate", () => {
     const r = buildYields(fixtureSources(), q("amount=2000"));
     const ranked = r.venues.filter((v) => v.carry.cash !== null);
     const firstPair = ranked.findIndex((v) => v.pairToken);
