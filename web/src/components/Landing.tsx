@@ -128,7 +128,7 @@ export function Faq() {
   return (
     <section aria-labelledby="faq-h" className="md:grid md:grid-cols-[1fr_1.4fr] md:items-start md:gap-12">
       <h2 id="faq-h" className={H2}>
-        Questions
+        <span className="hl">Questions</span>
       </h2>
       <div className="mt-4 flex flex-col gap-2 md:mt-0 md:gap-2.5">
         {FAQ.map((f, i) => (
@@ -148,6 +148,9 @@ export function Faq() {
   );
 }
 
+// Footer links drawn as the same accent pill as the table's action buttons.
+const PILL = "inline-flex min-h-10 items-center rounded-full bg-accent px-5 font-bold text-on-accent no-underline hover:opacity-90";
+
 export function SiteFooter({ notes }: { notes?: React.ReactNode }) {
   return (
     <footer className="mt-14 border-t border-line md:mt-24">
@@ -157,10 +160,10 @@ export function SiteFooter({ notes }: { notes?: React.ReactNode }) {
           <span className="text-[17px] font-bold md:text-lg">MUSD Compass</span>
           <span className="text-ink-muted">Built for the Mezo Buildathon. {LIVE ? "Mainnet data. Actions on testnet, and on mainnet from your own wallet." : "Mainnet data, testnet actions."} Not financial advice. Independent community tool, not made by Mezo.</span>
         </div>
-        <nav aria-label="Product" className="flex flex-col gap-1">
+        <nav aria-label="Product" className="flex flex-col items-start gap-2">
           <span className="text-[13px] font-semibold text-ink-muted">Product</span>
           {/* The footer lives on the Yields page itself, so this link jumps up instead of reloading the page. */}
-          <a href="#main" className="flex min-h-10 items-center no-underline hover:underline">
+          <a href="#main" className={PILL}>
             Yields
           </a>
           {[
@@ -169,12 +172,12 @@ export function SiteFooter({ notes }: { notes?: React.ReactNode }) {
             ["/rewards", "Rewards"],
             ["/trove", "Trove planner"],
           ].map(([href, label]) => (
-            <Link key={href} href={href} prefetch={false} className="flex min-h-10 items-center no-underline hover:underline">
+            <Link key={href} href={href} prefetch={false} className={PILL}>
               {label}
             </Link>
           ))}
         </nav>
-        <nav aria-label="Elsewhere" className="flex flex-col gap-1">
+        <nav aria-label="Elsewhere" className="flex flex-col items-start gap-2">
           <span className="text-[13px] font-semibold text-ink-muted">Elsewhere</span>
           {[
             [REPO, "GitHub"],
@@ -184,7 +187,7 @@ export function SiteFooter({ notes }: { notes?: React.ReactNode }) {
             ["/proof", "Proof"],
             ["https://mezo.org", "Mezo"],
           ].map(([href, label]) => (
-            <a key={href + label} href={href} className="flex min-h-10 items-center no-underline hover:underline">
+            <a key={href + label} href={href} className={PILL}>
               {label}
             </a>
           ))}
