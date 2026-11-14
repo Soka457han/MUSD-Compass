@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>MUSD Compass: Wave 2 deck</title>
+<!-- Source of musd-compass-deck.pdf. Rebuild: see deck.md. Each .slide is one 1280 x 720 page. -->
+<style>
+@font-face{font-family:Jakarta;src:url(../../web/node_modules/@fontsource-variable/plus-jakarta-sans/files/plus-jakarta-sans-latin-wght-normal.woff2) format("woff2");font-weight:200 800}
+@page{size:1280px 720px;margin:0}
+*{box-sizing:border-box;margin:0}
+:root{--ink:#1b1440;--muted:#565072;--accent:#7c3aed;--line:#d9d3ec;--card:rgb(255 255 255/.72)}
+body{font-family:Jakarta,system-ui,sans-serif;color:var(--ink);font-variant-numeric:tabular-nums;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.slide{width:1280px;height:720px;padding:56px 64px;position:relative;overflow:hidden;page-break-after:always;display:flex;flex-direction:column;
+  background:radial-gradient(520px at 92% 8%,rgb(232 121 249/.38),transparent 70%),radial-gradient(620px at 0% 100%,rgb(139 92 246/.26),transparent 70%),#e9e6f5}
+.kicker{font-size:15px;font-weight:700;color:var(--accent);letter-spacing:.02em;margin-bottom:10px}
+h1{font-size:58px;line-height:1.05;font-weight:800;letter-spacing:-.03em}
+h2{font-size:40px;line-height:1.1;font-weight:800;letter-spacing:-.025em;margin-bottom:26px}
+p,li{font-size:23px;line-height:1.45;color:var(--muted)}
+b,strong{color:var(--ink)}
+ul{padding-left:22px;display:grid;gap:10px}
+.card{background:var(--card);border:1px solid #fff;border-radius:22px;padding:24px 26px}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:20px}.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:18px}
+.big{font-size:58px;font-weight:800;letter-spacing:-.03em;line-height:1;color:var(--accent);display:block;margin-bottom:8px}
+.card h3{font-size:24px;margin-bottom:8px}.card p{font-size:19px}
+.chips{display:flex;gap:10px;flex-wrap:wrap;margin-top:22px}
+.chip{font-size:15px;font-weight:700;padding:8px 16px;border-radius:99px;background:#fff;border:1px solid var(--line)}
+.chip.a{background:var(--accent);color:#fff;border-color:var(--accent)}
+.shot{border-radius:18px;border:1px solid #fff;box-shadow:0 18px 50px rgb(124 58 237/.22);display:block;width:100%}
+.foot{margin-top:auto;display:flex;justify-content:space-between;font-size:14px;font-weight:600;color:var(--muted)}
+.logo{display:flex;align-items:center;gap:10px;font-weight:800;font-size:20px;margin-bottom:auto}
+.logo img{width:34px;height:34px}
+table{width:100%;border-collapse:collapse}
+td,th{text-align:left;vertical-align:top;padding:14px 14px 14px 0;border-top:1px solid var(--line);font-size:20px;line-height:1.4;color:var(--muted)}
+th{font-size:13px;font-weight:700;border-top:0;padding-bottom:6px}
+td:first-child{font-weight:700;color:var(--ink);width:31%}
+.flow{display:grid;grid-template-columns:1fr 60px 1.15fr 60px 1fr;align-items:center;gap:0}
+.col{display:grid;gap:12px}
+.box{background:var(--card);border:1px solid #fff;border-radius:16px;padding:18px 20px;font-size:20px;font-weight:700}
+.box small{display:block;font-size:16px;font-weight:500;color:var(--muted);margin-top:2px}
+.box.a{background:var(--accent);color:#fff;border-color:var(--accent);padding:30px 24px;font-size:26px}.box.a small{color:#ebe0ff;font-size:18px;margin-top:8px}
+.arrow{text-align:center;font-size:30px;color:var(--accent);font-weight:800}
+ol{padding-left:26px;display:grid;gap:12px}
+code{font:600 .92em ui-monospace,Consolas,monospace;background:rgb(124 58 237/.1);border-radius:6px;padding:1px 6px;color:var(--ink)}
+</style>
+</head>
+<body>
+
+<section class="slide">
+  <div class="logo"><img src="../../web/public/logo-mark.png" alt="">MUSD Compass</div>
+  <div class="g2" style="align-items:center;gap:44px">
+    <div>
+      <h1>Where your MUSD earns most, after costs.</h1>
+      <p style="margin-top:18px;font-size:22px">Every place Mezo MUSD can earn, on Mezo and Ethereum, ranked by the cash you keep.</p>
+      <div class="chips"><span class="chip a">Mezo Buildathon · Wave 2</span><span class="chip">Track 1: DeFi</span><span class="chip">Track 2: Access &amp; Distribution</span></div>
+    </div>
+    <img class="shot" src="../readme/yields.png" alt="">
+  </div>
+  <div class="foot"><span>musd-compass.vercel.app</span><span>Telegram: @musd_compass_bot</span><span>github.com/Soka457han/MUSD-Compass</span></div>
+</section>
+
+<section class="slide">
+  <div class="kicker">The problem</div>
+  <h2>MUSD earns in many places, and the biggest numbers mislead.</h2>
+  <div class="g3">
+    <div class="card"><span class="big">13</span><h3>Places to earn, each with its own APR</h3><p>MUSD earns in the Savings Vault, the Stability Pool, six Mezo pools and Mezo-paid pools on Ethereum. None of them use the same yardstick.</p></div>
+    <div class="card"><span class="big">12 weeks</span><h3>Part of the yield is locked</h3><p>Several pools pay in veMEZO, which stays locked for 12 weeks. A large APR can be mostly lock and very little cash.</p></div>
+    <div class="card"><span class="big">Gas</span><h3>Costs eat small amounts</h3><p>Going to Ethereum costs a bridge and gas both ways. Borrowed MUSD carries trove interest. On a small deposit that can cancel the yield.</p></div>
+  </div>
+  <p style="margin-top:26px">No screen answered: after costs, where do I keep the most cash?</p>
+  <div class="foot"><span>MUSD Compass</span><span>2</span></div>
+</section>
+
+<section class="slide">
+  <div class="kicker">The product</div>
+  <h2>One ranking, cash first.</h2>
+  <div class="g2" style="gap:36px;align-items:center">
+    <ul>
+      <li>Every MUSD venue ranked by <b>cash after costs</b>. Locked veMEZO sits beside the cash figure and is never added to it.</li>
+      <li>Hold or borrow, for 30, 90 or 365 days. Every number states its assumption and its source.</li>
+      <li><b>Before you go in:</b> what your amount keeps, the one-off costs, and the day they are earned back.</li>
+      <li><b>My MUSD, trove planner, rewards check</b> for any address, with a sample button on each.</li>
+      <li>The same numbers in a phone web app, a Telegram bot, a one-tag widget and an API.</li>
+    </ul>
+    <img class="shot" src="../readme/borrow.png" alt="">
+  </div>
+  <div class="foot"><span>MUSD Compass</span><span>3</span></div>
+</section>
+
+<section class="slide">
+  <div class="kicker">New in Wave 2</div>
+  <h2>What the Wave 1 review asked for, and what shipped.</h2>
+  <table>
+    <tr><th>The review asked for</th><th>Shipped</th></tr>
+    <tr><td>Borrow → Earn on mainnet with HintHelpers</td><td>A testnet / mainnet switch on <code>/vault</code>. Real HintHelpers hints, one guard, a typed-amount confirmation and a 2,500 MUSD limit. 8 real mainnet transactions.</td></tr>
+    <tr><td>Monitoring, top-up or repay, warnings</td><td><code>/watch</code> alerts in the Telegram bot. Liquidation, redemption and Recovery Mode warnings. Top-up and repay with the ratio before and after.</td></tr>
+    <tr><td>Users outside your own wallets</td><td><code>/stats</code> counts bot users, outside payers, widget sites and API requests.</td></tr>
+    <tr><td>A real mainnet x402 price</td><td>0.01 MUSD per call on Mezo mainnet, with one real mainnet payment.</td></tr>
+    <tr><td>WalletConnect or Mezo Passport</td><td>WalletConnect and browser wallets act. Unisat, OKX and Xverse are view only.</td></tr>
+  </table>
+  <p style="margin-top:16px;font-size:19px">Also added: gauge staking, Mezo pools in the ranking, the MUSD price against the redemption floor, the <code>/proof</code> page, and a new look.</p>
+  <div class="foot"><span>MUSD Compass</span><span>4</span></div>
+</section>
+
+<section class="slide">
+  <div class="kicker">Built on Mezo</div>
+  <h2>Reads Mezo's contracts, writes from your own wallet.</h2>
+  <div class="g2">
+    <div class="card"><h3>Reads on Mezo mainnet</h3><ul style="margin-top:10px">
+      <li style="font-size:21px">Savings Vault yield events and supply</li>
+      <li style="font-size:21px">The vault gauge's MEZO rate</li>
+      <li style="font-size:21px">Stability Pool and six Mezo MUSD pools</li>
+      <li style="font-size:21px">PriceFeed, BorrowerOperations, InterestRateManager</li>
+      <li style="font-size:21px">TroveManager and SortedTroves</li>
+      <li style="font-size:21px">The MUSD/mUSDC pool price and veMEZO rewards through Merkl</li></ul></div>
+    <div class="card"><h3>Writes, signed by your wallet</h3><ul style="margin-top:10px">
+      <li style="font-size:21px"><b>Savings Vault:</b> deposit, claim, withdraw on mainnet and testnet</li>
+      <li style="font-size:21px"><b>Gauge:</b> stake, unstake, claim MEZO on mainnet</li>
+      <li style="font-size:21px"><b>Troves:</b> Borrow → Earn, top-up and repay on testnet, simulated on mainnet</li>
+      <li style="font-size:21px"><b>MUSD as payment:</b> the premium API over x402, on testnet and mainnet</li></ul></div>
+  </div>
+  <div class="foot"><span>MUSD Compass</span><span>5</span></div>
+</section>
+
+<section class="slide">
+  <div class="kicker">Proof</div>
+  <h2>Every claim links to a transaction or a test.</h2>
+  <div class="g4">
+    <div class="card"><span class="big">9</span><p>real transactions on Mezo mainnet</p></div>
+    <div class="card"><span class="big">14</span><p>transactions on Mezo testnet</p></div>
+    <div class="card"><span class="big">340</span><p>unit tests</p></div>
+    <div class="card"><span class="big">72</span><p>end-to-end tests</p></div>
+  </div>
+  <ul style="margin-top:28px">
+    <li><code>/proof</code> lists every transaction Compass has sent, each linked to the explorer.</li>
+    <li><b>Try to break it:</b> four attacks run live on <code>/vault</code> with no wallet, and Compass or the chain refuses each one.</li>
+    <li>Every address feature has a sample button, so each page can be checked without a wallet.</li>
+  </ul>
+  <div class="foot"><span>MUSD Compass</span><span>6</span></div>
+</section>
+
+<section class="slide">
+  <div class="kicker">Safety</div>
+  <h2>No contract, no custody, no keys.</h2>
+  <div class="g2">
+    <div class="card"><h3>One guard for every transaction</h3><ul style="margin-top:10px">
+      <li style="font-size:21px">Only allowlisted contracts, and only the functions Compass uses</li>
+      <li style="font-size:21px">Approvals for the exact amount, never unlimited</li>
+      <li style="font-size:21px">Every transaction is simulated before you sign</li>
+      <li style="font-size:21px">On mainnet: a typed-amount confirmation and a 2,500 MUSD limit</li></ul></div>
+    <div class="card"><h3>Honest numbers</h3><ul style="margin-top:10px">
+      <li style="font-size:21px">Every number states its assumption and its source</li>
+      <li style="font-size:21px">A source that is down reads "unavailable"</li>
+      <li style="font-size:21px">Locked veMEZO is never counted as cash</li>
+      <li style="font-size:21px">Mainnet data and testnet actions are labelled</li></ul></div>
+  </div>
+  <div class="foot"><span>MUSD Compass</span><span>7</span></div>
+</section>
+
+<section class="slide">
+  <div class="kicker">Architecture</div>
+  <h2>One app owns every number.</h2>
+  <div class="flow">
+    <div class="col"><div class="box">Browser<small>phone or desktop</small></div><div class="box">Telegram bot</div><div class="box">Widget<small>one script tag</small></div><div class="box">Apps and agents<small>free API, or x402 paid in MUSD</small></div></div>
+    <div class="arrow">→</div>
+    <div class="box a">Compass API<small>One ranking for every channel. Sources are read through one adapter each and kept for 5 minutes.</small></div>
+    <div class="arrow">→</div>
+    <div class="col"><div class="box">Mezo mainnet</div><div class="box">Mezo testnet</div><div class="box">Ethereum</div><div class="box">Merkl</div></div>
+  </div>
+  <p style="margin-top:26px">Transactions are built in the browser, pass the guard, and are signed by your own wallet.</p>
+  <div class="foot"><span>MUSD Compass</span><span>8</span></div>
+</section>
+
+<section class="slide">
+  <div class="kicker">What is not done yet</div>
+  <h2>Stated plainly.</h2>
+  <ul>
+    <li><b>Borrow → Earn, top-up and repay have not run on mainnet with real funds.</b> They ran on testnet and passed mainnet simulation. A mainnet trove needs about 0.054 BTC locked.</li>
+    <li><b>No outside-user proof yet.</b> <code>/stats</code> will show the first outside bot user, payer or widget site.</li>
+    <li><b>The one mainnet x402 payment</b> came from the builder's own wallet.</li>
+    <li><b>Mezo Passport</b> was tried and left out. Bitcoin wallets are view only.</li>
+    <li><b>Scheduled trove alerts</b> can start hours late.</li>
+  </ul>
+  <div class="foot"><span>MUSD Compass</span><span>9</span></div>
+</section>
+
+<section class="slide">
+  <div class="kicker">Try it</div>
+  <h2>60 seconds, no wallet, no sign-up.</h2>
+  <div class="g2" style="gap:36px;align-items:center">
+    <ol>
+      <li>Open <b>musd-compass.vercel.app</b>. The top card is where 2,000 MUSD earns the most cash a year after costs.</li>
+      <li><code>/my</code> → <b>Try a sample</b>: a real address's MUSD against the best place for it.</li>
+      <li><code>/vault</code> → <b>Try to break it</b>: four attacks, each refused.</li>
+      <li><code>/proof</code>: every transaction, linked to the explorer.</li>
+    </ol>
+    <img class="shot" src="../readme/my-musd.png" alt="">
+  </div>
+  <p style="margin-top:22px;font-size:18px">Free for people. Apps and agents pay 0.01 MUSD per call over x402.</p>
+  <div class="foot"><span>musd-compass.vercel.app</span><span>Telegram: @musd_compass_bot</span><span>github.com/Soka457han/MUSD-Compass</span></div>
+</section>
+
+</body>
+</html>

@@ -1,33 +1,16 @@
-# Deck — 5 slides (source text)
+# Deck: Wave 2 (10 slides)
 
-> Superseded by the published 7-slide deck (Claude Slides artifact "MUSD Compass — Wave 1": download it as PDF for AKINDO). Kept as the plain-text outline.
+The deck is built from [deck.html](deck.html). To rebuild the PDF, open `deck.html` in Chrome and print it to PDF with a 1280 x 720 page, no margins and background graphics on. Save it as `musd-compass-deck.pdf` here and copy it to `web/public/` so the live link serves it.
 
-## 1. Problem — "Where should my MUSD be right now?"
-- MUSD can earn in the Savings Vault, six Mezo pools, the Stability Pool and Mezo-paid pools on Ethereum.
-- Each shows a different number; some pay cash, some pay veMEZO locked 12 weeks, Ethereum costs a bridge round trip.
-- The Mezo app is desktop-only. Unclaimed veMEZO can be reallocated.
+This file is the plain-text outline.
 
-## 2. Product — net carry, cash first
-- Every MUSD venue ranked by **cash carry after costs**; 🔒 locked veMEZO beside it, never inside it.
-- Holder or borrower (real trove costs), 30 / 90 / 365-day hold, break-even vs the Savings Vault.
-- Every number states its assumption and source; a down source says "unavailable".
-- Unclaimed veMEZO check and a trove planner (safe extra borrow at ≥ 200%, redemption-queue position).
-- Phone web app · Telegram bot · one-tag widget · free JSON API.
-
-## 3. Mezo integration
-- Reads (mainnet): sMUSD yield events → realised 14-day APR · Stability Pool · 6 Mezo pools · PriceFeed · live borrow parameters · TroveManager + SortedTroves (planner).
-- Writes (testnet): sMUSD exact approve → deposit · claimYield · withdraw.
-- MUSD as payment: x402 premium API, 0.001 test MUSD per call.
-- Mezo incentives: Merkl veMEZO campaigns + per-user unclaimed rewards.
-- Sends users into Mezo's own products: Savings Vault, Mezo app pools, Merkl claim.
-
-## 4. Demo and proof
-- Live: musd-compass.vercel.app · @musd_compass_bot · /developers.
-- Testnet proof: approve 100 MUSD (exact) · deposit 100 · withdraw 10 — explorer links in the README.
-- Safety: allowlisted contracts, simulate before sign, gas × 1.2, no custody, no keys, no mainnet writes.
-- Quality: 88 unit + 39 e2e + 25 bot tests, axe on every page, CI.
-
-## 5. Roadmap (Wave 2+)
-- WalletConnect for phone wallets.
-- Bot alerts: a better venue, or rewards waiting to be claimed.
-- Mainnet Savings Vault deposits after review.
+1. **Title.** Where your MUSD earns most, after costs. Mezo Buildathon Wave 2, Track 1 (DeFi) and Track 2 (Access & Distribution).
+2. **The problem.** 13 places to earn, each with its own APR. Part of the yield is locked for 12 weeks. Costs eat small amounts.
+3. **The product.** Every MUSD venue ranked by cash after costs, with locked veMEZO beside the cash figure. Hold or borrow, 30, 90 or 365 days. Before you go in. My MUSD, trove planner, rewards check. Phone web app, Telegram bot, widget, API.
+4. **New in Wave 2.** What the Wave 1 review asked for and what shipped: mainnet actions behind one guard, trove alerts and warnings, top-up and repay, `/stats`, a mainnet x402 price, WalletConnect. Also gauge staking, Mezo pools in the ranking, the MUSD price line, `/proof`, a new look.
+5. **Built on Mezo.** What Compass reads on Mezo mainnet and what it writes from the user's wallet.
+6. **Proof.** 9 real mainnet transactions, 14 testnet transactions, 340 unit tests, 72 end-to-end tests. `/proof` and *Try to break it*.
+7. **Safety.** No contract, no custody, no keys. One guard for every transaction.
+8. **Architecture.** One app owns every number; every channel calls the same API.
+9. **What is not done yet.** Trove actions on mainnet with real funds, outside-user proof, an outside x402 payer, Mezo Passport, alert timing.
+10. **Try it.** Four steps, no wallet. Free for people; apps and agents pay 0.01 MUSD per call over x402.
