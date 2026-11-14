@@ -37,7 +37,7 @@ Build order: `chain` → `carry`, `sources` → `yields-api` → `web-ui`, `vaul
 - @x402/next, @x402/evm, @x402/fetch 2.28. `@x402/evm` already lists Mezo MUSD as the default asset for `eip155:31611` and `eip155:31612` (Permit2 + EIP-2612), so `price: "$0.001"` settles in MUSD
 - Vitest 5 (unit), @playwright/test pinned to **1.56.0** (matches the preinstalled browser) + @axe-core/playwright 4.14 (e2e and accessibility)
 - Bot: Python 3.13 on Vercel (file-based function, `BaseHTTPRequestHandler`), httpx, pytest. No bot framework: one update per request, reply in the response body (Telegram "making requests when getting updates")
-- Measurement only (not dependencies): Lighthouse CLI via `npx lighthouse`, `scripts/latency.sh` (curl × 20 → p95)
+- Measurement only (not dependencies): Lighthouse CLI via `npx lighthouse`, and curl × 20 for p95 latency
 - No database. No own smart contract.
 
 ## Commands
@@ -63,7 +63,7 @@ CI (`.github/workflows/ci.yml`): lint → typecheck → test → build → e2e f
 musd-compass/
   SPEC.md  README.md  LICENSE (MIT)  CHANGELOG.md
   docs/design.md                 design v8 (what/why)
-  tasks/plan.md  tasks/todo.md   plan + checklist
+  tasks/plan.md                  plan
   web/
     src/app/page.tsx             venue table + calculator (home)
     src/app/vault/page.tsx       Savings Vault actions (testnet)
@@ -141,7 +141,7 @@ MUST
 8. CI is green; axe shows 0 serious/critical issues on the 4 pages.
 9. Judge kit: README "judge check in 60 seconds", the Get-test-MUSD page, "Try a sample" for every address feature, 5-slide deck, 2-minute video, AKINDO form submitted with both tracks named.
 10. Verification log #27 is closed: the deployed Vercel API reads the Mezo RPC and Merkl.
-SHOULD (each done = acceptance criteria in tasks/todo.md met)
+SHOULD (each done = its acceptance criteria met)
 11. Rewards reminder; 12. Trove planner; 13. x402 paid call recorded on testnet; 14. Efficiency board.
 
 ## Open Questions

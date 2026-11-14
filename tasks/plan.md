@@ -1,7 +1,7 @@
 # Implementation Plan: MUSD Compass (Wave 1)
 
 ## Overview
-We build the design v8 MUSTs as vertical slices, riskiest first: deploy reachability, live data, the carry math, then the wallet write. Each slice ends working and deployable. SHOULDs come after the MUST checkpoint and are cut from the bottom. Spec: `SPEC.md`. Checklist: `tasks/todo.md`.
+We build the design v8 MUSTs as vertical slices, riskiest first: deploy reachability, live data, the carry math, then the wallet write. Each slice ends working and deployable. SHOULDs come after the MUST checkpoint and are cut from the bottom. Spec: `SPEC.md`.
 
 ## Architecture Decisions
 - **One API, many surfaces.** Web, widget, bot and x402 all call `/api/yields` (or its siblings). No business logic in the bot or UI, so numbers never disagree.
@@ -38,7 +38,7 @@ Night blocks (B, E): Claude works in one long unattended run. Approving this pla
 Cut rule: if Checkpoint C slips past Sun 12:00 UTC (18:00 Dhaka), drop SHOULDs 9 → 8 → 7 → 6 in that order. MUSTs and the materials (T20–T21) are never cut.
 
 ## Task List
-See `tasks/todo.md`. Summary:
+Summary:
 
 **Phase 1: Foundation.** T1 scaffold + CI · T2 chain module + `/api/health` + hello webhook · T3 carry math (pure, tested) · [H1] GitHub repo · [H2] Vercel web · [H2b] WalletConnect id · [H4] BotFather · [H5] Vercel bot project → Checkpoint 0
 **Phase 2: Live read path.** T4 Merkl adapter + identity guard · T5 sMUSD realised-APR adapter · T6a Mezo adapters (SP, pools, borrow params) · T6b Ethereum adapters (Morpho, costs) · T7 `/api/yields` · T8 home page (table + calculator + break-even) → Checkpoint A

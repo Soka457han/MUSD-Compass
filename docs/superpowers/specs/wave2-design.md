@@ -16,7 +16,7 @@ Wave 2 rules (AKINDO overview): "rewards depth"; resubmission must be "explicit 
 - VERIFIED (Compass live API, reads chain): mainnet has **3 open troves**, no Recovery Mode, sample trove ICR ~8,832%. The audience for a trove monitor on mainnet is tiny. My earlier "trove monitor is the return hook" idea was made without this number.
 - VERIFIED (other builder's comment, Mezo docs): a trove needs at least 2,000 MUSD debt (1,800 + 200 gas deposit), so small holders cannot borrow.
 - VERIFIED (Passport README via npm mirror): built on RainbowKit + wagmi + viem 2; defaults Unisat/OKX/Xverse. Docs show testnet only, no Next.js, mainnet or WalletConnect project-id guidance. Compass's wallet code is hand-rolled (`web/src/lib/wallet.ts`, EIP-6963 + viem), so Passport means adding wagmi/RainbowKit. Mbl, MezoRoute and Janus already ship Passport (prior art).
-- VERIFIED (local tasks/todo.md): `[H2b]` Reown project id was never created, so WalletConnect needs the user to make one (free).
+- VERIFIED (Wave 1 task list): `[H2b]` Reown project id was never created, so WalletConnect needs the user to make one (free).
 - SECONDARY (DIA summary of Mezo docs, third-party mirror): redemption fee 0.75%; redemptions take the lowest collateral ratio at or above 110%; Recovery Mode below 150% system ratio. Matches `redemptionPosition` in `web/src/lib/trove.ts`. Official Mezo redemption page returned 404, so confirm against mezo.org/docs before writing warnings.
 - UNKNOWN: sMUSD/MUSD holder counts (explorer API blocked), whether Compass's openTrove path already uses HintHelpers, MUSD peg today, whether Wave 2 criteria weights changed.
 - Repo state: local README has 9 tx proof; GitHub README is the older version (last commit "Update README.md" overwrote it). Must be fixed first.
@@ -39,7 +39,7 @@ Wave 2 rules (AKINDO overview): "rewards depth"; resubmission must be "explicit 
 - `web/src/lib/trove.ts` (readTrove, safeExtraBorrow, redemptionPosition), `web/src/components/TrovePanel.tsx`, `MyPanel.tsx`
 - `web/src/lib/sendSafely.ts` (allowlist, simulate, exact approvals), `web/src/lib/wallet.ts`, `WalletModal.tsx`, `VaultPanel.tsx`
 - `web/src/lib/x402.ts`, `web/src/app/api/premium/yields/route.ts`
-- `README.md`, `docs/evidence.md`, `docs/submission/*`, `tasks/todo.md`
+- `README.md`, `docs/evidence.md`, `docs/submission/*`
 
 ## Skills per stage
 brainstorming -> design doc -> writing-plans -> TDD build (humanizer on copy, design-taste-frontend for UI) -> playwright/axe tests + systematic-debugging -> review + security-audit -> verification-before-completion + ship.
