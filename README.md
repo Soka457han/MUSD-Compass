@@ -55,9 +55,9 @@ The longer walk-through is [For judges](#for-judges-60-seconds-no-wallet-no-keys
 
 MUSD can earn in the Savings Vault, the Stability Pool, six Mezo pools and Mezo-paid pools on Ethereum. Each shows a different number, and the biggest numbers mislead.
 
-veMEZO rewards stay locked for 12 weeks, so a large APR can be mostly lock and very little cash. Costs eat small deposits: an Ethereum pool needs a bridge round trip and gas both ways, and borrowed MUSD carries trove interest, a 0.1% fee and a 1,800 MUSD minimum. The best place also moves. Overnight from 24 to 25 Oct 2026 the Uniswap V4 veMEZO APR went from 49.8% to 79.9% while MEZO rose 60%.
+veMEZO rewards stay locked for 12 weeks, so a large APR can be mostly lock and very little cash. Costs eat small deposits: an Ethereum pool needs a bridge round trip and gas both ways, and borrowed MUSD carries trove interest, a 0.1% fee and a 1,800 MUSD minimum. The best place also moves. In one night the Uniswap V4 veMEZO APR went from 49.8% to 79.9% while MEZO rose 60%.
 
-On a phone, Mezo's own app asks for a larger window (checked 26 Oct). No screen answered "after costs, where do I keep the most cash?"
+On a phone, Mezo's own app asks for a larger window. No screen answered "after costs, where do I keep the most cash?"
 
 ## Who it is for, and why they come back
 
@@ -86,12 +86,12 @@ People come back because Mezo's reward campaigns renew every 7 days and rates ju
 
 ## Built in Wave 1
 
-- **The ranking and calculator.** Every MUSD venue on Mezo and Ethereum, ranked by cash after costs, hold or borrow, for 30, 90 or 365 days. Locked veMEZO sits beside the cash figure and is never added to it.
-- **Before you go in, and break-even.** What your amount keeps, the one-off costs, the day they are earned back, and the amount where an Ethereum pool starts to beat the Savings Vault.
-- **Savings Vault on Mezo testnet.** Approve the exact amount, deposit, claim and withdraw, plus *Borrow → Earn*: open a trove at 200% and deposit the MUSD.
-- **My MUSD, trove planner, rewards check.** Any address's holdings against the best place for them, a trove's ratio and redemption-queue position, and unclaimed veMEZO.
-- **Try to break it.** Attacks run live with no wallet, and Compass or the chain refuses each one.
-- **Everywhere.** Phone web app, Telegram bot, one-tag widget, free JSON API, and a premium API paid in MUSD over x402 on testnet.
+- A ranking of every MUSD venue on Mezo and Ethereum by cash after costs, for holding or borrowing over 30, 90 or 365 days. Locked veMEZO sits beside the cash figure and is never added to it.
+- For your amount: what you keep, the one-off costs, the day they are earned back, and the amount where an Ethereum pool starts to beat the Savings Vault.
+- The Savings Vault on Mezo testnet: approve the exact amount, deposit, claim and withdraw. *Borrow → Earn* opens a trove at 200% and deposits the MUSD.
+- My MUSD, the trove planner and the rewards check, which read any address: its holdings against the best place for them, a trove's ratio and redemption-queue position, and unclaimed veMEZO.
+- *Try to break it*: attacks run live with no wallet, and Compass or the chain refuses each one.
+- The same numbers in a phone web app, a Telegram bot, a one-tag widget, a free JSON API, and a premium API paid in MUSD over x402 on testnet.
 
 ## New in Wave 2
 
@@ -108,11 +108,11 @@ The Wave 1 review asked for six things. Each row says what shipped, where to che
 
 Also added since Wave 1:
 
-- **Gauge staking** on `/vault` (mainnet): stake sMUSD, unstake, claim MEZO.
-- **Mezo pools in the ranking**, with their MEZO emission APR read from the gauges on chain.
-- **The MUSD price line**: MUSD's price on the MUSD/mUSDC pool against the redemption floor, and how much MUSD the pool takes before the price falls below $0.99.
-- **[/proof](https://musd-compass.vercel.app/proof)**: every transaction Compass has sent, with explorer links.
-- **A new look**: lilac glass cards, light and dark. Same features, same text, same numbers.
+- Gauge staking on `/vault` (mainnet): stake sMUSD, unstake, claim MEZO.
+- Mezo pools in the ranking, with their MEZO emission APR read from the gauges on chain.
+- The MUSD price line: MUSD's price on the MUSD/mUSDC pool against the redemption floor, and how much MUSD the pool takes before the price falls below $0.99.
+- [/proof](https://musd-compass.vercel.app/proof): every transaction Compass has sent, with explorer links.
+- A new look with lilac glass cards, in light and dark. The features, text and numbers are unchanged.
 
 ## Judging criteria, mapped to evidence
 
@@ -150,9 +150,9 @@ flowchart LR
   API --> KV[(Redis: usage counts, watched troves)]
 ```
 
-- **Reads.** One adapter per source (Savings Vault, Mezo pools and gauges, troves, the MUSD price, Merkl, Ethereum, Morpho). A source that is down reads "unavailable"; it never shows an old figure as current.
-- **Writes.** Compass has no contract and holds no funds. Every transaction is built in the browser, passes one guard ([`sendSafely.ts`](web/src/lib/sendSafely.ts)) and is signed by your own wallet.
-- **Channels.** The bot and the widget hold no logic of their own; they call the API.
+- Reads go through one adapter per source (Savings Vault, Mezo pools and gauges, troves, the MUSD price, Merkl, Ethereum, Morpho). A source that is down reads "unavailable" and never shows an old figure as current.
+- Compass has no contract and holds no funds. Every transaction is built in the browser, passes one guard ([`sendSafely.ts`](web/src/lib/sendSafely.ts)) and is signed by your own wallet.
+- The bot and the widget have no logic of their own. They call the API.
 
 ## Built on Mezo
 
@@ -176,11 +176,11 @@ flowchart LR
 | Every venue number is read live from Mezo, Ethereum or Merkl and kept for 5 minutes | **Mainnet is proven for the Savings Vault, the gauge and one x402 payment.** Nine real mainnet transactions: eight made through Compass's `/vault` page (5 MUSD in and out of the vault, staked and unstaked in the gauge, MEZO claimed) and one 0.01 MUSD x402 payment from `/developers` ([proof](https://musd-compass.vercel.app/proof)). Borrow → Earn, top-up and repay have not run on mainnet, and troves in the demo flow are testnet only; testnet MUSD has no market value |
 | Approve, deposit, withdraw, claim, a trove opened to borrow and deposit, and two x402 payments are real Mezo testnet transactions ([below](#testnet-proof)) | Compass has no contract of its own to audit |
 | `/my`, `/vault`, `/rewards` and `/trove` samples are read from the chain | Mezo pools and the Stability Pool are listed by size; their APR lives in the Mezo app |
-| The bot, widget and API return the same numbers as the web app (bot checked 26 Oct, all six buttons) | Uniswap V4 trading fees are not reported by Merkl, so they count as 0 |
+| The bot, widget and API return the same numbers as the web app (bot checked, all six buttons) | Uniswap V4 trading fees are not reported by Merkl, so they count as 0 |
 
 ## Mainnet proof
 
-Mezo mainnet (chain 31612), real funds. The first eight were made through [/vault](https://musd-compass.vercel.app/vault) from wallet [`0x9126…6976`](https://explorer.mezo.org/address/0x912697ed3feef6ca700ba18e008fdf990b6d6976) on 12 Nov 2026 (17:34 to 17:42 UTC), the last through [/developers](https://musd-compass.vercel.app/developers) on 13 Nov 2026. Each was read back from the chain: status success, and the called function and the amount match the row ([evidence](docs/evidence.md)). The wallet is the builder's own, so this proves the mainnet flow works, not outside usage.
+Mezo mainnet (chain 31612), real funds. The first eight were made through [/vault](https://musd-compass.vercel.app/vault) from wallet [`0x9126…6976`](https://explorer.mezo.org/address/0x912697ed3feef6ca700ba18e008fdf990b6d6976), the last through [/developers](https://musd-compass.vercel.app/developers). Each was read back from the chain: status success, and the called function and the amount match the row ([evidence](docs/evidence.md)). The wallet is the builder's own, so this proves the mainnet flow works, not outside usage.
 
 | Step | Amount | Transaction |
 |---|---|---|
@@ -198,7 +198,7 @@ Not yet run on mainnet: Borrow → Earn, top-up and repay. They are built and pa
 
 ## Testnet proof
 
-Mezo testnet (chain 31611), made through [/vault](https://musd-compass.vercel.app/vault) and [/developers](https://musd-compass.vercel.app/developers), 24 to 26 Oct 2026. Every row comes from the public dev wallet [`0xfe21…676C`](https://explorer.test.mezo.org/address/0xfe21B2782B35BE770DD4a7b05f81cE43790D676C) except the second x402 payment.
+Mezo testnet (chain 31611), made through [/vault](https://musd-compass.vercel.app/vault) and [/developers](https://musd-compass.vercel.app/developers). Every row comes from the public dev wallet [`0xfe21…676C`](https://explorer.test.mezo.org/address/0xfe21B2782B35BE770DD4a7b05f81cE43790D676C) except the second x402 payment.
 
 | Step | Amount | Transaction |
 |---|---|---|
@@ -211,11 +211,11 @@ Mezo testnet (chain 31611), made through [/vault](https://musd-compass.vercel.ap
 | *Borrow → Earn* 1 of 3: `openTrove` with test BTC as collateral | 1,800 MUSD borrowed | [`0x82f0ddf6…1fe0`](https://explorer.test.mezo.org/tx/0x82f0ddf6fd1598a1a89eaf3652f69323e5fdc69151ef08209e6c5a5e8ed81fe0) |
 | *Borrow → Earn* 2 of 3: approve the vault for exactly that amount | 1,800 MUSD | [`0xafbff33a…641d`](https://explorer.test.mezo.org/tx/0xafbff33ad670be5565928aaf481e6e6159d55a9d510cca06627d43ccc1fd641d) |
 | *Borrow → Earn* 3 of 3: deposit the borrowed MUSD into the Savings Vault | 1,800 MUSD → 1,800 sMUSD | [`0x53da2a83…a135`](https://explorer.test.mezo.org/tx/0x53da2a8307efecc5d71eaeda40dfd172f43be82a05ef7f3c55168917c34ea135) |
-| *Borrow → Earn* again from a second wallet (13 Nov 2026), 1 of 3: openTrove with test BTC | 2,000 MUSD borrowed against 0.06419851 BTC | [`0xf200e224…a3a0`](https://explorer.test.mezo.org/tx/0xf200e2240b49ea22f7ebbb0f37952b8307334761595bdf09c9e8d6bcf74aa3a0) |
-| *Borrow → Earn* again from a second wallet (13 Nov 2026), 2 of 3: exact approval | 2,000 MUSD | [`0x97b53558…c015`](https://explorer.test.mezo.org/tx/0x97b535581ba19c3a5c54a943bdcf25355e7fc10d666445005dccf7198841c015) |
-| *Borrow → Earn* again from a second wallet (13 Nov 2026), 3 of 3: deposit into the Savings Vault | 2,000 MUSD → 2,000 sMUSD | [`0x4e666ca9…f12e`](https://explorer.test.mezo.org/tx/0x4e666ca9b86b60c073550a4dec4ebd656ae9674f34d31570f292fe0d3c90f12e) |
-| Top-up on that trove (13 Nov 2026): add BTC to that trove (addColl) | 0.01 test BTC | [`0xbbf4c340…ca8b`](https://explorer.test.mezo.org/tx/0xbbf4c340132cc13f77fd3edb8d22a8e2858a576859d63ea948baf81bbf99ca8b) |
-| Repay on that trove (13 Nov 2026): Repay part of that trove's debt (repayMUSD, needs no approval) | 100 MUSD | [`0x06fd03a8…c6d4`](https://explorer.test.mezo.org/tx/0x06fd03a8bcb371ab2b6273216c84efa70ac928e4a453750e09601c23304bc6d4) |
+| *Borrow → Earn* again from a second wallet, 1 of 3: openTrove with test BTC | 2,000 MUSD borrowed against 0.06419851 BTC | [`0xf200e224…a3a0`](https://explorer.test.mezo.org/tx/0xf200e2240b49ea22f7ebbb0f37952b8307334761595bdf09c9e8d6bcf74aa3a0) |
+| *Borrow → Earn* again from a second wallet, 2 of 3: exact approval | 2,000 MUSD | [`0x97b53558…c015`](https://explorer.test.mezo.org/tx/0x97b535581ba19c3a5c54a943bdcf25355e7fc10d666445005dccf7198841c015) |
+| *Borrow → Earn* again from a second wallet, 3 of 3: deposit into the Savings Vault | 2,000 MUSD → 2,000 sMUSD | [`0x4e666ca9…f12e`](https://explorer.test.mezo.org/tx/0x4e666ca9b86b60c073550a4dec4ebd656ae9674f34d31570f292fe0d3c90f12e) |
+| Top-up on that trove: add BTC to that trove (addColl) | 0.01 test BTC | [`0xbbf4c340…ca8b`](https://explorer.test.mezo.org/tx/0xbbf4c340132cc13f77fd3edb8d22a8e2858a576859d63ea948baf81bbf99ca8b) |
+| Repay on that trove: Repay part of that trove's debt (repayMUSD, needs no approval) | 100 MUSD | [`0x06fd03a8…c6d4`](https://explorer.test.mezo.org/tx/0x06fd03a8bcb371ab2b6273216c84efa70ac928e4a453750e09601c23304bc6d4) |
 
 The dev wallet now holds 1,890 sMUSD and 67.41 MUSD with a vault allowance of 0, and [`/api/vault/0xfe21…676C`](https://musd-compass.vercel.app/api/vault/0xfe21B2782B35BE770DD4a7b05f81cE43790D676C) shows the same. Every transaction and live check is listed in [docs/evidence.md](docs/evidence.md).
 
@@ -276,7 +276,7 @@ Tech stack: Next.js 16 (App Router, React 19) on Vercel · TypeScript · viem ·
 
 Documents:
 
-- **Wave 2:** [what changed since Wave 1](FEEDBACK-RESPONSE.md) · [changelog](CHANGELOG.md) · [evidence](docs/evidence.md) · design ([part one](docs/superpowers/specs/2026-11-03-wave2-design.md), [part two](docs/superpowers/specs/2026-11-08-wave2b-design.md)) · plans ([Wave 2](docs/superpowers/plans/2026-11-03-wave2.md), [mainnet actions](docs/superpowers/plans/2026-11-10-mainnet-actions.md))
+- **Wave 2:** [what changed since Wave 1](FEEDBACK-RESPONSE.md) · [changelog](CHANGELOG.md) · [evidence](docs/evidence.md) · design ([part one](docs/superpowers/specs/wave2-design.md), [part two](docs/superpowers/specs/wave2b-design.md)) · plans ([Wave 2](docs/superpowers/plans/wave2.md), [mainnet actions](docs/superpowers/plans/mainnet-actions.md))
 - **Wave 1:** [spec](SPEC.md) · [design](docs/design.md) · [plan](tasks/plan.md)
 
 MIT licence.

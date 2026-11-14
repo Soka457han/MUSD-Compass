@@ -1,7 +1,5 @@
 # MUSD Compass Wave 2b: trove care, outside-user proof, pricing, then depth
 
-Date: 8 Nov 2026. Wave 2 closes 15 Nov 2026.
-
 ## Why
 
 The Wave 1 review asked for three things Compass still lacks: proof that people outside the team use it, care for a trove after Borrow → Earn opens it, and a real answer to "who pays for x402". Two other projects lost points for numbers that disagreed with each other and for slow pages, so every number Compass shows must say how old it is and pages must stay fast.

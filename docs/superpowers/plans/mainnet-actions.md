@@ -10,7 +10,7 @@
 
 **Spec:** the Wave 1 judge comment (Borrow → Earn on mainnet with HintHelpers; top-up or repay; redemption and Recovery Mode warnings; WalletConnect or Passport) and README "Wave 2" item 1 (capped mainnet Savings Vault deposits).
 
-## What already exists (read 10 Nov 2026, commit 207cac3)
+## What already exists (read, commit 207cac3)
 
 | Ask | State |
 |---|---|
@@ -22,7 +22,7 @@
 | Hard cap | **Missing** |
 | Network choice | Hidden inside the Borrow section, after a testnet read succeeds |
 
-## Mainnet checks (read-only `eth_call`, Boar RPC, 10 Nov 2026)
+## Mainnet checks (read-only `eth_call`, Boar RPC)
 
 - chain 31612; BorrowerOperations points at the SortedTroves and TroveManager in `addresses.ts`.
 - `minNetDebt` 1,800; `borrowingRate` 0.1%; gas compensation 200; BTC $74,131.86; Recovery Mode off; TCR 2,734%; 4 troves.

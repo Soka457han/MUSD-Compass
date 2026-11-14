@@ -1,7 +1,7 @@
 # MUSD Compass Wave 2: plan (draft, stages 1-3)
 
 ## Context
-Wave 1 judge review (`civ_defi_mezo`, 31 Oct) says integration is already deep and lists what would lift Wave 2:
+Wave 1 judge review (`civ_defi_mezo`) says integration is already deep and lists what would lift Wave 2:
 1. Borrow -> Earn on mainnet with HintHelpers.
 2. Monitoring, top-up or repay for the trove it opens, with redemption and Recovery Mode warnings.
 3. Show users outside your own wallets using it.
@@ -12,14 +12,14 @@ Wave 1 judge review (`civ_defi_mezo`, 31 Oct) says integration is already deep a
 Wave 2 rules (AKINDO overview): "rewards depth"; resubmission must be "explicit about what changed since Wave 1" and show "meaningful new progress". Mezo's stated lenses: extend, don't detour; composability wins; works as expected, every feature testable, no clear security flaws (same reviewer's answer in the Comments tab). Same reviewer to another builder: prove real users with wallet addresses and explorer links, do not mix testnet and mainnet claims, check max borrow at transaction time.
 
 ## Research findings (evidence labels)
-- VERIFIED (AKINDO page): Wave 2 build Nov 2-15, pool $5,000. The countdown showed "9 Days 15:26" at about 14:05 UTC on 3 Nov and the timeline lists 11/13 11:30 as the deadline. Treat **13 Nov** as the deadline until confirmed in Discord/AKINDO.
+- VERIFIED (AKINDO page): Wave 2 pool $5,000. The page's countdown and its timeline give different deadlines; use the earlier one until it is confirmed in Discord/AKINDO.
 - VERIFIED (Compass live API, reads chain): mainnet has **3 open troves**, no Recovery Mode, sample trove ICR ~8,832%. The audience for a trove monitor on mainnet is tiny. My earlier "trove monitor is the return hook" idea was made without this number.
 - VERIFIED (other builder's comment, Mezo docs): a trove needs at least 2,000 MUSD debt (1,800 + 200 gas deposit), so small holders cannot borrow.
 - VERIFIED (Passport README via npm mirror): built on RainbowKit + wagmi + viem 2; defaults Unisat/OKX/Xverse. Docs show testnet only, no Next.js, mainnet or WalletConnect project-id guidance. Compass's wallet code is hand-rolled (`web/src/lib/wallet.ts`, EIP-6963 + viem), so Passport means adding wagmi/RainbowKit. Mbl, MezoRoute and Janus already ship Passport (prior art).
 - VERIFIED (local tasks/todo.md): `[H2b]` Reown project id was never created, so WalletConnect needs the user to make one (free).
 - SECONDARY (DIA summary of Mezo docs, third-party mirror): redemption fee 0.75%; redemptions take the lowest collateral ratio at or above 110%; Recovery Mode below 150% system ratio. Matches `redemptionPosition` in `web/src/lib/trove.ts`. Official Mezo redemption page returned 404, so confirm against mezo.org/docs before writing warnings.
 - UNKNOWN: sMUSD/MUSD holder counts (explorer API blocked), whether Compass's openTrove path already uses HintHelpers, MUSD peg today, whether Wave 2 criteria weights changed.
-- Repo state: local README has 9 tx proof; GitHub README is the older version (last commit "Update README.md" on 26 Oct overwrote it). Must be fixed first.
+- Repo state: local README has 9 tx proof; GitHub README is the older version (last commit "Update README.md" overwrote it). Must be fixed first.
 
 ## Recommended Wave 2 scope (3 to 4 items, narrative: "from where to put MUSD, to keeping it safe, to proof people use it")
 1. **Repo and submission hygiene (day 1):** push the local README, fix the video link, add deck link, update the AKINDO entry (team, track, "what changed since Wave 1"). Cheap, directly requested.
@@ -53,8 +53,8 @@ brainstorming -> design doc -> writing-plans -> TDD build (humanizer on copy, de
 ## Still needed from the user
 - Confirm they hold (or can get) about 0.05+ BTC on Mezo mainnet for the 2,000 MUSD minimum trove, and are willing to use a dedicated wallet.
 - Create the free Reown project id.
-- Confirm the Wave 2 deadline in Discord/AKINDO (13 vs 15 Nov).
+- Confirm the Wave 2 deadline in Discord/AKINDO.
 - Recruit 3 to 5 outside testers.
 
 ## Next step after approval
-Stage 3: write the task breakdown (superpowers:writing-plans) with order, tests and time boxes against the 13 Nov deadline, README/AKINDO fixes first.
+Stage 3: write the task breakdown (superpowers:writing-plans) with order, tests and time boxes against the deadline, README/AKINDO fixes first.

@@ -8,7 +8,7 @@
 
 **Tech Stack:** Next.js 16, TypeScript, viem 2.57.11, Vitest, Playwright + axe, Python bot (pytest). New dependency: `@walletconnect/ethereum-provider` (exact version, at least two weeks old, pinned).
 
-**Spec:** `docs/superpowers/specs/2026-11-03-wave2-design.md` (approved 3 Nov 2026). Judge review text is quoted in its Context section.
+**Spec:** `docs/superpowers/specs/wave2-design.md` (approved). Judge review text is quoted in its Context section.
 
 **Working rules:** run commands from `F:\snipping\musd-compass\web`. The user commits and pushes in GitHub Desktop, so each task ends at a "Checkpoint" that lists changed files; do not run `git commit` or `git push` unless the user asks. `.github/workflows/ci.yml` is protected from device writes.
 
@@ -23,7 +23,6 @@
 - Copy rules (humanizer): no em or en dashes, no "not X but Y", no bold labels in lists, no invented numbers, every number states its source or assumption.
 - Phone first (360 px, no horizontal scroll), WCAG AA, axe clean on every page in light and dark.
 - No secrets in git. `.env*` stays ignored except `.env.example`.
-- Deadline: treat **13 Nov 2026** as the AKINDO Wave 2 deadline until confirmed (program text says build ends 15 Nov). Code freeze 11 Nov.
 
 ## Review Focus
 
@@ -43,7 +42,7 @@
 **Interfaces:**
 - Produces: a README that matches `docs/evidence.md` (9 transactions). Later tasks edit it again, so it must be the base.
 
-- [ ] **Step 1: Check the divergence.** Run `git fetch origin && git log --oneline HEAD..origin/main`. Expected: lists `5bb8222 Update README.md` (a web edit on 26 Oct that replaced the README with the older text).
+- [ ] **Step 1: Check the divergence.** Run `git fetch origin && git log --oneline HEAD..origin/main`. Expected: lists `5bb8222 Update README.md` (a web edit that replaced the README with the older text).
 - [ ] **Step 2: Keep the local README.** Tell the user: after pulling, GitHub Desktop will show a README conflict; resolve it by keeping the local file (it has Borrow -> Earn rows, the second-wallet x402 row and 9 transactions). Do not resolve it for them.
 - [ ] **Step 3: Fix line 10 of `README.md`.** Replace `[add the video link]` with the real YouTube link given by the user, as `[Watch (2 min)](https://www.youtube.com/watch?v=MzgrWvwby00)` (this id is the one on GitHub today; confirm it with the user). Deck row: `[Deck (PDF)](https://musd-compass.vercel.app/musd-compass-deck.pdf)`.
 - [ ] **Step 4: Verify.** Run `Select-String -Path README.md -Pattern 'add the video|add the deck'`. Expected: no matches.
@@ -164,7 +163,7 @@
 - [ ] **Step 2: Write failing tests:** `allows addColl on BorrowerOperations`, `allows repayMUSD`, `refuses closeTrove`, `refuses approve to BorrowerOperations for any function but repay`, `still refuses unlimited approvals`.
 - [ ] **Step 3: Run** `npx vitest run tests/unit/sendSafely.test.ts`. Expected: FAIL. **Step 4:** implement. **Step 5:** run, expected PASS.
 - [ ] **Step 6:** Add "Top up" and "Repay" buttons in `TrovePanel` for the connected wallet's own trove only, on the selected network, each simulated first.
-- [ ] **Step 7: Checkpoint.** If time is short on 9 Nov, cut Task 6 and say so in the submission ("monitoring and sized suggestions; adjust in the Mezo app").
+- [ ] **Step 7: Checkpoint.** If time is short, cut Task 6 and say so in the submission ("monitoring and sized suggestions; adjust in the Mezo app").
 
 ---
 
@@ -224,7 +223,7 @@
 - [ ] **Step 2: User action:** from a dedicated wallet holding enough BTC on Mezo mainnet, with `NEXT_PUBLIC_MAINNET_WRITES=1` set in a separate Vercel preview (not production), run Borrow -> Earn once. Claude never holds keys; the user sends the three transaction hashes.
 - [ ] **Step 3:** Verify each hash on `explorer.mezo.org` in the browser (status Success, amounts, addresses) and add them to `docs/evidence.md` and the README proof table under a separate heading "Mezo mainnet".
 - [ ] **Step 4:** Turn the flag on in production only after Steps 1 to 3 pass.
-- [ ] **Step 5: Checkpoint.** If the user cannot fund a trove by 10 Nov, skip Steps 2 to 4 and state "mainnet: simulated, not executed" in the README.
+- [ ] **Step 5: Checkpoint.** If the user cannot fund a trove, skip Steps 2 to 4 and state "mainnet: simulated, not executed" in the README.
 
 ---
 
@@ -235,25 +234,25 @@
 - Modify: `docs/evidence.md`, `docs/submission/akindo-answers.md`, deck (`docs/submission/musd-compass-deck.pdf`, `web/public/musd-compass-deck.pdf`)
 
 - [ ] **Step 1:** Write `docs/testers.md` (a 5-step guide: get test MUSD, open `/vault`, connect, Borrow -> Earn, send the explorer link). Humanizer pass.
-- [ ] **Step 2:** The user recruits 3 to 5 testers (Mezo Discord, own circle). Claude verifies each reported address on `explorer.test.mezo.org` and lists address plus transaction links in `docs/evidence.md` under "Outside wallets". If fewer than 3 exist by 11 Nov, state the real number.
+- [ ] **Step 2:** The user recruits 3 to 5 testers (Mezo Discord, own circle). Claude verifies each reported address on `explorer.test.mezo.org` and lists address plus transaction links in `docs/evidence.md` under "Outside wallets". If fewer than 3 exist, state the real number.
 - [ ] **Step 3:** Write the AKINDO Wave 2 text: required fields (name, category, TL;DR, how it works, target group, tech stack, track 1 and 2, chain, status "existing project with new features" with the Wave 1 link, readiness, next three milestones, team with X or LinkedIn) and a section "What changed since Wave 1" mapped one-to-one to the judge's six points, each with a link.
 - [ ] **Step 4:** Update the deck (Wave 1 -> Wave 2 story: Where to put MUSD, Keep it safe, Proof) via the deck artifact `https://claude.ai/artifact/NZX3MecXuPvMkD8F4ZkNhn`, export the PDF, copy it to both PDF paths. Humanizer on all copy.
-- [ ] **Step 5:** The user records a 2-minute video and submits on AKINDO by 12 Nov. Claude opens the public submission in a private-style check (browser) and confirms repo, demo, deck and video links all load.
+- [ ] **Step 5:** The user records a 2-minute video and submits on AKINDO. Claude opens the public submission in a private-style check (browser) and confirms repo, demo, deck and video links all load.
 
 ---
 
-## Schedule (3 Nov to 13 Nov)
+## Schedule
 
-| Dates | Tasks |
+| Order | Tasks |
 |---|---|
-| 3 to 4 Nov | 0, 1, 2 (spike first), user creates Reown id |
-| 5 to 6 Nov | 3, 4 |
-| 7 to 8 Nov | 5, 7 |
-| 9 Nov | 6 (cut if late), 8 |
-| 10 Nov | 9, 10 (dry run, real run if funded) |
-| 11 Nov | code freeze, tester evidence, deck, video |
-| 12 Nov | submit, check public links |
-| 13 Nov | buffer |
+| 1 | 0, 1, 2 (spike first), user creates Reown id |
+| 2 | 3, 4 |
+| 3 | 5, 7 |
+| 4 | 6 (cut if late), 8 |
+| 5 | 9, 10 (dry run, real run if funded) |
+| 6 | code freeze, tester evidence, deck, video |
+| 7 | submit, check public links |
+| 8 | buffer |
 
 ## Self-review notes
 

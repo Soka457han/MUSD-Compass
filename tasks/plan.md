@@ -26,7 +26,7 @@ Wall clock ≈ 46 h (Sat 15:00 → Mon 13:00 UTC); your hands-on time ≈ 8 h (H
 
 | Block | When (UTC → Dhaka) | Claude | You [H] | Checkpoint |
 |---|---|---|---|---|
-| A. Foundation + de-risk | Sat 24 Oct 15:00–19:00 → 21:00–01:00 | T1–T3 | H1 GitHub, H2 Vercel, H2b WalletConnect id, H4 BotFather, H5 bot project on Vercel, H-push | 0: deployed `/api/health` reads Mezo RPC + Merkl |
+| A. Foundation + de-risk | Sat 15:00–19:00 → 21:00–01:00 | T1–T3 | H1 GitHub, H2 Vercel, H2b WalletConnect id, H4 BotFather, H5 bot project on Vercel, H-push | 0: deployed `/api/health` reads Mezo RPC + Merkl |
 | B. Night build | Sat 19:00 – Sun 03:00 → 01:00–09:00 | T4–T8, then T9–T13 code | sleep | — |
 | C. Morning: live + write | Sun 03:00–09:00 → 09:00–15:00 | fixes, T14, then T15 live check | H-push, review A on phone, **H3 deposit early** | A, B, C (all MUSTs) |
 | D. SHOULDs | Sun 09:00–16:00 → 15:00–22:00 | T16–T19 (cut from the bottom) | H7 x402 signature, H-push | D |
@@ -61,7 +61,7 @@ See `tasks/todo.md`. Summary:
 | Wallet can't add Mezo testnet / gas estimate fails | Med | viem `mezoTestnet` chain def; `wallet_addEthereumChain`; clear error text; tested with MetaMask + one mobile wallet |
 | x402 Permit2 flow fails on 31611 | Low (SHOULD) | Spike inside T18 first (30 min); cut if it fails |
 | Merkl campaigns change weekly (Thu) | Med | Nothing hard-coded; tests use fixtures, the UI uses live data; recheck sample address in T21 |
-| Bot down during judging (27 Oct–1 Nov) | Med | Webhook function on Vercel has no server to crash or sleep; Vercel function logs; T2 spike deploys a hello-webhook at Checkpoint 0; Railway trial as fallback; README shows `python bot.py --poll` |
+| Bot down during judging | Med | Webhook function on Vercel has no server to crash or sleep; Vercel function logs; T2 spike deploys a hello-webhook at Checkpoint 0; Railway trial as fallback; README shows `python bot.py --poll` |
 | Time overrun | High | Fixed cut rule above; materials protected |
 
 ## Open Questions

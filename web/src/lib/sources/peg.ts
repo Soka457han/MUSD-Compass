@@ -17,7 +17,7 @@ export function musdPriceFromSqrtPriceX96(sqrtPriceX96: bigint): number {
   return Number((2n ** 192n * 10n ** 20n) / sqrtPriceX96 ** 2n) / 1e8;
 }
 
-/** Read on Mezo mainnet, 8 Nov 2026 (docs/research/2026-11-wave2b-venues-peg.md). Assumes mUSDC = $1. */
+/** Read on Mezo mainnet, 8 Nov 2026 (docs/research/wave2b-venues-peg.md). Assumes mUSDC = $1. */
 export async function readPeg(): Promise<Peg> {
   "use cache: remote";
   cacheLife({ revalidate: 300, expire: 86_400 }); // see the note in merkl.ts

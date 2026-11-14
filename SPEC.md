@@ -6,7 +6,7 @@ Source of truth for *what* and *why*: `docs/design.md` (v8). This spec says *how
 1. Code is written and tested in Claude's cloud workspace, delivered into `F:\snipping\musd-compass\`, and the user pushes it to a new public GitHub repo. Claude never holds GitHub, Vercel, Telegram or wallet credentials. The user's VS Code / GitHub Desktop is used only to view, run locally and push — never to edit the same files in parallel.
 2. Package manager: **npm** (nothing extra to install on the user's PC). Node 22 LTS.
 3. Hosting: all on Vercel's free tier — project 1 = `web/` (Next.js), project 2 = `bot/` (Python function receiving Telegram **webhooks**, so it never sleeps and needs no always-on server or card). Railway/Render workers cost money after a small trial (Railway: one-time $5, then $1/month credit; Render: no free worker, $7/month), so they are only the fallback. Default domain `musd-compass.vercel.app`.
-4. English UI only. Wave 1 deadline: **26 Oct 2026 15:00 UTC (21:00 Dhaka)**; ≈48 h from spec time, ≈25–30 working hours.
+4. English UI only. Wave 1 deadline: ≈48 h from spec time, ≈25–30 working hours.
 5. One spec with a module map below, not one spec per module: the modules share one API contract, and the timebox doesn't allow seven review gates.
 
 ## Objective
@@ -31,7 +31,7 @@ Success = a judge can open one link on a phone, understand where MUSD earns most
 
 Build order: `chain` → `carry`, `sources` → `yields-api` → `web-ui`, `vault` → `bot` → SHOULDs, cut from the bottom (9, 8, 7, 6).
 
-## Tech Stack (versions checked 24 Oct; pin exact versions in package-lock)
+## Tech Stack (versions checked; pin exact versions in package-lock)
 - Next.js 16.4 (App Router, TypeScript, Tailwind from create-next-app), React 19
 - viem 2.57 (has `mezo` 31612 and `mezoTestnet` 31611 chains), used directly for the wallet too (injected EIP-1193 provider via `custom(window.ethereum)`). wagmi was dropped: one connector and three writes don't need it. WalletConnect is Wave 2 (needs `@walletconnect/ethereum-provider` and a project id)
 - @x402/next, @x402/evm, @x402/fetch 2.28. `@x402/evm` already lists Mezo MUSD as the default asset for `eip155:31611` and `eip155:31612` (Permit2 + EIP-2612), so `price: "$0.001"` settles in MUSD
@@ -80,7 +80,7 @@ musd-compass/
     src/lib/carry/{carry,breakEven,identity}.ts
     src/lib/cache.ts             wraps Next's shared data cache (`unstable_cache` or `"use cache"` + `cacheLife`, whichever Next 16.4 recommends; confirmed in T1), revalidate 300 s, shared across Vercel instances
     src/components/…
-    tests/unit/…  tests/fixtures/… (live data recorded 24–25 Oct)
+    tests/unit/…  tests/fixtures/…
     e2e/…
   bot/
     api/telegram.py  (Vercel webhook entry)  bot.py (commands; `python bot.py --poll` for local testing)  api_client.py  fmt.py  requirements.txt  vercel.json  tests/
@@ -125,7 +125,7 @@ Naming: `camelCase` functions, `PascalCase` components and types, files `camelCa
 - **Never:** commit secrets or `.env*` (only `.env.example`); ask for or handle seed phrases or private keys; use `isTrustedForwarder` / meta-transactions; unlimited approvals (incl. x402: advertise only `eip2612GasSponsoring`, which permits the exact amount; never the ERC-20 approval extension, which signs `maxUint256`); call `api.mezo.org` from the server; present veMEZO as cash; invent a claim deadline; deploy our own contract in Wave 1.
 
 ## Environment variables (`.env.example`)
-web: `MEZO_MAINNET_RPC` (default `https://rpc-http.mezo.boar.network`), `MEZO_MAINNET_RPC_FALLBACK` (default `https://mainnet.mezo.public.validationcloud.io`; `https://rpc-internal.mezo.org` as a second option; both checked 24 Oct. Do not use viem's default `rpc.mezo.org`, which failed the check), `MEZO_TESTNET_RPC` (default `https://rpc.test.mezo.org`), `ETHEREUM_RPC` (default `https://ethereum-rpc.publicnode.com`), `NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID` (optional), `X402_PAY_TO` (public payee address), `X402_FACILITATOR_URL` (default `https://facilitator.vativ.io`).
+web: `MEZO_MAINNET_RPC` (default `https://rpc-http.mezo.boar.network`), `MEZO_MAINNET_RPC_FALLBACK` (default `https://mainnet.mezo.public.validationcloud.io`; `https://rpc-internal.mezo.org` as a second option; both checked. Do not use viem's default `rpc.mezo.org`, which failed the check), `MEZO_TESTNET_RPC` (default `https://rpc.test.mezo.org`), `ETHEREUM_RPC` (default `https://ethereum-rpc.publicnode.com`), `NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID` (optional), `X402_PAY_TO` (public payee address), `X402_FACILITATOR_URL` (default `https://facilitator.vativ.io`).
 web + bot: `BOT_API_KEY` (shared secret; the bot sends it as `x-compass-bot`, and the API then skips its per-IP limit because all bot traffic comes from one IP).
 bot: no bot token at runtime (replies go back inside the webhook response; the token is used once, by you, in the setWebhook link); `TELEGRAM_WEBHOOK_SECRET` (random; Telegram sends it in `X-Telegram-Bot-Api-Secret-Token`, and the function rejects any update without it), `COMPASS_API_URL`, `COMPASS_WEB_URL`.
 
