@@ -220,10 +220,10 @@ export function Compass({ sources, between, after }: { sources: Sources; between
   return (
     <>
       <main id="main" className="mx-auto w-full max-w-6xl flex-1 px-4 pt-5 md:px-6 md:pt-14">
-        <section aria-label="Calculator" className="relative isolate grid gap-7 lg:grid-cols-[1.1fr_1fr] lg:items-center lg:gap-12">
+        <section aria-label="Calculator" className="relative isolate grid gap-7 lg:grid-cols-[1.1fr_1fr] lg:items-start lg:gap-12">
           <HeroRing />
           <div className="flex min-w-0 flex-col gap-4 md:gap-5">
-            <h1 className="text-[30px] leading-[1.15] font-extrabold tracking-tight text-balance md:text-[56px] md:leading-[1.06]">Where your MUSD earns most, after costs.</h1>
+            <h1 className="text-[30px] leading-[1.15] font-extrabold tracking-tight text-balance md:text-[56px] md:leading-[1.06]">Where your MUSD <span className="hl">earns most</span>, after costs.</h1>
             <p className="text-ink-muted md:max-w-[520px] md:text-lg">Every Mezo earning spot, ranked by the cash you keep. Live from Mezo and Ethereum.</p>
             <form
               data-hydrated={hydrated || undefined}
@@ -312,7 +312,7 @@ export function Compass({ sources, between, after }: { sources: Sources; between
             <>
               <section aria-labelledby="browse-h" className={dim || undefined}>
                 <h2 id="browse-h" className="text-2xl leading-tight font-extrabold tracking-tight md:text-[32px]">
-                  Browse by type
+                  Browse <span className="hl">by type</span>
                 </h2>
                 <ul className="mt-4 grid grid-cols-2 gap-2.5 md:mt-5 md:grid-cols-6 md:gap-3">
                   {tiles.map((t) => (

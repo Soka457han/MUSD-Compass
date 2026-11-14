@@ -66,7 +66,7 @@ export function RewardsPanel() {
     <div className="mx-auto w-full max-w-3xl flex-1 space-y-5 px-4 py-5">
       <section aria-labelledby="lookup-h" className="rounded-[20px] border border-line bg-card px-5 py-5">
         <h2 id="lookup-h" className="text-base font-bold">
-          Unclaimed veMEZO from Merkl
+          <span className="hl">Unclaimed veMEZO</span> from Merkl
         </h2>
         <p className="mt-1 max-w-prose text-sm text-ink-muted">For MUSD liquidity on Ethereum paid by Mezo. Read only — paste any public address.</p>
         <form

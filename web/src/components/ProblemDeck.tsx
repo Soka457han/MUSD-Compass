@@ -42,7 +42,7 @@ export function ProblemDeck({ count }: { count: number }) {
   return (
     <section aria-labelledby="problem-h">
       <h2 id="problem-h" className="px-4 text-2xl leading-tight font-extrabold tracking-tight md:px-0 md:text-[32px]">
-        Why picking a spot for MUSD is hard
+        Why picking a spot for MUSD <span className="hl">is hard</span>
       </h2>
       <div
         ref={deck}

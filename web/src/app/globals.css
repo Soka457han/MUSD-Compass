@@ -382,3 +382,26 @@ main :is(a, article)[class*="rounded-[20px]"]:hover {
   .hero-coin,
   .hero-coin image { animation: none; }
 }
+
+/* Key words in headings: framed like a selected object in a design tool (hatched fill, thin frame, four corner handles). */
+.hl {
+  position: relative;
+  padding: 0 0.14em;
+  white-space: nowrap;
+  color: var(--ink);
+  border: 1px solid color-mix(in srgb, var(--accent) 65%, transparent);
+  background:
+    repeating-linear-gradient(-45deg, color-mix(in srgb, var(--accent) 16%, transparent) 0 2px, transparent 2px 7px),
+    var(--accent-soft);
+}
+.hl::after {
+  content: "";
+  position: absolute;
+  inset: -4px;
+  pointer-events: none;
+  background:
+    linear-gradient(var(--accent), var(--accent)) 0 0 / 7px 7px no-repeat,
+    linear-gradient(var(--accent), var(--accent)) 100% 0 / 7px 7px no-repeat,
+    linear-gradient(var(--accent), var(--accent)) 0 100% / 7px 7px no-repeat,
+    linear-gradient(var(--accent), var(--accent)) 100% 100% / 7px 7px no-repeat;
+}

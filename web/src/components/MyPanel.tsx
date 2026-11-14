@@ -150,7 +150,7 @@ export function MyPanel({ sources }: { sources: Sources }) {
     <div className="mx-auto w-full max-w-3xl flex-1 space-y-5 px-4 py-5">
       <section aria-labelledby="my-h" className="rounded-[20px] border border-line bg-card px-5 py-5">
         <h2 id="my-h" className="text-base font-bold">
-          Where your MUSD sits, and where it would earn more
+          Where your MUSD sits, and where it would <span className="hl">earn more</span>
         </h2>
         <p className="mt-1 max-w-prose text-sm text-ink-muted">Wallet, Savings Vault (staked or not), Stability Pool, trove and unclaimed veMEZO on Mezo mainnet. Read only: use your wallet, or paste any public address.</p>
         <form

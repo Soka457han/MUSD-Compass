@@ -118,7 +118,7 @@ export function TrovePanel() {
     <div className="mx-auto w-full max-w-3xl flex-1 space-y-5 px-4 py-5">
       <section aria-labelledby="lookup-h" className="rounded-[20px] border border-line bg-card px-5 py-5">
         <h2 id="lookup-h" className="text-base font-bold">
-          Your MUSD trove on Mezo
+          Your <span className="hl">MUSD trove</span> on Mezo
         </h2>
         <p className="mt-1 max-w-prose text-sm text-ink-muted">Read only, Mezo mainnet. Use your wallet, or paste the public address that owns the trove.</p>
         <form

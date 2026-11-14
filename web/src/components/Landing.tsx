@@ -16,7 +16,7 @@ export function HowItWorks() {
   return (
     <section aria-labelledby="how-h">
       <h2 id="how-h" className={H2}>
-        How Compass ranks them
+        How Compass <span className="hl">ranks</span> them
       </h2>
       <ol className="mt-4 grid gap-2.5 md:mt-6 md:grid-cols-3 md:gap-4">
         {STEPS.map((s, i) => (
@@ -57,7 +57,7 @@ export function Trust() {
     <section aria-labelledby="trust-h" className="md:grid md:grid-cols-[1fr_1.4fr] md:items-start md:gap-12">
       <div className="flex flex-col gap-2 md:gap-4">
         <h2 id="trust-h" className={H2}>
-          Where the numbers come from
+          Where the <span className="hl">numbers</span> come from
         </h2>
         <p className="text-ink-muted md:text-lg">Every figure has a source link and the assumption behind it.</p>
         <a href={`${REPO}#testnet-proof-mezo-testnet-chain-31611`} className="mt-2 hidden h-12 items-center self-start rounded-full border border-line px-[22px] font-semibold no-underline md:inline-flex">
@@ -93,7 +93,7 @@ export function Channels() {
   return (
     <section aria-labelledby="any-h">
       <h2 id="any-h" className={H2}>
-        Same numbers, other places
+        <span className="hl">Same numbers</span>, other places
       </h2>
       <p className="mt-2 text-ink-muted md:mt-3 md:text-lg">The site, the bot, the widget and the API all read the same ranking.</p>
       <ul className="mt-4 grid grid-cols-2 gap-2.5 md:mt-6 md:grid-cols-4 md:gap-4">
