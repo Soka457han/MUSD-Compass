@@ -90,7 +90,7 @@ async function Live() {
               key={k}
               title={`Mezo ${k}`}
               big={fmt(net(k).payers)}
-              note={`payers outside the team, ${fmt(net(k).payments)} payments from them. Payments from our own wallets, counted separately: ${fmt(net(k).own)}.`}
+              note={`${net(k).payers === 1 ? "payer" : "payers"} outside the team, ${fmt(net(k).payments)} ${net(k).payments === 1 ? "payment" : "payments"} from them. Payments from our own wallets, counted separately: ${fmt(net(k).own)}.`}
               since={s.since}
             />
           ))}

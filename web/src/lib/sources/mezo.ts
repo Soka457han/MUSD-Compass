@@ -46,6 +46,10 @@ export function gaugeEmissions(g: GaugeRead | null, tvlUsd: number, mezoUsd: num
 }
 
 const usd0 = (n: number) => `$${Math.round(n).toLocaleString("en-US")}`;
+
+/** Where MEZO rewards can be sold. Exchange listings checked 14 Nov 2026: Coinbase MEZO-USD, KuCoin MEZO-USDT. */
+export const sellNoteText = (depthMusd: number, poolUsd: number) =>
+  `On Mezo, MEZO trades in the MEZO/MUSD-200 pool, which holds about ${Math.round(depthMusd).toLocaleString("en-US")} MUSD to pay sellers (${usd0(poolUsd)} in all). Selling more than a small part of that there drops the price fast. MEZO also trades on exchanges such as Coinbase and KuCoin, which means moving it off Mezo first.`;
 const dayLabel = (d: Date) => d.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
 
 export type MezoData = { venues: Venue[]; borrow: ReturnType<typeof toBorrowParams>; btcPriceUsd: number; gasPriceWei: string; paramsLive: boolean };
@@ -167,7 +171,10 @@ export function mezoVenues(chain: MezoChain, mezoPriceUsd: number, priceSource =
 
   // MEZO is valued at the MEZO/MUSD pool's price; that pool is small, so selling a lot of MEZO there moves the price.
   const mezoPool = pools.find((p) => p.address === MAINNET.pools.mezoMusdCl200);
-  const sellNote = mezoPool ? [`MEZO mainly trades in the MEZO/MUSD-200 pool, which holds about ${usd0(mezoPool.tvl)}; selling a lot of MEZO there lowers its price.`] : [];
+  // The MUSD side is what MEZO sellers can be paid; the pool's total size counts the MEZO side too.
+  const musdSide = mezoPool?.tokens.find((t) => getAddress(t.address) === getAddress(MAINNET.musd));
+  const sellDepthMusd = musdSide ? Number(formatUnits(BigInt(musdSide.reserve), musdSide.decimals)) : undefined;
+  const sellNote = mezoPool && sellDepthMusd !== undefined ? [sellNoteText(sellDepthMusd, mezoPool.tvl)] : [];
 
   const venues: Venue[] = [
     {
@@ -199,6 +206,7 @@ export function mezoVenues(chain: MezoChain, mezoPriceUsd: number, priceSource =
         source: { label: em ? "Mezo chain: gauge and pool reserves" : "Mezo chain — pool reserves", url: `https://explorer.mezo.org/address/${p.address}` },
         routes: [],
         ...(p.name.includes("BTC/") ? { pairToken: "BTC" as const } : p.name.includes("MEZO/") ? { pairToken: "MEZO" as const } : {}),
+        ...(em && sellDepthMusd !== undefined && { mezoSellDepthMusd: sellDepthMusd }),
         tags: [
           "Mezo-native",
           p.kind,
@@ -221,7 +229,7 @@ export function mezoVenues(chain: MezoChain, mezoPriceUsd: number, priceSource =
     }),
   ];
 
-  const gauged = savingsGaugeVenue(chain.savingsGauge, mezoPriceUsd, priceSource, nowSec, now, sellNote);
+  const gauged = savingsGaugeVenue(chain.savingsGauge, mezoPriceUsd, priceSource, nowSec, now, sellNote, sellDepthMusd);
   if (gauged) venues.splice(1, 0, gauged);
   if (chain.dittoAssets !== null) venues.push(dittoVenue(chain.dittoAssets, now));
 
@@ -230,7 +238,7 @@ export function mezoVenues(chain: MezoChain, mezoPriceUsd: number, priceSource =
 
 /** sMUSD staked in Mezo's MUSD Savings gauge: MEZO emissions instead of the vault's fee yield (Mezo docs, MUSD Savings Vault).
  *  1 sMUSD is counted as 1 MUSD, as on the My MUSD page. Null when the gauge was not read, has ended or holds nothing. */
-export function savingsGaugeVenue(g: { rewardRate: string; periodFinish: string; staked: string } | null, mezoPriceUsd: number, priceSource: string, nowSec: number, now: string, sellNote: string[] = []): Venue | null {
+export function savingsGaugeVenue(g: { rewardRate: string; periodFinish: string; staked: string } | null, mezoPriceUsd: number, priceSource: string, nowSec: number, now: string, sellNote: string[] = [], sellDepthMusd?: number): Venue | null {
   if (!g || !(mezoPriceUsd > 0)) return null;
   const stakedUsd = Number(formatUnits(BigInt(g.staked), 18));
   const aprPct = gaugeAprPct(BigInt(g.rewardRate), stakedUsd, BigInt(g.periodFinish), nowSec, mezoPriceUsd);
@@ -247,6 +255,7 @@ export function savingsGaugeVenue(g: { rewardRate: string; periodFinish: string;
     action: mainnetWritesEnabled() ? { label: "Deposit, then stake", url: "/vault?net=mainnet" } : { label: "Stake in the Mezo app", url: "https://mezo.org/earn/vaults" },
     source: { label: "Mezo chain: MUSD Savings gauge", url: `https://explorer.mezo.org/address/${MAINNET.smusdGauge}` },
     routes: [],
+    ...(sellDepthMusd !== undefined && { mezoSellDepthMusd: sellDepthMusd }),
     tags: ["Mezo-native", "Paid in MEZO", "No vault fee yield while staked"],
     notes: [
       `Pays about ${Math.round(mezoPerDay).toLocaleString("en-US")} MEZO a day to staked sMUSD until ${dayLabel(endsAt)}, valued at $${mezoPriceUsd.toFixed(5)} per MEZO from ${priceSource}.`,

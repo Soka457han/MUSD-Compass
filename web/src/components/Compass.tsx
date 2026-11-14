@@ -150,7 +150,12 @@ export function Compass({ sources, between, after }: { sources: Sources; between
   // Deep links (the bot sends ?amount=…&mode=…): read once after hydration, then mirror edits into the URL.
   useEffect(() => {
     const sp = new URLSearchParams(window.location.search);
-    const r = parseQuery(sp);
+    let r = parseQuery(sp);
+    // A bad amount (e.g. ?amount=0) falls back to the default amount but keeps the link's mode and days.
+    if (!r.ok && sp.has("amount")) {
+      sp.delete("amount");
+      r = parseQuery(sp);
+    }
     if (!r.ok) {
       setHydrated(true); // eslint-disable-line react-hooks/set-state-in-effect
       return;

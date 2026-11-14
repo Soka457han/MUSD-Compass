@@ -64,7 +64,7 @@ export function fixtureSources(): Sources {
     pool("mezo-pool-musd-musdt", "Mezo pool MUSD/mUSDT", "Basic stable", 13_164),
     pool("mezo-pool-musdc-musd", "Mezo pool mUSDC/MUSD", "Basic stable", 11_651, { stakedUsd: 1_018, emissionsApr: 1.31 }),
     // Recorded 9 Nov 2026 (block 13092373): 71,200.53 MEZO a day to 131,302.52 staked sMUSD until 12 Nov, valued here at the fixture MEZO price.
-    savingsGaugeVenue({ rewardRate: "824080208333333333", periodFinish: "1794441600", staked: "131302520000000000000000" }, 0.00297, "Merkl", Date.parse(at) / 1000, at)!,
+    savingsGaugeVenue({ rewardRate: "824080208333333333", periodFinish: "1794441600", staked: "131302520000000000000000" }, 0.00297, "Merkl", Date.parse(at) / 1000, at, [], 824)!, // 824 MUSD: the MEZO pool's MUSD side, read 14 Nov 2026
     pool("mezo-pool-mezo-musd-200", "Mezo pool MEZO/MUSD-200", "Concentrated volatile", 5_795, { stakedUsd: 3_800, emissionsApr: 1_095 }, "MEZO"),
     dittoVenue(104_230, at), // Mezo app TVL, 9 Nov 2026
     ...parseMerkl(listings as MerklListing[], new Date(at)),

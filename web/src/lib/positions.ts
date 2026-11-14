@@ -69,8 +69,15 @@ export function placesFor(amount: number, sources: Sources): VenueOut[] {
   return buildYields(sources, { amount, mode: "holder", trove: "new", days: 90, ratePct: null }).venues.filter((v) => v.status === "ok" && v.id !== "mezo-stability-pool");
 }
 
-/** Each holding next to the best cash place for that same amount (holder, 90-day hold). */
+/** MUSD that would move to a better place: everything not already staked in the gauge. Rates are diluted by this one
+ *  amount, so every holding is compared at the same rate and the "more a year" figures add up. */
+export function movable(p: Positions): number {
+  return [p.wallet, p.vault, p.stability].filter((a) => a >= 1).reduce((s, a) => s + a, 0);
+}
+
+/** Each holding next to the best cash place if all movable MUSD went there together (holder, 90-day hold). */
 export function compare(p: Positions, sources: Sources): Row[] {
+  const moving = movable(p);
   const vaultApr = sources.venues.find((v) => v.id === sources.benchmarkId && v.status === "ok")?.rates.liquidApr ?? null;
   const held: [Row["id"], number, number | null][] = [
     ["wallet", p.wallet, 0],
@@ -81,7 +88,8 @@ export function compare(p: Positions, sources: Sources): Row[] {
   return held
     .filter(([, amount]) => amount >= 1)
     .flatMap(([id, amount, nowPct]) => {
-      const best = buildYields(sources, { amount, mode: "holder", trove: "new", days: 90, ratePct: null }).venues.find((v) => v.carry.cash !== null && !v.pairToken);
+      // Staked sMUSD is already in the gauge's staked total, so it is not added again; it is diluted only by what would join it.
+      const best = buildYields(sources, { amount: Math.max(moving, id === "staked" ? 1 : amount), mode: "holder", trove: "new", days: 90, ratePct: null }).venues.find((v) => v.carry.cash !== null && !v.pairToken);
       if (!best) return [];
       // Already staked and staking is best: the same place, so no gap (the two rates differ only by the reads' timing and dilution).
       const same = id === "staked" && best.id === "mezo-smusd-gauge";

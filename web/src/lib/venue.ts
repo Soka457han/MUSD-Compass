@@ -17,6 +17,7 @@ export type Venue = {
   pairToken?: "BTC" | "MEZO"; // a deposit also needs this token, so the venue is listed apart from MUSD-only spots
   notes: string[];
   incentiveUsdPerDay?: number; // what the reward campaign pays out per day (Merkl venues only)
+  mezoSellDepthMusd?: number; // MEZO-paid venues: MUSD the Mezo MEZO/MUSD pool holds to pay out MEZO sellers
   status: "ok" | "unavailable";
   updatedAt: string;
 };

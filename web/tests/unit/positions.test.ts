@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { checkText } from "@/components/PriceLabel";
+import { checkText, mezoOverDepth } from "@/components/PriceLabel";
 import { fixtureSources } from "@/lib/sources/fixture";
-import { compare, placesFor, type Positions } from "@/lib/positions";
+import { compare, movable, placesFor, type Positions } from "@/lib/positions";
 import { gaugeAprPct } from "@/lib/gauge";
 
 const sources = fixtureSources();
@@ -41,6 +41,29 @@ describe("checkText", () => {
     expect(checkText({ keepMusd: 19.73, oneOffMusd: 0, paybackDays: null }, 90)).toBe("you keep 19.73 MUSD cash, no one-off costs");
     expect(checkText({ keepMusd: -1.2, oneOffMusd: 1.28, paybackDays: "never" }, 90)).toBe("you lose 1.20 MUSD · 1.28 MUSD one-off costs, never earned back at today's yield");
     expect(checkText({ keepMusd: 3, oneOffMusd: 1.28, paybackDays: 120 }, 90)).toBe("you keep 3.00 MUSD cash · 1.28 MUSD one-off costs, earned back after 120 days, longer than your hold");
+    expect(checkText({ keepMusd: 3, oneOffMusd: 2, paybackDays: 1 }, 365)).toBe("you keep 3.00 MUSD cash · 2.00 MUSD one-off costs, earned back after 1 day");
+  });
+  it("MEZO-paid venues say the reward is MEZO, not MUSD cash", () => {
+    expect(checkText({ keepMusd: 263.89, oneOffMusd: 0, paybackDays: null }, 90, true)).toBe("you keep about 263.89 MUSD after costs, earned as MEZO, no one-off costs");
+  });
+});
+
+describe("mezoOverDepth", () => {
+  const v = { carry: { liquid: 40, locked: 0, costs: 0, cash: 40, total: 40 }, mezoSellDepthMusd: 824 };
+  it("warns only when the MEZO earned over the hold is more than the MEZO pool can pay sellers", () => {
+    expect(mezoOverDepth(v, 2000, 90)).toBeNull(); // 197 MUSD of MEZO
+    expect(mezoOverDepth(v, 100_000, 90)).toBeCloseTo(9863.01, 1);
+    expect(mezoOverDepth({ ...v, mezoSellDepthMusd: undefined }, 100_000, 90)).toBeNull(); // not MEZO-paid
+  });
+});
+
+describe("compare on several holdings", () => {
+  it("compares every movable holding at one shared rate, so the rows agree and add up", () => {
+    const p = { ...base, wallet: 467, vault: 57_000 };
+    const rows = compare(p, sources);
+    expect(movable(p)).toBe(57_467);
+    expect(rows[0].best.carry.cash).toBeCloseTo(rows[1].best.carry.cash!, 9);
+    expect(rows[0].best.carry.cash).toBeCloseTo(placesFor(57_467, sources).find((v) => v.id === rows[0].best.id)!.carry.cash!, 9);
   });
 });
 

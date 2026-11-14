@@ -5,7 +5,8 @@ import { useEffect, useState } from "react";
 import { SAMPLES } from "@/lib/chain/addresses";
 import { useOwnWallet } from "@/lib/useOwnWallet";
 import { musd, pct, usd } from "@/lib/format";
-import { compare, placesFor, type Positions, type Row } from "@/lib/positions";
+import { compare, movable, placesFor, type Positions, type Row } from "@/lib/positions";
+import { MAINNET_CAP_MUSD } from "@/lib/sendSafely";
 import type { Sources, VenueOut } from "@/lib/yields";
 import { ArrowUpRightIcon } from "./Icons";
 
@@ -30,7 +31,7 @@ function actionFor(r: Row, benchmarkId: string) {
 }
 
 /** Every place this MUSD could go: ranked by cash, then the pools that also need BTC or MEZO. */
-function Places({ amount, sources }: { amount: number; sources: Sources }) {
+function Places({ amount, staked, sources }: { amount: number; staked: number; sources: Sources }) {
   const all = placesFor(amount, sources);
   const ranked = all.filter((v) => v.carry.cash !== null && !v.pairToken);
   const paired = all.filter((v) => v.carry.cash !== null && v.pairToken);
@@ -40,6 +41,7 @@ function Places({ amount, sources }: { amount: number; sources: Sources }) {
       <h2 id="places-h" className="text-base font-bold">
         Every place {musd(amount)} could go today
       </h2>
+      {staked >= 1 && <p className="mt-1 text-sm text-ink-muted">Not counting the {musd(staked)} already staked in the gauge.</p>}
       <p className="mt-1 text-sm text-ink-muted">Best cash first, after costs, holding 90 days. Locked veMEZO is shown beside cash and never added to it.</p>
       <ol className="mt-3 divide-y divide-line overflow-hidden rounded-2xl border border-line">
         {ranked.map((v, i) => {
@@ -54,9 +56,9 @@ function Places({ amount, sources }: { amount: number; sources: Sources }) {
               </span>
               <span className="text-sm font-extrabold">{pct(v.carry.cash)} cash</span>
               <span className="w-full pl-8 text-xs text-ink-muted">
-                about {musd(Math.max(0, Math.floor((amount * (v.carry.cash ?? 0)) / 100)))} a year
+                about {musd(Math.max(0, Math.round((amount * (v.carry.cash ?? 0)) / 100)))} a year
                 {locked > 0 && ` · +${pct(locked)} locked veMEZO, not counted`}
-                {mezoPaid && ` · ${mezoPaid.toLowerCase()}`} ·{" "}
+                {mezoPaid && " · paid in MEZO"} ·{" "}
                 <a href={l.url} target="_blank" rel="noreferrer" className="font-semibold text-accent-text underline">
                   {l.label}
                 </a>
@@ -117,6 +119,9 @@ export function MyPanel({ sources }: { sources: Sources }) {
   const rows = data ? compare(data, sources) : [];
   const vaultApr = sources.venues.find((v) => v.id === sources.benchmarkId && v.status === "ok")?.rates.liquidApr ?? null;
   const total = rows.reduce((s, r) => s + r.amount, 0);
+  const moving = data ? movable(data) : 0;
+  const stakedNow = data?.staked ?? 0;
+  const mezoDepth = sources.venues.find((v) => v.mezoSellDepthMusd !== undefined)?.mezoSellDepthMusd;
   const nothing = data && rows.length === 0 && !data.trove && !(data.veMezo && data.veMezo.unclaimed > 0);
 
   return (
@@ -203,7 +208,7 @@ export function MyPanel({ sources }: { sources: Sources }) {
                         Best now: <span className="font-semibold text-ink">{bestName}</span> at {pct(r.best.carry.cash)}
                         {r.extraPerYear !== null && r.extraPerYear >= 1 && (
                           <>
-                            , about <span className="font-semibold text-ink">{musd(Math.floor(r.extraPerYear))} more a year</span>
+                            , about <span className="font-semibold text-ink">{musd(Math.round(r.extraPerYear))} more a year</span>
                           </>
                         )}
                         .
@@ -221,12 +226,17 @@ export function MyPanel({ sources }: { sources: Sources }) {
             })}
           </ul>
           <p className="mt-3 text-xs text-ink-muted">
-            Compared with every ranked place for that same amount: the Savings Vault and Mezo-paid pools on Ethereum, holding 90 days, after costs. Mezo&apos;s own pools show their rates in the Mezo app. Locked veMEZO is not counted as cash. Rates and reward campaigns change week to week.
+            Each holding is compared {moving >= 1 ? `as if all ${musd(moving)} you could move went to the same place together` : "with every ranked place"}, holding 90 days, after costs: the Savings Vault, Mezo&apos;s own pools and Mezo-paid pools on Ethereum. Gauge rewards are a fixed amount shared by everyone staked, so the rate falls as more MUSD joins, and your staked MUSD would earn that lower rate too. Locked veMEZO is not counted as cash. Rates and reward campaigns change week to week.
           </p>
+          {mezoDepth !== undefined && rows.some((r) => r.best.mezoSellDepthMusd !== undefined && (r.extraPerYear ?? 0) >= 1) && (
+            <p className="mt-2 text-xs text-ink-muted">
+              MEZO-paid rates value MEZO at today&apos;s price. Mezo&apos;s MEZO pool holds only about {musd(Math.round(mezoDepth))} to pay sellers, so a large reward means a lower price or selling on an exchange. Compass also moves at most {musd(MAINNET_CAP_MUSD)} per transaction on mainnet; for more, repeat it or use the Mezo app.
+            </p>
+          )}
         </section>
       )}
 
-      {data && total >= 1 && <Places amount={total} sources={sources} />}
+      {data && total >= 1 && <Places amount={moving >= 1 ? moving : total} staked={moving >= 1 ? stakedNow : 0} sources={sources} />}
 
       {data && (data.trove || (data.veMezo && data.veMezo.unclaimed > 0)) && (
         <section aria-labelledby="more-h" className="rounded-[20px] border border-line bg-card px-5 py-5">

@@ -122,7 +122,7 @@ test("every ranked venue says what this amount keeps before you go in", async ({
   await page.locator("form[data-hydrated]").waitFor();
   const cards = page.getByRole("list", { name: "Venues ranked by cash carry" }).getByRole("article");
   await expect(cards.first()).toContainText("Before you go in: 2,000 MUSD for 90 days");
-  await expect(cards.first()).toContainText(/you keep \d+\.\d\d MUSD cash, no one-off costs/);
+  await expect(cards.first()).toContainText(/you keep about \d+\.\d\d MUSD after costs, earned as MEZO, no one-off costs/); // the fixture's top venue is the MEZO-paid gauge
   // Ethereum rows carry the bridge round trip as a one-off cost (the fixture's ranked Mezo gauge pool has none, so pick the Ethereum row).
   await expect(cards.filter({ hasText: "Ethereum" }).first()).toContainText(/MUSD one-off costs, (never earned back|earned back after \d+ days)/);
 });
@@ -141,9 +141,10 @@ test("My MUSD: each holding against the best place, plus trove and veMEZO; reach
   await expect(row("Savings Vault")).toContainText(/Best now: MUSD Savings Vault, staked in the gauge at .*more a year/);
   await expect(row("Savings Vault, staked in the gauge")).toContainText(/paid in MEZO.*This is the best cash place today\./);
   await expect(row("Stability Pool")).toContainText("No steady APR");
-  const places = page.getByRole("region", { name: "Every place 7,050 MUSD could go today" }).getByRole("listitem");
-  await expect(places.first()).toContainText(/MUSD Savings Vault, staked in the gauge.*cash.*paid in mezo/);
-  await expect(places.filter({ hasText: "MUSD Savings Vault (sMUSD)" })).toContainText(/4\.23% cash.*about 298 MUSD a year/);
+  const places = page.getByRole("region", { name: "Every place 6,050 MUSD could go today" }).getByRole("listitem");
+  await expect(page.getByText("Not counting the 1,000 MUSD already staked in the gauge.")).toBeVisible(); // staked MUSD is not moved again
+  await expect(places.first()).toContainText(/MUSD Savings Vault, staked in the gauge.*cash.*paid in MEZO/);
+  await expect(places.filter({ hasText: "MUSD Savings Vault (sMUSD)" })).toContainText(/4\.23% cash.*about 256 MUSD a year/);
   await expect(page.getByText("Higher rates, but they need BTC or MEZO too")).toBeVisible();
   await expect(places.filter({ hasText: "Ethereum" }).first()).toContainText("locked veMEZO, not counted");
   await expect(page.getByText(/30,210 MUSD borrowed at 1%/)).toBeVisible();

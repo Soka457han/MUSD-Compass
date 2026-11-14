@@ -743,7 +743,7 @@ export function VaultPanel() {
               <input id="borrow-amt" inputMode="decimal" value={borrowAmt} onChange={(e) => setBorrowAmt(e.target.value)} className="block h-11 w-full max-w-xs rounded-full border border-field bg-card px-4 text-sm" />
               {coll !== null && (
                 <p className="text-sm text-ink-muted">
-                  Locks <span className="font-semibold text-ink">{formatEther(coll)} BTC</span> ({net} price ${setup.btcUsd.toLocaleString("en-US", { maximumFractionDigits: 0 })}) for a 200% ratio · fee {(Number(borrowAmt) * setup.feePct / 100).toFixed(2)} MUSD · {setup.gasComp} MUSD gas deposit, returned when the trove closes · you have {setup.btcBalance.toFixed(5)} BTC
+                  Locks <span className="font-semibold text-ink">{formatEther(coll)} BTC</span> ({net} price ${setup.btcUsd.toLocaleString("en-US", { maximumFractionDigits: 0 })}) for a 200% ratio (BTC can fall about 45% before Mezo&apos;s 110% liquidation line) · fee {(Number(borrowAmt) * setup.feePct / 100).toFixed(2)} MUSD · {setup.gasComp} MUSD gas deposit, returned when the trove closes · you have {setup.btcBalance.toFixed(5)} BTC
                 </p>
               )}
               {shortBtc && (

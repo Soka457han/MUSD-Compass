@@ -11,7 +11,8 @@ export type Route = (typeof ROUTES)[number];
 const NETS = ["testnet", "mainnet"] as const;
 type Net = (typeof NETS)[number];
 
-const OWN_WALLETS = ["0xfe21B2782B35BE770DD4a7b05f81cE43790D676C", "0xC20F87B85A58a0Bc1E0eE851D0bBAaDFFf9e9C4C"].map((a) => a.toLowerCase());
+// Dev wallet, test wallet, and the second wallet 0x9126…6976 that signs the /proof rows (it paid the 13 Nov mainnet x402 call).
+const OWN_WALLETS = ["0xfe21B2782B35BE770DD4a7b05f81cE43790D676C", "0xC20F87B85A58a0Bc1E0eE851D0bBAaDFFf9e9C4C", "0x912697eD3fEeF6cA700Ba18e008Fdf990b6d6976"].map((a) => a.toLowerCase());
 const TTL = 3_456_000; // 40 days of daily keys
 
 const day = (offset = 0) => new Date(Date.now() - offset * 86_400_000).toISOString().slice(0, 10);

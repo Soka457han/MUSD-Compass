@@ -18,18 +18,27 @@ function PriceFigure({ value }: { value: number }) {
 
 const m2 = (n: number) => `${Math.abs(n).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} MUSD`;
 
-/** "Before you go in": the venue's carry turned into MUSD for this amount and hold. */
-export function checkText(c: VenueOut["check"], days: number): string {
+const dayCount = (n: number) => `${n} day${n === 1 ? "" : "s"}`;
+
+/** "Before you go in": the venue's carry turned into MUSD for this amount and hold. MEZO-paid venues say so: the reward is MEZO valued at spot, not MUSD. */
+export function checkText(c: VenueOut["check"], days: number, paidInMezo = false): string {
   if (c.keepMusd === null) return "";
-  const keep = c.keepMusd >= 0 ? `you keep ${m2(c.keepMusd)} cash` : `you lose ${m2(c.keepMusd)}`;
+  const keep = c.keepMusd < 0 ? `you lose ${m2(c.keepMusd)}` : paidInMezo ? `you keep about ${m2(c.keepMusd)} after costs, earned as MEZO` : `you keep ${m2(c.keepMusd)} cash`;
   if (c.paybackDays === null) return `${keep}, no one-off costs`;
   const back =
     c.paybackDays === "never"
       ? "never earned back at today's yield"
       : c.paybackDays > days
-        ? `earned back after ${c.paybackDays} days, longer than your hold`
-        : `earned back after ${c.paybackDays} days`;
+        ? `earned back after ${dayCount(c.paybackDays)}, longer than your hold`
+        : `earned back after ${dayCount(c.paybackDays)}`;
   return `${keep} · ${m2(c.oneOffMusd)} one-off costs, ${back}`;
+}
+
+/** MUSD worth of MEZO a venue pays over the hold, when that is more than Mezo's MEZO pool can pay sellers; null otherwise. */
+export function mezoOverDepth(v: Pick<VenueOut, "carry" | "mezoSellDepthMusd">, amount: number, days: number): number | null {
+  if (v.mezoSellDepthMusd === undefined || v.carry.liquid === null) return null;
+  const earned = (amount * v.carry.liquid * days) / 36_500;
+  return earned > v.mezoSellDepthMusd ? earned : null;
 }
 
 function rangeText(r: Range): string {
@@ -47,6 +56,7 @@ export function PriceLabel({ v, days, amount, lead }: { v: VenueOut; days: numbe
   const external = v.action.url.startsWith("http");
   const titleId = `venue-${v.id}`;
   const chip = lead ? "bg-surface" : "bg-card";
+  const overDepth = mezoOverDepth(v, amount, days);
 
   return (
     <article aria-labelledby={titleId} className={`relative flex h-full flex-col rounded-[18px] border border-line md:rounded-[20px] ${lead ? "bg-card" : "bg-surface"}`}>
@@ -103,7 +113,12 @@ export function PriceLabel({ v, days, amount, lead }: { v: VenueOut; days: numbe
             <dt className="text-ink-muted">
               Before you go in: {musd(amount)} for {days} days
             </dt>
-            <dd className="font-semibold">{checkText(v.check, days)}</dd>
+            <dd className="font-semibold">{checkText(v.check, days, v.mezoSellDepthMusd !== undefined)}</dd>
+            {overDepth !== null && (
+              <dd className="mt-1 text-danger-text">
+                That is about {musd(Math.round(overDepth))} of MEZO, more than the {musd(Math.round(v.mezoSellDepthMusd!))} Mezo&apos;s MEZO pool holds to pay sellers today. Expect a lower price, or sell on an exchange.
+              </dd>
+            )}
           </div>
         )}
         <div>
