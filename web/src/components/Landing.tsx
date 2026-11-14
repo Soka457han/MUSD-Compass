@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CompassMark } from "./Icons";
 import { MAINNET_CAP_MUSD, mainnetWritesEnabled } from "@/lib/sendSafely";
 import { walletConnectEnabled } from "@/lib/walletconnect";
 
@@ -149,7 +150,7 @@ export function Faq() {
 }
 
 // Footer links drawn as the same accent pill as the table's action buttons.
-const PILL = "inline-flex min-h-10 items-center rounded-full bg-accent px-5 font-bold text-on-accent no-underline hover:opacity-90";
+const PILL = "inline-flex min-h-9 items-center rounded-full bg-accent px-4 text-sm font-semibold text-on-accent no-underline hover:opacity-90";
 
 export function SiteFooter({ notes }: { notes?: React.ReactNode }) {
   return (
@@ -157,11 +158,14 @@ export function SiteFooter({ notes }: { notes?: React.ReactNode }) {
       {notes && <div className="mx-auto max-w-6xl space-y-1.5 px-4 pt-7 text-xs leading-relaxed text-ink-muted md:px-6 md:pt-10">{notes}</div>}
       <div className="mx-auto grid max-w-6xl gap-6 px-4 py-7 text-sm md:grid-cols-[1.4fr_1fr_1fr] md:gap-8 md:px-6 md:py-10 md:text-[15px]">
         <div className="flex flex-col gap-2.5">
-          <span className="text-[17px] font-bold md:text-lg">MUSD Compass</span>
+          <span className="flex items-center gap-2.5 text-[17px] font-bold md:text-lg">
+            <CompassMark className="size-8 md:size-9" />
+            MUSD Compass
+          </span>
           <span className="text-ink-muted">Built for the Mezo Buildathon. {LIVE ? "Mainnet data. Actions on testnet, and on mainnet from your own wallet." : "Mainnet data, testnet actions."} Not financial advice. Independent community tool, not made by Mezo.</span>
         </div>
         <nav aria-label="Product" className="flex flex-col items-start gap-2">
-          <span className="text-[13px] font-semibold text-ink-muted">Product</span>
+          <span className="mb-1 text-[17px] font-bold md:text-lg"><span className="hl">Product</span></span>
           {/* The footer lives on the Yields page itself, so this link jumps up instead of reloading the page. */}
           <a href="#main" className={PILL}>
             Yields
@@ -178,7 +182,7 @@ export function SiteFooter({ notes }: { notes?: React.ReactNode }) {
           ))}
         </nav>
         <nav aria-label="Elsewhere" className="flex flex-col items-start gap-2">
-          <span className="text-[13px] font-semibold text-ink-muted">Elsewhere</span>
+          <span className="mb-1 text-[17px] font-bold md:text-lg"><span className="hl">Elsewhere</span></span>
           {[
             [REPO, "GitHub"],
             [BOT, "Telegram bot"],
