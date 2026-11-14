@@ -48,9 +48,9 @@ function Segmented<T extends string>(props: { legend: string; name: string; valu
 }
 
 /** Decoration only: a coin circling a glass ring, behind the best-cash card on wide screens. */
-function HeroRing() {
+function HeroRing({ up }: { up: boolean }) {
   return (
-    <svg aria-hidden="true" viewBox="0 0 340 340" className="pointer-events-none absolute -top-6 right-0 -z-10 hidden size-[420px] lg:block xl:-right-16 2xl:-right-44">
+    <svg aria-hidden="true" viewBox="0 0 340 340" className={`pointer-events-none absolute right-0 -z-10 hidden size-[420px] transition-[top] duration-300 lg:block xl:-right-16 2xl:-right-44 ${up ? "-top-16" : "-top-6"}`}>
       <circle cx="170" cy="170" r="120" fill="none" stroke="var(--ring)" strokeWidth="30" />
       <circle cx="170" cy="170" r="120" fill="none" stroke="var(--accent)" strokeOpacity="0.35" strokeWidth="2" />
       {/* 44 x 46 keeps the picture's shape; its centre sits on the ring line (radius 120 from 170,170). */}
@@ -221,7 +221,7 @@ export function Compass({ sources, between, after }: { sources: Sources; between
     <>
       <main id="main" className="mx-auto w-full max-w-6xl flex-1 px-4 pt-5 md:px-6 md:pt-14">
         <section aria-label="Calculator" className="relative isolate grid gap-7 lg:grid-cols-[1.1fr_1fr] lg:items-start lg:gap-12">
-          <HeroRing />
+          <HeroRing up={query?.mode === "borrower"} />
           <div className="flex min-w-0 flex-col gap-4 md:gap-5">
             <h1 className="text-[30px] leading-[1.15] font-extrabold tracking-tight text-balance md:text-[56px] md:leading-[1.06]">Where your MUSD <span className="hl">earns most</span>, after costs.</h1>
             <p className="text-ink-muted md:max-w-[520px] md:text-lg">Every Mezo earning spot, ranked by the cash you keep. Live from Mezo and Ethereum.</p>
@@ -300,7 +300,7 @@ export function Compass({ sources, between, after }: { sources: Sources; between
             </div>
           </div>
           {result && lead ? (
-            <BestCash v={lead} holding={result.assumptions.holding} mint={query?.mode === "borrower" ? { amount: query.amount, rate: result.assumptions.ratePct } : null} className={`${dim} lg:mt-36`} />
+            <BestCash v={lead} holding={result.assumptions.holding} mint={query?.mode === "borrower" ? { amount: query.amount, rate: result.assumptions.ratePct } : null} className={`${dim} lg:transition-[margin] lg:duration-300 ${query?.mode === "borrower" ? "lg:mt-8" : "lg:mt-36"}`} />
           ) : (
             <p className="text-sm">No venue can be ranked right now.</p>
           )}

@@ -383,25 +383,31 @@ main :is(a, article)[class*="rounded-[20px]"]:hover {
   .hero-coin image { animation: none; }
 }
 
-/* Key words in headings: framed like a selected object in a design tool (hatched fill, thin frame, four corner handles). */
+/* Key words in headings: framed like a selected object in a design tool (soft fill, thin frame, four corner handles).
+   The frame is drawn behind the words and kept inside the line's own height, so it never touches the lines above or below. */
 .hl {
   position: relative;
-  padding: 0 0.14em;
+  isolation: isolate;
   white-space: nowrap;
   color: var(--ink);
-  border: 1px solid color-mix(in srgb, var(--accent) 65%, transparent);
-  background:
-    repeating-linear-gradient(-45deg, color-mix(in srgb, var(--accent) 16%, transparent) 0 2px, transparent 2px 7px),
-    var(--accent-soft);
 }
+.hl::before,
 .hl::after {
   content: "";
   position: absolute;
-  inset: -4px;
+  z-index: -1;
   pointer-events: none;
+}
+.hl::before {
+  inset: 0.16em -0.05em 0.08em;
+  border: 1px solid color-mix(in srgb, var(--accent) 65%, transparent);
+  background: var(--accent-soft);
+}
+.hl::after {
+  inset: calc(0.16em - 3px) calc(-0.05em - 3px) calc(0.08em - 3px);
   background:
-    linear-gradient(var(--accent), var(--accent)) 0 0 / 7px 7px no-repeat,
-    linear-gradient(var(--accent), var(--accent)) 100% 0 / 7px 7px no-repeat,
-    linear-gradient(var(--accent), var(--accent)) 0 100% / 7px 7px no-repeat,
-    linear-gradient(var(--accent), var(--accent)) 100% 100% / 7px 7px no-repeat;
+    linear-gradient(var(--accent), var(--accent)) 0 0 / 6px 6px no-repeat,
+    linear-gradient(var(--accent), var(--accent)) 100% 0 / 6px 6px no-repeat,
+    linear-gradient(var(--accent), var(--accent)) 0 100% / 6px 6px no-repeat,
+    linear-gradient(var(--accent), var(--accent)) 100% 100% / 6px 6px no-repeat;
 }
