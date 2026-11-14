@@ -165,7 +165,7 @@ export function SiteFooter({ notes }: { notes?: React.ReactNode }) {
           <span className="text-ink-muted">Built for the Mezo Buildathon. {LIVE ? "Mainnet data. Actions on testnet, and on mainnet from your own wallet." : "Mainnet data, testnet actions."} Not financial advice. Independent community tool, not made by Mezo.</span>
         </div>
         <nav aria-label="Product" className="flex flex-col items-start gap-2">
-          <span className="mb-1 text-[17px] font-bold md:text-lg"><span className="hl">Product</span></span>
+          <span className="mb-2 text-xl font-bold md:text-[22px]"><span className="hl inline-block px-2 py-1.5">Product</span></span>
           {/* The footer lives on the Yields page itself, so this link jumps up instead of reloading the page. */}
           <a href="#main" className={PILL}>
             Yields
@@ -182,7 +182,7 @@ export function SiteFooter({ notes }: { notes?: React.ReactNode }) {
           ))}
         </nav>
         <nav aria-label="Elsewhere" className="flex flex-col items-start gap-2">
-          <span className="mb-1 text-[17px] font-bold md:text-lg"><span className="hl">Elsewhere</span></span>
+          <span className="mb-2 text-xl font-bold md:text-[22px]"><span className="hl inline-block px-2 py-1.5">Elsewhere</span></span>
           {[
             [REPO, "GitHub"],
             [BOT, "Telegram bot"],
