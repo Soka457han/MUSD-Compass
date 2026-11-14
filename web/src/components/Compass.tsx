@@ -53,11 +53,9 @@ function HeroRing() {
     <svg aria-hidden="true" viewBox="0 0 340 340" className="pointer-events-none absolute -top-20 -right-16 -z-10 hidden size-[440px] lg:block">
       <circle cx="170" cy="170" r="120" fill="none" stroke="var(--ring)" strokeWidth="30" />
       <circle cx="170" cy="170" r="120" fill="none" stroke="var(--accent)" strokeOpacity="0.35" strokeWidth="2" />
+      {/* 44 x 46 keeps the picture's shape; its centre sits on the ring line (radius 120 from 170,170). */}
       <g className="hero-coin">
-        <circle cx="170" cy="50" r="18" fill="#f5c451" stroke="#c9952b" strokeWidth="3" />
-        <text x="170" y="56" textAnchor="middle" fontSize="15" fontWeight="800" fill="#7a5410">
-          M
-        </text>
+        <image href="/coin.webp" x="148" y="27" width="44" height="46" />
       </g>
     </svg>
   );

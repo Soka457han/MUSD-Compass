@@ -330,6 +330,11 @@ main :is(a, article)[class*="rounded-[20px]"]:hover {
   transform-origin: 170px 170px;
   animation: orbit 9s linear infinite;
 }
+/* The coin is a photo taken at an angle, so it turns the other way at the same speed and stays upright all the way round. */
+.hero-coin image {
+  transform-origin: 170px 50px;
+  animation: orbit 9s linear infinite reverse;
+}
 @keyframes orbit {
   to { transform: rotate(360deg); }
 }
@@ -374,5 +379,6 @@ main :is(a, article)[class*="rounded-[20px]"]:hover {
   main { --focus-blur: 0px; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .hero-coin { animation: none; }
+  .hero-coin,
+  .hero-coin image { animation: none; }
 }
