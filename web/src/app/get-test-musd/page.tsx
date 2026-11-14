@@ -42,7 +42,7 @@ export default function GetTestMusdPage() {
       </p>
       <main id="main" className="mx-auto w-full max-w-3xl flex-1 px-4 py-5">
         <h1 className="text-[30px] leading-tight font-extrabold tracking-tight md:text-[40px]">
-          Get test MUSD in 3 steps
+          Get test MUSD in <span className="hl">3 steps</span>
         </h1>
         <p className="mt-1 max-w-prose text-sm text-ink-muted">About 5 minutes with any EVM wallet (MetaMask, Rabby, a phone wallet&apos;s browser).</p>
         <ol className="mt-4 space-y-5">

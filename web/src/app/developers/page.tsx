@@ -54,7 +54,7 @@ export default function DevelopersPage() {
       <main id="main" className="mx-auto w-full max-w-3xl flex-1 space-y-5 px-4 py-5">
         <div>
           <h1 className="text-[30px] leading-tight font-extrabold tracking-tight md:text-[40px]">
-            API and widget
+            <span className="hl">API</span> and widget
           </h1>
           <p className="mt-1 max-w-prose text-sm text-ink-muted">
             The same numbers the page shows, as JSON. Free, no key, CORS open. 60 requests per minute per IP; sources refresh every 5 minutes.

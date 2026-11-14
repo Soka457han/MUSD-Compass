@@ -52,7 +52,7 @@ export default function IncentivesPage() {
       <SiteHeader current="/incentives" />
       <main id="main" className="mx-auto w-full max-w-3xl flex-1 px-4 py-5">
         <h1 className="text-[30px] leading-tight font-extrabold tracking-tight md:text-[40px]">
-          Incentive efficiency
+          Incentive <span className="hl">efficiency</span>
         </h1>
         <p className="mt-1 max-w-prose text-sm text-ink-muted">What each Mezo-paid MUSD campaign on Ethereum spends per day, against the liquidity it holds. Mainnet data, refreshed every 5 minutes.</p>
         <Suspense fallback={<p className="mt-4 text-sm">Reading Merkl…</p>}>

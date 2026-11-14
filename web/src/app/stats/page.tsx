@@ -122,7 +122,7 @@ export default function StatsPage() {
       <SiteHeader current="/stats" />
       <main id="main" className="mx-auto w-full max-w-3xl flex-1 space-y-5 px-4 py-5">
         <div>
-          <h1 className="text-[30px] leading-tight font-extrabold tracking-tight md:text-[40px]">Usage stats</h1>
+          <h1 className="text-[30px] leading-tight font-extrabold tracking-tight md:text-[40px]">Usage <span className="hl">stats</span></h1>
           <p className="mt-1 max-w-prose text-sm text-ink-muted">
             Plain counts, kept without addresses or chat ids. Requests include site visitors, bot users and outside apps. Our own cron and warm-up calls are excluded.
           </p>
