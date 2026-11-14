@@ -50,7 +50,7 @@ function Segmented<T extends string>(props: { legend: string; name: string; valu
 /** Decoration only: a coin circling a glass ring, behind the best-cash card on wide screens. */
 function HeroRing() {
   return (
-    <svg aria-hidden="true" viewBox="0 0 340 340" className="pointer-events-none absolute -top-20 -right-16 -z-10 hidden size-[440px] lg:block">
+    <svg aria-hidden="true" viewBox="0 0 340 340" className="pointer-events-none absolute -top-6 right-0 -z-10 hidden size-[420px] lg:block xl:-right-12">
       <circle cx="170" cy="170" r="120" fill="none" stroke="var(--ring)" strokeWidth="30" />
       <circle cx="170" cy="170" r="120" fill="none" stroke="var(--accent)" strokeOpacity="0.35" strokeWidth="2" />
       {/* 44 x 46 keeps the picture's shape; its centre sits on the ring line (radius 120 from 170,170). */}
@@ -300,7 +300,7 @@ export function Compass({ sources, between, after }: { sources: Sources; between
             </div>
           </div>
           {result && lead ? (
-            <BestCash v={lead} holding={result.assumptions.holding} mint={query?.mode === "borrower" ? { amount: query.amount, rate: result.assumptions.ratePct } : null} className={dim} />
+            <BestCash v={lead} holding={result.assumptions.holding} mint={query?.mode === "borrower" ? { amount: query.amount, rate: result.assumptions.ratePct } : null} className={`${dim} lg:mt-36 lg:mr-10 xl:mr-12`} />
           ) : (
             <p className="text-sm">No venue can be ranked right now.</p>
           )}
