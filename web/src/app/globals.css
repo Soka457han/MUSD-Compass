@@ -1,14 +1,21 @@
 @import "tailwindcss";
 
-/* Light by default: white page, one purple accent, pastel tiles with dark text. Dark is opt-in (a saved choice). */
+/* Light by default: soft lilac page, frosted-glass cards, one purple accent, pastel tiles with dark text. Dark is opt-in (a saved choice). */
 :root {
-  --page: #ffffff;
-  --surface: #f4f4f7;
+  --page: #e9e6f5;
+  --surface: #f6f4fc;
   --card: #ffffff;
-  --line: #e3e4e8;
-  --field: #8a8f98; /* text-field edges: 3:1 against the page (WCAG 1.4.11); --line is for dividers */
-  --ink: #0e1318;
-  --ink-muted: #5b616b;
+  --glass: rgb(255 255 255 / 0.5); /* cards: see-through, blurring the light behind them */
+  --glass-line: rgb(255 255 255 / 0.9);
+  --ring: rgb(255 255 255 / 0.75);
+  --glow-1: rgb(232 121 249 / 0.35);
+  --glow-2: rgb(139 92 246 / 0.22);
+  --glow-3: rgb(255 170 220 / 0.3);
+  --btn-glow: rgb(124 58 237 / 0.28);
+  --line: #d9d3ec;
+  --field: #7a7890; /* text-field edges: 3:1 against the page (WCAG 1.4.11); --line is for dividers */
+  --ink: #1b1440;
+  --ink-muted: #565072;
   --accent: #7c3aed;
   --on-accent: #ffffff;
   --accent-text: #6d28d9;
@@ -30,6 +37,13 @@
   --page: #0f1015;
   --surface: #16171d;
   --card: #222328;
+  --glass: rgb(34 35 40 / 0.6);
+  --glass-line: rgb(255 255 255 / 0.08);
+  --ring: rgb(255 255 255 / 0.08);
+  --glow-1: rgb(168 85 247 / 0.22);
+  --glow-2: rgb(124 58 237 / 0.18);
+  --glow-3: rgb(217 70 239 / 0.14);
+  --btn-glow: rgb(163 112 252 / 0.35);
   --line: #2e2f36;
   --field: #6b6d75;
   --ink: #ffffff;
@@ -218,4 +232,147 @@ a {
   html:has(.tabbar) {
     scroll-padding-bottom: 88px; /* a focused control never hides behind the tab bar */
   }
+}
+
+/* ---------- Glass look and scroll motion ---------- */
+
+/* Coloured light fixed behind the page; the glass cards blur it as they scroll past. */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(min(520px, 80vw) at 88% 22%, var(--glow-1), transparent 70%),
+    radial-gradient(min(620px, 90vw) at 4% 78%, var(--glow-2), transparent 70%),
+    radial-gradient(min(420px, 70vw) at 55% 105%, var(--glow-3), transparent 70%);
+}
+
+/* Every 20px-radius card inside <main> is a glass card. Matched by its radius class so no component needs a new class. */
+main [class*="rounded-[20px]"].bg-card {
+  background: var(--glass);
+  border-color: var(--glass-line);
+  -webkit-backdrop-filter: blur(22px) saturate(1.4);
+  backdrop-filter: blur(22px) saturate(1.4);
+}
+main :is(a, article)[class*="rounded-[20px]"] {
+  transition: transform 250ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+main :is(a, article)[class*="rounded-[20px]"]:hover {
+  transform: translateY(-4px);
+}
+
+/* Hold/Borrow and days pickers: one pill slides to the chosen option. --n is the option count. */
+.seg {
+  position: relative;
+}
+.seg::before {
+  content: "";
+  position: absolute;
+  top: 4px;
+  bottom: 4px;
+  left: 4px;
+  width: calc((100% - 8px - (var(--n) - 1) * 2px) / var(--n));
+  border-radius: 999px;
+  background: var(--accent);
+  transform: translateX(calc(var(--i, 0) * (100% + 2px)));
+  transition: transform 400ms cubic-bezier(0.3, 1.5, 0.5, 1);
+}
+.seg:has(label:nth-child(2) :checked) { --i: 1; }
+.seg:has(label:nth-child(3) :checked) { --i: 2; }
+
+/* Filled buttons lift and catch the light on hover; outline pills fill up from the bottom. */
+@layer components {
+  :is(a, button).bg-accent {
+    position: relative;
+    overflow: hidden;
+  }
+}
+:is(a, button).bg-accent {
+  box-shadow: 0 6px 22px var(--btn-glow);
+  transition: transform 150ms, box-shadow 200ms;
+}
+:is(a, button).bg-accent:not(:disabled):hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 30px var(--btn-glow);
+}
+:is(a, button).bg-accent:not(:disabled):active {
+  transform: scale(0.97);
+}
+:is(a, button).bg-accent::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(110deg, transparent 35%, rgb(255 255 255 / 0.45) 50%, transparent 65%);
+  transform: translateX(-120%);
+  pointer-events: none;
+}
+:is(a, button).bg-accent:not(:disabled):hover::before {
+  transform: translateX(120%);
+  transition: transform 700ms;
+}
+:is(a, button)[class*="rounded-full"][class*="border-line"] {
+  background-image: linear-gradient(var(--accent), var(--accent));
+  background-repeat: no-repeat;
+  background-position: 0 100%;
+  background-size: 100% 0;
+  transition: background-size 300ms, color 300ms, border-color 300ms;
+}
+:is(a, button)[class*="rounded-full"][class*="border-line"]:not(:disabled):hover {
+  background-size: 100% 100%;
+  color: var(--on-accent);
+  border-color: var(--accent);
+}
+
+/* Hero: a coin circling a glass ring behind the best-cash card. */
+.hero-coin {
+  transform-origin: 170px 170px;
+  animation: orbit 9s linear infinite;
+}
+@keyframes orbit {
+  to { transform: rotate(360deg); }
+}
+
+/* Tied to scroll (Chrome, Edge, Safari 26+). Elsewhere, and with reduced motion, everything is simply shown. */
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    /* Cards waiting below are visible but dim, soft and zoomed out; they come into focus over their first 240px on screen.
+       A shorter card is done as soon as it is fully on screen, so a card you can see whole is never left dim. */
+    main [class*="rounded-[20px]"]:not(.deck-card),
+    main details {
+      animation: focus-in linear backwards;
+      animation-timeline: view();
+      animation-range: entry 0% entry min(100%, 240px);
+    }
+    /* Section headings fill with ink from left to right as they scroll up. Each is followed by its section and the footer, so it always completes. */
+    @media (forced-colors: none) {
+      main h2[class*="text-2xl"] {
+        background: linear-gradient(90deg, var(--ink) 45%, color-mix(in srgb, var(--ink) 18%, transparent) 55%) 0 0 / 220% 100% no-repeat;
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+        animation: ink-in linear both;
+        animation-timeline: view();
+        animation-range: entry 30% cover 32%;
+      }
+    }
+  }
+}
+@keyframes focus-in {
+  from {
+    opacity: 0.3;
+    filter: blur(var(--focus-blur, 8px));
+    transform: translateY(48px) scale(0.9);
+  }
+}
+@keyframes ink-in {
+  from { background-position: 100% 0; }
+}
+/* Phones: no blur while scrolling, it costs too much there. */
+@media (max-width: 767px) {
+  main { --focus-blur: 0px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hero-coin { animation: none; }
 }

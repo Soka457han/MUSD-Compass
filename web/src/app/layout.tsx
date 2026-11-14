@@ -15,8 +15,8 @@ export const metadata: Metadata = {
   description: "Where Mezo MUSD earns the most after costs — cash first, locked veMEZO beside it.",
 };
 
-// Phone status bar and installed-app bar follow the page (white by default), not the old yellow.
-export const viewport: Viewport = { themeColor: "#ffffff" };
+// Phone status bar and installed-app bar follow the page (lilac by default).
+export const viewport: Viewport = { themeColor: "#e9e6f5" };
 
 // Light is the default; a saved "dark" choice is applied before paint so the page never flashes white first.
 const THEME_SCRIPT = `try{if(localStorage.getItem("theme")==="dark")document.documentElement.dataset.theme="dark"}catch(e){}`;

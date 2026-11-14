@@ -25,11 +25,11 @@ function Segmented<T extends string>(props: { legend: string; name: string; valu
   return (
     <fieldset className="min-w-0">
       <legend className="mb-2 pl-[21px] text-[13px] font-semibold text-ink-muted">{props.legend}</legend>
-      <div className="flex gap-0.5 rounded-full border border-line bg-card p-1">
+      <div className="seg grid auto-cols-fr grid-flow-col gap-0.5 rounded-full border border-line bg-card p-1" style={{ "--n": props.options.length } as React.CSSProperties}>
         {props.options.map((o) => (
           <label
             key={o.value}
-            className="flex h-11 flex-1 cursor-pointer items-center justify-center rounded-full px-[18px] text-[15px] font-semibold whitespace-nowrap transition-colors duration-150 has-[:checked]:bg-accent has-[:checked]:text-on-accent has-[:focus-visible]:outline-3 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-[var(--focus)]"
+            className="relative flex h-11 cursor-pointer items-center justify-center rounded-full px-3.5 text-[15px] font-semibold whitespace-nowrap transition-colors duration-150 has-[:checked]:text-on-accent has-[:focus-visible]:outline-3 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-[var(--focus)]"
           >
             <input
               type="radio"
@@ -44,6 +44,22 @@ function Segmented<T extends string>(props: { legend: string; name: string; valu
         ))}
       </div>
     </fieldset>
+  );
+}
+
+/** Decoration only: a coin circling a glass ring, behind the best-cash card on wide screens. */
+function HeroRing() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 340 340" className="pointer-events-none absolute -top-20 -right-16 -z-10 hidden size-[440px] lg:block">
+      <circle cx="170" cy="170" r="120" fill="none" stroke="var(--ring)" strokeWidth="30" />
+      <circle cx="170" cy="170" r="120" fill="none" stroke="var(--accent)" strokeOpacity="0.35" strokeWidth="2" />
+      <g className="hero-coin">
+        <circle cx="170" cy="50" r="18" fill="#f5c451" stroke="#c9952b" strokeWidth="3" />
+        <text x="170" y="56" textAnchor="middle" fontSize="15" fontWeight="800" fill="#7a5410">
+          M
+        </text>
+      </g>
+    </svg>
   );
 }
 
@@ -206,7 +222,8 @@ export function Compass({ sources, between, after }: { sources: Sources; between
   return (
     <>
       <main id="main" className="mx-auto w-full max-w-6xl flex-1 px-4 pt-5 md:px-6 md:pt-14">
-        <section aria-label="Calculator" className="grid gap-7 lg:grid-cols-[1.1fr_1fr] lg:items-center lg:gap-12">
+        <section aria-label="Calculator" className="relative isolate grid gap-7 lg:grid-cols-[1.1fr_1fr] lg:items-center lg:gap-12">
+          <HeroRing />
           <div className="flex min-w-0 flex-col gap-4 md:gap-5">
             <h1 className="text-[30px] leading-[1.15] font-extrabold tracking-tight text-balance md:text-[56px] md:leading-[1.06]">Where your MUSD earns most, after costs.</h1>
             <p className="text-ink-muted md:max-w-[520px] md:text-lg">Every Mezo earning spot, ranked by the cash you keep. Live from Mezo and Ethereum.</p>

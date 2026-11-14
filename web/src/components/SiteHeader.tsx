@@ -45,14 +45,14 @@ export function SiteHeader({ current }: { current: string }) {
       <a href="#main" className="sr-only focus:not-sr-only focus:absolute focus:z-30 focus:rounded-full focus:bg-accent focus:px-4 focus:py-2 focus:text-on-accent">
         Skip to content
       </a>
-      <header className="border-b border-line">
+      <header>
         <div className="mx-auto flex h-16 max-w-6xl items-center gap-3 px-4 md:h-[72px] md:gap-8 md:px-6">
           <Link href="/" className="flex flex-1 items-center gap-2.5 text-[17px] font-bold whitespace-nowrap no-underline md:text-lg lg:flex-none">
             <CompassMark className="size-7" />
             MUSD Compass
           </Link>
           <nav aria-label="Main" className="hidden flex-1 lg:block">
-            <ul className="flex gap-1 text-[15px] font-semibold">
+            <ul className="flex w-fit gap-1 rounded-full border border-line bg-card p-1 text-[15px] font-semibold shadow-[0_4px_18px_rgb(0_0_0/0.06)]">
               {NAV.map((n) => (
                 <li key={n.label}>
                   <NavLink
