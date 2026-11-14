@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { usd } from "@/lib/format";
 import { AdviceList } from "./AdviceList";
 import { troveAdvice } from "@/lib/safety";
@@ -13,6 +13,16 @@ import type { TroveView } from "@/lib/trove";
 type Trove = TroveView & { safeIcrPct: number; minIcrPct: number; market: { musdUsd: number; floorUsd: number; redemptionPct: number } | null };
 
 const n = (v: number, d = 0) => v.toLocaleString("en-US", { maximumFractionDigits: d });
+const short = (a: string) => `${a.slice(0, 6)}…${a.slice(-4)}`;
+const BUSY = "Compass is busy right now. Try again in a minute.";
+const SLOW = "Mezo is slow to answer right now. Try again in a minute.";
+const timedOut = (e: unknown) => e instanceof DOMException && e.name === "TimeoutError";
+
+/** A collateral ratio as shown; past 10,000% the exact figure tells nothing more. null: no trove. */
+export function ratio(v: number | null | undefined): string {
+  if (v == null) return "—";
+  return v > 10_000 ? "over 10,000%" : `${n(v)}%`;
+}
 
 /** Calculator link: existing-trove mode at this trove's own rate (only when it is in the calculator's 1–5 % range). */
 function calculatorHref(t: Trove): string {
@@ -29,8 +39,11 @@ export function TrovePanel() {
   const [busy, setBusy] = useState(false);
   const [addBtc, setAddBtc] = useState("");
   const [repay, setRepay] = useState("");
-  const [whatIf, setWhatIf] = useState<{ text: string; bad?: boolean } | null>(null);
+  const [whatIf, setWhatIf] = useState<{ text: string; bad?: boolean; busy?: boolean } | null>(null);
   const own = useOwnWallet();
+  const latest = useRef(0); // only the newest lookup may set the trove
+  const latestPreview = useRef(0); // only the newest what-if, for the trove still shown, may set its answer
+  const asked = useRef(false); // Use my wallet was pressed before the wallet was known
 
   /** What a top-up or a repay would do to this trove, from the same mainnet read the page shows. Nothing is sent: no wallet is involved. */
   const preview = async () => {
@@ -39,36 +52,48 @@ export function TrovePanel() {
     if (addBtc.trim()) q.set("addBtc", addBtc.trim());
     if (repay.trim()) q.set("repayMusd", repay.trim());
     if (![...q].length) return setWhatIf({ text: "Type an amount of BTC to add or MUSD to repay.", bad: true });
+    const me = ++latestPreview.current;
+    setWhatIf({ text: "Working it out…", busy: true });
+    let next: { text: string; bad?: boolean };
     try {
       const r = await fetch(`/api/trove/${encodeURIComponent(t.address)}?${q}`, { signal: AbortSignal.timeout(25_000) });
-      const j = await r.json();
-      if (!r.ok || !j.preview) return setWhatIf({ text: j.error ?? "Could not work that out. Try again in a minute.", bad: true });
-      const line = j.preview.ahead !== null && j.ahead !== null ? ` Troves redeemed before this one: about ${n(j.ahead)} now, about ${n(j.preview.ahead)} after, of ${n(j.preview.troves)}.` : "";
-      setWhatIf({ text: `Ratio after: ${n(j.preview.icrPct)}% (now ${n(j.icrPct)}%).${line}` });
-    } catch {
-      setWhatIf({ text: "Could not reach Compass. Check your connection and try again.", bad: true });
+      const j = await r.json().catch(() => null); // a 504 or 429 page from the host is not JSON
+      if (!j) next = { text: BUSY, bad: true };
+      else if (!r.ok || !j.preview) next = { text: j.error ?? "Could not work that out. Try again in a minute.", bad: true };
+      else {
+        const line = j.preview.ahead != null && j.ahead != null ? ` Troves redeemed before this one: about ${n(j.ahead)} now, about ${n(j.preview.ahead)} after, of ${n(j.preview.troves)}.` : "";
+        next = { text: `Ratio after: ${ratio(j.preview.icrPct)}${j.icrPct == null ? "" : ` (now ${ratio(j.icrPct)})`}.${line}` };
+      }
+    } catch (e) {
+      next = { text: timedOut(e) ? SLOW : "Could not reach Compass. Check your connection and try again.", bad: true };
     }
+    if (me === latestPreview.current) setWhatIf(next);
   };
 
   const load = async (addr: string) => {
     if (!addr) return setError("Paste a 0x address first, or press Try a sample.");
+    const me = ++latest.current;
     setError(null);
     setBusy(true);
     try {
       const r = await fetch(`/api/trove/${encodeURIComponent(addr)}`, { signal: AbortSignal.timeout(25_000) });
-      const j = await r.json();
-      if (!r.ok) {
-        setT(null);
-        setError(j.error ?? "Could not read the trove.");
-      } else {
-        setT(j);
+      const j = await r.json().catch(() => null); // a 504 or 429 page from the host is not JSON
+      if (me !== latest.current) return;
+      if (r.ok && j) {
+        const shown = addr === "sample" ? (j.address ?? addr) : addr; // the sample's real owner, so the link reopens the same trove
+        setT({ ...j, address: j.address ?? addr });
+        latestPreview.current++;
         setWhatIf(null);
-        if (addr === "sample") setLookup(j.address);
+        if (addr === "sample") setLookup(shown);
+        history.replaceState(null, "", `?address=${shown}`);
+      } else {
+        setT(null);
+        setError(j ? (j.error ?? "Could not read the trove.") : BUSY);
       }
     } catch (e) {
-      setError(e instanceof DOMException && e.name === "TimeoutError" ? "Mezo is slow to answer right now. Try again in a minute." : "Could not reach Compass — check your connection.");
+      if (me === latest.current) setError(timedOut(e) ? SLOW : "Could not reach Compass — check your connection.");
     } finally {
-      setBusy(false);
+      if (me === latest.current) setBusy(false);
     }
   };
 
@@ -82,10 +107,9 @@ export function TrovePanel() {
     }
   }, []);
 
-  // Your connected wallet's trove shows as soon as the wallet is known, unless an alert link already named an address.
+  // Your connected wallet's trove shows as soon as the wallet is known, unless another address (say from an alert link) is already shown.
   useEffect(() => {
-    if (!own.account || new URLSearchParams(window.location.search).get("address")) return;
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- fills the address box from the wallet, which only exists on the client
+    if (!own.account || (latest.current > 0 && !asked.current)) return;
     setLookup(own.account);
     void load(own.account);
   }, [own.account]);
@@ -110,13 +134,13 @@ export function TrovePanel() {
             </label>
             <input id="lookup" value={lookup} onChange={(e) => setLookup(e.target.value)} placeholder="0x…" autoComplete="off" spellCheck={false} className="block h-11 w-full rounded-full border border-field bg-card px-4 text-sm" />
           </div>
-          <button type="submit" disabled={busy} className="min-h-11 rounded-full border border-line px-4 text-sm font-bold disabled:opacity-60">
+          <button type="submit" className="min-h-11 rounded-full border border-line px-4 text-sm font-bold">
             Look up
           </button>
           <button
             type="button"
             disabled={busy}
-            onClick={() => (own.account ? (setLookup(own.account), void load(own.account)) : void own.connect())}
+            onClick={() => (own.account ? (setLookup(own.account), void load(own.account)) : ((asked.current = true), void own.connect()))}
             className="min-h-11 rounded-full bg-accent px-4 text-sm font-bold text-on-accent disabled:opacity-60"
           >
             Use my wallet
@@ -131,13 +155,14 @@ export function TrovePanel() {
             {error ?? own.error}
           </p>
         )}
-        {t && !t.active && <p className="mt-4 text-sm">This address has no open trove.</p>}
+        {t && <p className="mt-4 text-xs font-semibold text-ink-muted">For {short(t.address)}</p>}
+        {t && !t.active && <p className="mt-1 text-sm">This address has no open trove.</p>}
         {t?.active && (
           <>
-            <dl className="mt-4 grid grid-cols-2 gap-x-4 gap-y-3 sm:grid-cols-4">
+            <dl className="mt-2 grid grid-cols-2 gap-x-4 gap-y-3 sm:grid-cols-4">
               <div>
                 <dt className="text-xs text-ink-muted">Collateral ratio</dt>
-                <dd className="price text-[2rem]">{n(t.icrPct)}%</dd>
+                <dd className="price text-[2rem]">{ratio(t.icrPct)}</dd>
               </div>
               <div>
                 <dt className="text-xs text-ink-muted">Interest rate</dt>
@@ -207,7 +232,7 @@ export function TrovePanel() {
                 </label>
                 <input id="whatif-musd" inputMode="decimal" value={repay} onChange={(e) => setRepay(e.target.value)} placeholder="1000" className="block h-11 w-32 rounded-full border border-field bg-card px-4 text-sm" />
               </div>
-              <button type="submit" className="min-h-11 rounded-full border border-line px-4 text-sm font-bold">
+              <button type="submit" disabled={whatIf?.busy} className="min-h-11 rounded-full border border-line px-4 text-sm font-bold disabled:opacity-60">
                 Show the result
               </button>
             </div>

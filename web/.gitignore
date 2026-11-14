@@ -47,3 +47,6 @@ next-env.d.ts
 
 # design tool state
 .impeccable/
+
+.vercel
+.env*

@@ -24,11 +24,15 @@ async function TopThree({ searchParams }: { searchParams: PageProps<"/embed">["s
   const parsed = parseQuery(sp);
   const q = parsed.ok ? parsed.query : { amount: 2000, mode: "holder" as const, trove: "new" as const, days: 90 as const, ratePct: null };
   const { venues } = buildYields(await loadSources(), q);
+  const defaulted = typeof amount === "string" && !parsed.ok; // a bad data-amount: say the default is shown, don't hide it
   const top = venues.filter((v) => v.status === "ok" && v.carry.cash !== null && !v.pairToken).slice(0, 3);
   const full = `/?amount=${q.amount}&mode=holder&days=${q.days}`;
   return (
     <>
-      <p className="text-sm font-semibold">Cash carry per year on {musd(q.amount)}</p>
+      <p className="text-sm font-semibold">
+        Cash carry per year on {musd(q.amount)}
+        {defaulted && <span className="font-normal text-ink-muted"> (default)</span>}
+      </p>
       <ol className="mt-2 divide-y divide-line border-y border-line">
         {top.map((v) => (
           <li key={v.id} className="flex items-baseline gap-3 py-2">
@@ -44,7 +48,13 @@ async function TopThree({ searchParams }: { searchParams: PageProps<"/embed">["s
         ))}
       </ol>
       <p className="mt-2 text-xs text-ink-muted">
-        Mainnet data · assumes {q.days}-day hold · <LockIcon className="inline size-3 align-[-0.1em]" /> with locked veMEZO, not cash
+        Mainnet data · assumes {q.days}-day hold
+        {top.some((v) => v.carry.locked) && (
+          <>
+            {" "}
+            · <LockIcon className="inline size-3 align-[-0.1em]" /> with locked veMEZO, not cash
+          </>
+        )}
       </p>
       <a href={full} target="_blank" rel="noopener" className="mt-1 inline-flex items-center gap-1 text-sm font-semibold underline">
         Full table on MUSD Compass

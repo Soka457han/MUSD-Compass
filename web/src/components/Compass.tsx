@@ -5,7 +5,7 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { flushSync } from "react-dom";
 import { musd, pct, shortDate, timeUtc, usd } from "@/lib/format";
 import { minNewTroveAmount } from "@/lib/carry/carry";
-import { buildYields, parseQuery, type Query, type Sources, type VenueOut } from "@/lib/yields";
+import { buildYields, cleanAmount, parseQuery, parseQueryLenient, type Query, type Sources, type VenueOut } from "@/lib/yields";
 import { LockIcon } from "./Icons";
 import { SiteFooter } from "./Landing";
 import { PriceLabel } from "./PriceLabel";
@@ -94,12 +94,12 @@ function PegLine({ peg }: { peg: NonNullable<Sources["peg"]> }) {
 }
 
 /** The answer, up top: the best cash carry for the current inputs. The full card for it leads the ranked list below. */
-function BestCash({ v, holding, mint }: { v: VenueOut; holding: string; mint: { amount: number; rate: number } | null }) {
+function BestCash({ v, holding, mint, className = "" }: { v: VenueOut; holding: string; mint: { amount: number; rate: number } | null; className?: string }) {
   const external = v.action.url.startsWith("http");
   const locked = v.carry.locked ?? 0;
   const cash = v.carry.cash ?? 0;
   return (
-    <section aria-labelledby="best-h" className="flex flex-col gap-3.5 rounded-[20px] border border-line bg-card p-[22px] md:p-8">
+    <section aria-labelledby="best-h" className={`flex flex-col gap-3.5 rounded-[20px] border border-line bg-card p-[22px] md:p-8 ${className}`}>
       <div className="flex items-center justify-between gap-3">
         <h2 id="best-h" className="text-base font-bold md:text-lg">
           {v.name}
@@ -116,7 +116,7 @@ function BestCash({ v, holding, mint }: { v: VenueOut; holding: string; mint: { 
       {mint && (
         <p data-testid="mint-line" className="rounded-2xl bg-accent-soft px-4 py-3 text-sm font-semibold md:text-base">
           {cash > 0
-            ? `Borrow ${musd(mint.amount)} against your BTC at ${mint.rate}%: ${v.name} pays ${pct(v.carry.liquid)}. After the fee and interest you keep ${pct(cash)} a year, about ${musd(Math.floor((mint.amount * cash) / 100))}.`
+            ? `Borrow ${musd(mint.amount)} against your BTC at ${mint.rate}%: ${v.name} pays ${pct(v.carry.liquid)}. After the fee and interest you keep ${pct(cash)} a year, about ${musd(Math.round((mint.amount * cash) / 100))}.`
             : `Borrow ${musd(mint.amount)} against your BTC at ${mint.rate}%: after the fee and interest the best place pays ${pct(cash)}. Borrowing to earn does not pay today.`}
         </p>
       )}
@@ -144,32 +144,26 @@ function BestCash({ v, holding, mint }: { v: VenueOut; holding: string; mint: { 
 export function Compass({ sources, between, after }: { sources: Sources; between?: ReactNode; after?: ReactNode }) {
   const [form, setForm] = useState<Form>({ amount: "2000", mode: "holder", days: "90", rate: "", trove: "new" });
   const [hydrated, setHydrated] = useState(false);
+  // The last amount that parsed: an invalid one keeps this ranking on screen instead of collapsing the page.
+  const [goodAmount, setGoodAmount] = useState("2000");
   // Latest form, so a quick edit during a view transition never builds on a stale render.
   const latest = useRef(form);
 
   // Deep links (the bot sends ?amount=…&mode=…): read once after hydration, then mirror edits into the URL.
   useEffect(() => {
-    const sp = new URLSearchParams(window.location.search);
-    let r = parseQuery(sp);
-    // A bad amount (e.g. ?amount=0) falls back to the default amount but keeps the link's mode and days.
-    if (!r.ok && sp.has("amount")) {
-      sp.delete("amount");
-      r = parseQuery(sp);
-    }
-    if (!r.ok) {
-      setHydrated(true); // eslint-disable-line react-hooks/set-state-in-effect
-      return;
-    }
-    const q = r.query;
+    // A bad field (e.g. ?rate=9 or ?amount=0) falls back to its default; the link's other fields still apply.
+    const q = parseQueryLenient(new URLSearchParams(window.location.search));
     const fromUrl: Form = { amount: String(q.amount), mode: q.mode, days: String(q.days) as Form["days"], rate: q.ratePct ? String(q.ratePct) : "", trove: q.trove };
     latest.current = fromUrl;
-    setForm(fromUrl);
+    setForm(fromUrl); // eslint-disable-line react-hooks/set-state-in-effect
+    setGoodAmount(fromUrl.amount);
     setHydrated(true);
   }, []);
 
   // Choice changes re-rank with a view transition (the page's one motion moment); typing never animates.
   const update = (patch: Partial<Form>, animate = true) => {
     const next = { ...latest.current, ...patch };
+    if (patch.amount && parseQuery(new URLSearchParams({ amount: patch.amount })).ok) setGoodAmount(patch.amount);
     latest.current = next;
     window.history.replaceState(null, "", `?${toParams(next)}`);
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -180,8 +174,10 @@ export function Compass({ sources, between, after }: { sources: Sources; between
     }
   };
 
-  const parsed = parseQuery(toParams(form));
-  const query: Query | null = parsed.ok ? parsed.query : null;
+  const parsed = parseQuery(toParams({ ...form, amount: form.amount || "0" })); // an empty box is an error here, not the API's 2,000 default
+  const shown = parsed.ok ? parsed : parseQuery(toParams({ ...form, amount: goodAmount }));
+  const query: Query | null = shown.ok ? shown.query : null;
+  const dim = parsed.ok ? "" : "grayscale"; // marks the ranking as for the previous amount; keeps text contrast, unlike opacity
   const result = useMemo(() => (query ? buildYields(sources, query) : null), [sources, query?.amount, query?.mode, query?.days, query?.ratePct, query?.trove]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const liveRate = sources.borrow.ratePct;
@@ -228,7 +224,7 @@ export function Compass({ sources, between, after }: { sources: Sources; between
                   inputMode="decimal"
                   autoComplete="off"
                   value={form.amount}
-                  onChange={(e) => update({ amount: e.target.value.replace(/[^\d.]/g, "") }, false)}
+                  onChange={(e) => update({ amount: cleanAmount(e.target.value) }, false)}
                   aria-invalid={!parsed.ok}
                   aria-describedby={!parsed.ok ? "amount-error" : undefined}
                   className={`${FIELD} text-xl font-bold`}
@@ -264,6 +260,7 @@ export function Compass({ sources, between, after }: { sources: Sources; between
               {!parsed.ok && (
                 <p id="amount-error" role="alert" className="text-sm font-semibold text-danger-text xl:col-span-3">
                   {parsed.error}
+                  {query && ` Results shown are still for ${musd(query.amount)}.`}
                 </p>
               )}
               {result?.notice && (
@@ -288,9 +285,9 @@ export function Compass({ sources, between, after }: { sources: Sources; between
             </div>
           </div>
           {result && lead ? (
-            <BestCash v={lead} holding={result.assumptions.holding} mint={query?.mode === "borrower" ? { amount: query.amount, rate: result.assumptions.ratePct } : null} />
+            <BestCash v={lead} holding={result.assumptions.holding} mint={query?.mode === "borrower" ? { amount: query.amount, rate: result.assumptions.ratePct } : null} className={dim} />
           ) : (
-            <p className="text-sm">Enter an amount to rank venues.</p>
+            <p className="text-sm">No venue can be ranked right now.</p>
           )}
           {result?.assumptions.peg && <PegLine peg={result.assumptions.peg} />}
         </section>
@@ -298,7 +295,7 @@ export function Compass({ sources, between, after }: { sources: Sources; between
         <div className="mt-14 flex flex-col gap-14 md:mt-24 md:gap-20">
           {result && lead && (
             <>
-              <section aria-labelledby="browse-h">
+              <section aria-labelledby="browse-h" className={dim || undefined}>
                 <h2 id="browse-h" className="text-2xl leading-tight font-extrabold tracking-tight md:text-[32px]">
                   Browse by type
                 </h2>
@@ -314,7 +311,7 @@ export function Compass({ sources, between, after }: { sources: Sources; between
                 </ul>
               </section>
 
-              <section aria-labelledby="venues">
+              <section aria-labelledby="venues" className={dim || undefined}>
                 <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1">
                   <h2 id="venues" className="scroll-mt-6 text-2xl leading-tight font-extrabold tracking-tight md:text-[32px]">
                     All venues

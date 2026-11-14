@@ -23,6 +23,20 @@ export function parseQuery(sp: URLSearchParams): { ok: true; query: Query } | { 
   return { ok: true, query: { amount, mode, trove, days: days as Days, ratePct: rate } };
 }
 
+/** For deep links: like parseQuery, but a bad field falls back to its default and the valid ones are kept. */
+export function parseQueryLenient(sp: URLSearchParams): Query {
+  const kept = new URLSearchParams();
+  for (const k of ["amount", "mode", "trove", "days", "rate"]) {
+    const v = sp.get(k);
+    if (v !== null && parseQuery(new URLSearchParams({ [k]: v })).ok) kept.set(k, v); // every field is validated on its own
+  }
+  return (parseQuery(kept) as { ok: true; query: Query }).query;
+}
+
+/** What the amount box keeps of a keystroke: thousands separators go; anything else stays so parseQuery
+ *  reads it exactly as it reads ?amount= ("1e3" is 1,000 in both) and shows an error for "abc" or "-5". */
+export const cleanAmount = (s: string) => s.replace(/[,\s_]/g, "");
+
 export type Sources = {
   venues: Venue[]; // every venue, already marked unavailable where a source failed
   benchmarkId: string; // sMUSD — what break-even compares against

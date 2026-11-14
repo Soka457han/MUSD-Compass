@@ -66,6 +66,13 @@ export function WalletModal({
     if (!d) return;
     if (open && !d.open) d.showModal();
     if (!open && d.open) d.close();
+    if (!open) return;
+    // A modal <dialog> does not stop the page behind it from scrolling.
+    const before = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = before;
+    };
   }, [open]);
 
   useEffect(() => {

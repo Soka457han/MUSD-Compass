@@ -36,6 +36,11 @@ export function previewTrove(t: TroveView, change: { addBtc?: number; repayMusd?
   return { icrPct: ((collateralBtc * t.btcUsd) / debt) * 100, collateralBtc, debt, ahead, troves: nicrs?.length ?? 0 };
 }
 
+/** What the API sends: with no open trove the contract's ICR and NICR are a uint256-max sentinel, not numbers anyone should show. */
+export function publicTrove(t: TroveView): Omit<TroveView, "icrPct" | "nicr"> & { icrPct: number | null; nicr: string | null } {
+  return t.active ? t : { ...t, icrPct: null, nicr: null };
+}
+
 export type TroveView = {
   address: Address;
   active: boolean;

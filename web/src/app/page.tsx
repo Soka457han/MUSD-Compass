@@ -74,9 +74,6 @@ function Loading() {
 export default function Home() {
   return (
     <>
-      <a href="#main" className="sr-only focus:not-sr-only focus:absolute focus:z-30 focus:rounded-full focus:bg-accent focus:px-4 focus:py-2 focus:text-on-accent">
-        Skip to venues
-      </a>
       <SiteHeader current="/" />
       <Suspense fallback={<Loading />}>
         <LiveCompass />

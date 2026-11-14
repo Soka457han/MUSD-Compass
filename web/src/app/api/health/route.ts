@@ -3,13 +3,13 @@ import { createPublicClient, http } from "viem";
 import { mezo } from "viem/chains";
 import { ethereumClient, mezoTestnetClient, rpcUrls } from "@/lib/chain/clients";
 import { check } from "@/lib/health";
-import { allow } from "@/lib/rateLimit";
+import { allow, tooMany } from "@/lib/rateLimit";
 
 const single = (url: string) => createPublicClient({ chain: mezo, transport: http(url) });
 
 export async function GET(req: Request) {
   await connection(); // always run at request time
-  if (!allow(req)) return Response.json({ error: "Too many requests — try again in a minute." }, { status: 429 }); // each call fires 5 upstream requests
+  if (!allow(req)) return tooMany(); // each call fires 5 upstream requests
   const results = await Promise.all([
     check("mezo-mainnet", () => single(rpcUrls.mezo).getBlockNumber()),
     check("mezo-mainnet-fallback", () => single(rpcUrls.mezoFallback).getBlockNumber()),

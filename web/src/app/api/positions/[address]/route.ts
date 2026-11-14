@@ -1,10 +1,10 @@
 import type { PublicClient } from "viem";
 import { mezoClient } from "@/lib/chain/clients";
 import { readPositions, type Positions } from "@/lib/positions";
-import { allow } from "@/lib/rateLimit";
+import { allow, tooMany } from "@/lib/rateLimit";
 import { loadSources } from "@/lib/sources";
 import { fetchUserRewards } from "@/lib/sources/merkl";
-import { isWallet } from "@/lib/vault";
+import { toWallet } from "@/lib/vault";
 
 export const maxDuration = 60;
 const HEADERS = { "Access-Control-Allow-Origin": "*", "Cache-Control": "no-store" };
@@ -21,9 +21,9 @@ const FIXTURE: Omit<Positions, "address"> = {
 
 /** Where an address's MUSD sits on Mezo mainnet. Read only. */
 export async function GET(req: Request, { params }: { params: Promise<{ address: string }> }) {
-  if (!allow(req)) return Response.json({ error: "Too many requests — try again in a minute." }, { status: 429, headers: HEADERS });
-  const { address } = await params;
-  if (!isWallet(address)) return Response.json({ error: "That is not an EVM address (0x… with 40 hex characters)." }, { status: 400, headers: HEADERS });
+  if (!allow(req)) return tooMany(HEADERS);
+  const address = toWallet((await params).address);
+  if (!address) return Response.json({ error: "That is not an EVM address (0x… with 40 hex characters)." }, { status: 400, headers: HEADERS });
   if (process.env.COMPASS_FIXTURES === "1") return Response.json({ address, ...FIXTURE, network: "Mezo mainnet" }, { headers: HEADERS });
 
   try {

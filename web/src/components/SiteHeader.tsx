@@ -41,6 +41,10 @@ function NavLink({ n, current, className, children }: { n: Item; current: string
 export function SiteHeader({ current }: { current: string }) {
   return (
     <>
+      {/* Every page using this header has <main id="main">; /embed has neither. */}
+      <a href="#main" className="sr-only focus:not-sr-only focus:absolute focus:z-30 focus:rounded-full focus:bg-accent focus:px-4 focus:py-2 focus:text-on-accent">
+        Skip to content
+      </a>
       <header className="border-b border-line">
         <div className="mx-auto flex h-16 max-w-6xl items-center gap-3 px-4 md:h-[72px] md:gap-8 md:px-6">
           <Link href="/" className="flex flex-1 items-center gap-2.5 text-[17px] font-bold whitespace-nowrap no-underline md:text-lg lg:flex-none">
@@ -63,9 +67,11 @@ export function SiteHeader({ current }: { current: string }) {
             </ul>
           </nav>
           <ThemeToggle />
-          <Link href="/vault" prefetch={false} className="hidden h-11 items-center rounded-full bg-accent px-[18px] text-[15px] font-bold whitespace-nowrap text-on-accent no-underline min-[400px]:inline-flex md:px-[22px]">
-            Open vault
-          </Link>
+          {current !== "/vault" && (
+            <Link href="/vault" prefetch={false} className="hidden h-11 items-center rounded-full bg-accent px-[18px] text-[15px] font-bold whitespace-nowrap text-on-accent no-underline min-[400px]:inline-flex md:px-[22px]">
+              Open vault
+            </Link>
+          )}
         </div>
       </header>
       <nav aria-label="Main" className="tabbar fixed inset-x-0 bottom-0 z-20 border-t border-line bg-surface pb-[max(10px,env(safe-area-inset-bottom))] lg:hidden">

@@ -1,13 +1,13 @@
 import { after } from "next/server";
 import type { Address, PublicClient } from "viem";
 import { mezoClient } from "@/lib/chain/clients";
-import { allow } from "@/lib/rateLimit";
+import { allow, tooMany } from "@/lib/rateLimit";
 import { loadSources } from "@/lib/sources";
 import { countCall } from "@/lib/stats";
 import { fetchTroveQueue } from "@/lib/sources/troveQueue";
 import { troveAdvice } from "@/lib/safety";
-import { previewTrove, readTrove, SAFE_ICR, sampleTrove, type TroveView } from "@/lib/trove";
-import { isWallet } from "@/lib/vault";
+import { previewTrove, publicTrove, readTrove, SAFE_ICR, sampleTrove, type TroveView } from "@/lib/trove";
+import { toWallet } from "@/lib/vault";
 
 export const maxDuration = 300; // reads loadSources, same cold fill as /api/yields
 const HEADERS = { "Access-Control-Allow-Origin": "*", "Cache-Control": "no-store" };
@@ -29,20 +29,22 @@ const FIXTURE: TroveView = {
 };
 
 const AMOUNT = /^\d+(\.\d{1,8})?$/;
+const AMOUNT_ERROR = { addBtc: "Enter BTC as a plain number, up to 8 decimals.", repayMusd: "Enter MUSD as a plain number, up to 8 decimals." };
 
 /** Mainnet trove for an address, or `sample` for the safest live trove (SortedTroves.getFirst()). */
 export async function GET(req: Request, { params }: { params: Promise<{ address: string }> }) {
-  if (!allow(req)) return Response.json({ error: "Too many requests — try again in a minute." }, { status: 429, headers: HEADERS });
+  if (!allow(req)) return tooMany(HEADERS);
   after(() => countCall("trove", req));
-  const { address } = await params;
-  if (address !== "sample" && !isWallet(address)) return Response.json({ error: "That is not an EVM address (0x… with 40 hex characters)." }, { status: 400, headers: HEADERS });
+  const raw = (await params).address;
+  const address = raw === "sample" ? raw : toWallet(raw);
+  if (!address) return Response.json({ error: "That is not an EVM address (0x… with 40 hex characters)." }, { status: 400, headers: HEADERS });
   const about = { network: "Mezo mainnet", safeIcrPct: SAFE_ICR * 100, minIcrPct: 110 };
   const q = new URL(req.url).searchParams;
   const change: { addBtc?: number; repayMusd?: number } = {};
   for (const k of ["addBtc", "repayMusd"] as const) {
     const v = q.get(k);
     if (v === null) continue;
-    if (!AMOUNT.test(v)) return Response.json({ error: `${k} must be a plain number with up to 8 decimals.` }, { status: 400, headers: HEADERS });
+    if (!AMOUNT.test(v)) return Response.json({ error: AMOUNT_ERROR[k] }, { status: 400, headers: HEADERS });
     change[k] = Number(v);
   }
   const wantsPreview = change.addBtc !== undefined || change.repayMusd !== undefined;
@@ -57,7 +59,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ address:
   const reply = (t: TroveView, nicrs: bigint[] | null, market: { musdUsd: number; floorUsd: number; redemptionPct: number } | null) => {
     const { bad, ...extra } = withPreview(t, nicrs) as { bad?: string; preview?: unknown };
     if (bad) return Response.json({ error: bad }, { status: 400, headers: HEADERS });
-    return Response.json({ ...t, advice: troveAdvice(t, undefined, undefined, market), market, ...extra, ...about }, { headers: HEADERS });
+    return Response.json({ ...publicTrove(t), advice: troveAdvice(t, undefined, undefined, market), market, ...extra, ...about }, { headers: HEADERS });
   };
   if (process.env.COMPASS_FIXTURES === "1") return reply(FIXTURE, null, { musdUsd: 0.9951, floorUsd: 0.9925, redemptionPct: 0.75 });
 

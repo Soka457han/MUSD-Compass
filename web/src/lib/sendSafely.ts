@@ -13,6 +13,10 @@ const TROVE_CALLS = new Set(["openTrove", "addColl", "repayMUSD"]);
 /** Mainnet writes stay off until a deploy sets NEXT_PUBLIC_MAINNET_WRITES=1; testnet is always allowed. */
 export const mainnetWritesEnabled = () => process.env.NEXT_PUBLIC_MAINNET_WRITES === "1";
 
+/** The network a page URL asks for (?net=mainnet, any letter case). Mainnet only where a deploy switched it on; anything else is testnet. */
+export const netFromSearch = (search: string, enabled = mainnetWritesEnabled()): NetworkId =>
+  enabled && new URLSearchParams(search).get("net")?.toLowerCase() === "mainnet" ? "mainnet" : "testnet";
+
 /** Compass's own launch limit: Mezo's docs and contracts set no maximum (checked 12 Nov 2026, docs/evidence.md). The most MUSD one mainnet transaction may deposit, approve, borrow or stake through Compass while it is new (1 sMUSD counts as 1 MUSD). Top-up, repay, withdraw, unstake and claim are not capped: they lower risk or return funds. */
 export const MAINNET_CAP_MUSD = 2_500;
 const overCap = (network: NetworkId, amount: bigint) => network === "mainnet" && amount > BigInt(MAINNET_CAP_MUSD) * 10n ** 18n;

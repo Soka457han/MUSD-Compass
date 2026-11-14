@@ -1,26 +1,31 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { SAMPLES } from "@/lib/chain/addresses";
 import { useOwnWallet } from "@/lib/useOwnWallet";
 import { musd, pct, usd } from "@/lib/format";
 import { compare, movable, placesFor, type Positions, type Row } from "@/lib/positions";
 import { MAINNET_CAP_MUSD } from "@/lib/sendSafely";
+import { isWallet } from "@/lib/vault";
 import type { Sources, VenueOut } from "@/lib/yields";
 import { ArrowUpRightIcon } from "./Icons";
 
 const ve = (n: number) => n.toLocaleString("en-US", { maximumFractionDigits: 2 });
 const MEZO_VAULTS = "https://mezo.org/earn/vaults"; // mainnet Savings Vault in the Mezo app (the /vault page here is testnet)
+const short = (a: string) => `${a.slice(0, 6)}…${a.slice(-4)}`;
+const BUSY = "Compass is busy right now. Try again in a minute.";
 
-/** What the holding earns now, in words. */
-function nowText(r: Row, vaultApr: number | null): string {
+/** What the holding earns now, in words. `moving` is the other MUSD that would join the best place. */
+export function nowText(r: Row, vaultApr: number | null, moving: number): string {
   if (r.id === "wallet") return "Earns nothing while it sits in the wallet.";
   if (r.id === "stability") return "No steady APR: earns only when troves are liquidated.";
-  if (r.id === "staked")
-    return r.nowPct === null
-      ? "Earns MEZO from the gauge instead of the savings yield (rate unavailable right now)."
-      : `Earns about ${pct(r.nowPct)} a year, paid in MEZO. Staking hands the ${pct(vaultApr)} savings yield to voters.`;
+  if (r.id === "staked") {
+    if (r.nowPct === null) return "Earns MEZO from the gauge instead of the savings yield (rate unavailable right now).";
+    // The best-place rate is diluted by the rest of this MUSD joining the gauge, so it is lower than today's rate: say both.
+    const later = moving >= 1 && r.best.id === "mezo-smusd-gauge" ? ` now (about ${pct(r.best.carry.cash)} once your other ${musd(moving)} joins)` : "";
+    return `Earns about ${pct(r.nowPct)} a year${later}, paid in MEZO. Staking hands the ${pct(vaultApr)} savings yield to voters.`;
+  }
   return `Earns ${pct(r.nowPct)} cash a year now.`;
 }
 
@@ -59,7 +64,7 @@ function Places({ amount, staked, sources }: { amount: number; staked: number; s
                 about {musd(Math.max(0, Math.round((amount * (v.carry.cash ?? 0)) / 100)))} a year
                 {locked > 0 && ` · +${pct(locked)} locked veMEZO, not counted`}
                 {mezoPaid && " · paid in MEZO"} ·{" "}
-                <a href={l.url} target="_blank" rel="noreferrer" className="font-semibold text-accent-text underline">
+                <a href={l.url} target="_blank" rel="noreferrer" className="inline-block py-4 -my-4 font-semibold text-accent-text underline">
                   {l.label}
                 </a>
               </span>
@@ -89,29 +94,46 @@ export function MyPanel({ sources }: { sources: Sources }) {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const own = useOwnWallet();
+  const latest = useRef(0); // only the newest lookup may set the result
+  const asked = useRef(false); // Use my wallet was pressed before the wallet was known
 
   const load = async (addr: string) => {
     if (!addr) return setError("Paste a 0x address first, or press Try a sample.");
+    const me = ++latest.current;
     setError(null);
     setBusy(true);
     try {
       const r = await fetch(`/api/positions/${encodeURIComponent(addr)}`, { signal: AbortSignal.timeout(25_000) });
-      const j = await r.json();
-      if (!r.ok) {
+      const j = await r.json().catch(() => null); // a 504 or 429 page from the host is not JSON
+      if (me !== latest.current) return;
+      if (r.ok && j) {
+        setData({ ...j, address: j.address ?? addr });
+        history.replaceState(null, "", `?address=${addr}`);
+      } else {
         setData(null);
-        setError(j.error ?? "Could not read this address.");
-      } else setData(j);
+        setError(j ? (j.error ?? "Could not read this address.") : BUSY);
+      }
     } catch (e) {
-      setError(e instanceof DOMException && e.name === "TimeoutError" ? "Mezo is slow to answer right now. Try again in a minute." : "Could not reach Compass — check your connection.");
+      if (me === latest.current) setError(e instanceof DOMException && e.name === "TimeoutError" ? "Mezo is slow to answer right now. Try again in a minute." : "Could not reach Compass — check your connection.");
     } finally {
-      setBusy(false);
+      if (me === latest.current) setBusy(false);
     }
   };
 
-  // Your connected wallet's numbers show as soon as the wallet is known (after Use my wallet, or on a refresh when the site is already allowed).
+  // A shared link /my?address=0x… looks that address up once on open.
   useEffect(() => {
-    if (!own.account) return;
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- fills the address box from the wallet, which only exists on the client
+    const a = new URLSearchParams(window.location.search).get("address");
+    if (a && isWallet(a)) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time read of the URL, which only exists on the client
+      setLookup(a);
+      void load(a);
+    }
+  }, []);
+
+  // Your connected wallet's numbers show as soon as the wallet is known (after Use my wallet, or on a refresh when the site is already allowed),
+  // unless another address is already being shown.
+  useEffect(() => {
+    if (!own.account || (latest.current > 0 && !asked.current)) return;
     setLookup(own.account);
     void load(own.account);
   }, [own.account]);
@@ -144,13 +166,13 @@ export function MyPanel({ sources }: { sources: Sources }) {
             </label>
             <input id="my-address" value={lookup} onChange={(e) => setLookup(e.target.value)} placeholder="0x…" autoComplete="off" spellCheck={false} className="block h-11 w-full rounded-full border border-field bg-card px-4 text-sm" />
           </div>
-          <button type="submit" disabled={busy} className="min-h-11 rounded-full border border-line px-4 text-sm font-bold disabled:opacity-60">
+          <button type="submit" className="min-h-11 rounded-full border border-line px-4 text-sm font-bold">
             Look up
           </button>
           <button
             type="button"
             disabled={busy}
-            onClick={() => (own.account ? (setLookup(own.account), void load(own.account)) : void own.connect())}
+            onClick={() => (own.account ? (setLookup(own.account), void load(own.account)) : ((asked.current = true), void own.connect()))}
             className="min-h-11 rounded-full bg-accent px-4 text-sm font-bold text-on-accent disabled:opacity-60"
           >
             Use my wallet
@@ -173,13 +195,14 @@ export function MyPanel({ sources }: { sources: Sources }) {
             {error ?? own.error}
           </p>
         )}
+        {data && <p className="mt-4 text-xs font-semibold text-ink-muted">For {short(data.address)}</p>}
         {data && rows.length > 0 && (
-          <p className="mt-4 text-sm text-ink-muted">
+          <p className="mt-1 text-sm text-ink-muted">
             <span className="price block text-[2.5rem] text-ink">{musd(total)}</span>
             on Mezo, in the wallet or put to work
           </p>
         )}
-        {nothing && <p className="mt-4 text-sm">No MUSD, trove or unclaimed veMEZO for this address on Mezo mainnet.</p>}
+        {nothing && <p className="mt-1 text-sm">No MUSD, trove or unclaimed veMEZO for this address on Mezo mainnet.</p>}
       </section>
 
       {data && rows.length > 0 && (
@@ -200,7 +223,7 @@ export function MyPanel({ sources }: { sources: Sources }) {
                     <span className="text-base font-extrabold">{musd(r.amount)}</span>
                   </div>
                   <p className="mt-1 text-sm text-ink-muted">
-                    {nowText(r, vaultApr)}{" "}
+                    {nowText(r, vaultApr, moving)}{" "}
                     {there ? (
                       <span className="font-semibold text-ink">This is the best cash place today.</span>
                     ) : (

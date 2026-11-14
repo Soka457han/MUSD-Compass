@@ -28,3 +28,8 @@ export function allow(req: Request): boolean {
   }
   return ++h.count <= LIMIT;
 }
+
+/** The 429 every route answers when allow() says no; Retry-After is the whole window, the longest a caller can have to wait. */
+export function tooMany(headers: Record<string, string> = {}): Response {
+  return Response.json({ error: "Too many requests — try again in a minute." }, { status: 429, headers: { ...headers, "Retry-After": String(WINDOW_MS / 1000) } });
+}

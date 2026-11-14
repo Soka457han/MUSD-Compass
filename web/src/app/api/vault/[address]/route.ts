@@ -2,17 +2,17 @@ import { after } from "next/server";
 import type { PublicClient } from "viem";
 import { mezoClient, mezoTestnetClient } from "@/lib/chain/clients";
 import { readGaugePosition } from "@/lib/gaugeActions";
-import { allow } from "@/lib/rateLimit";
+import { allow, tooMany } from "@/lib/rateLimit";
 import { fetchSmusdMainnet, fetchSmusdTestnetLastDistribution } from "@/lib/sources/smusd";
-import { isWallet, readVault } from "@/lib/vault";
+import { toWallet, readVault } from "@/lib/vault";
 
 export const maxDuration = 60;
 const HEADERS = { "Access-Control-Allow-Origin": "*", "Cache-Control": "no-store" };
 
 export async function GET(req: Request, { params }: { params: Promise<{ address: string }> }) {
-  if (!allow(req)) return Response.json({ error: "Too many requests — try again in a minute." }, { status: 429, headers: HEADERS });
-  const { address } = await params;
-  if (!isWallet(address)) return Response.json({ error: "That is not an EVM address (0x… with 40 hex characters)." }, { status: 400, headers: HEADERS });
+  if (!allow(req)) return tooMany(HEADERS);
+  const address = toWallet((await params).address);
+  if (!address) return Response.json({ error: "That is not an EVM address (0x… with 40 hex characters)." }, { status: 400, headers: HEADERS });
   // ?network=mainnet reads the mainnet vault; anything else but testnet (the default) is refused, so a typo never answers with the wrong network.
   const asked = new URL(req.url).searchParams.get("network") ?? "testnet";
   if (asked !== "testnet" && asked !== "mainnet") return Response.json({ error: "network must be testnet or mainnet." }, { status: 400, headers: HEADERS });

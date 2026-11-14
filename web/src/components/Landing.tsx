@@ -36,7 +36,7 @@ export function HowItWorks() {
 }
 
 const TRUST = [
-  { title: "Vault yield from its own payouts", body: "The Savings Vault rate is worked out from the vault's payout events over the last 14 days." },
+  { title: "Vault yield from its own payouts", body: "The Savings Vault rate is worked out from the vault's payout events over the last 7 days." },
   { title: "Rewards from Merkl", body: "Pool reward rates come from the Merkl campaigns that pay them." },
   { title: "Locked stays separate", body: "veMEZO sits next to the cash figure and is never added to it." },
   { title: "Every number has a time", body: 'The footer shows when the data was read. If a source cannot be read and there is no recent copy, that venue reads "unavailable".' },

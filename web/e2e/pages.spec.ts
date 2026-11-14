@@ -112,8 +112,8 @@ test("Have BTC? turns on borrowing and says in one line whether minting MUSD to 
   await expect(page.getByTestId("mint-line")).toHaveCount(0);
   await page.getByRole("button", { name: "Have BTC? See if borrowing MUSD pays" }).click();
   await expect(page).toHaveURL(/mode=borrower/);
-  // The fixture's best is staked sMUSD at 57.90%: 57.90 − 1.10 interest − 0.41 fee = 56.40% → about 1,127 MUSD a year on 2,000
-  await expect(page.getByTestId("mint-line")).toHaveText(/^Borrow 2,000 MUSD against your BTC at 1%: MUSD Savings Vault, staked in the gauge pays 57\.90%\. After the fee and interest you keep 56\.40% a year, about 1,127 MUSD\.$/);
+  // The fixture's best is staked sMUSD at 57.90%: 57.90 − 1.10 interest − 0.41 fee = 56.40% → about 1,128 MUSD a year (rounded) on 2,000
+  await expect(page.getByTestId("mint-line")).toHaveText(/^Borrow 2,000 MUSD against your BTC at 1%: MUSD Savings Vault, staked in the gauge pays 57\.90%\. After the fee and interest you keep 56\.40% a year, about 1,128 MUSD\.$/);
   await expect(page.getByRole("button", { name: /Have BTC/ })).toHaveCount(0);
 });
 

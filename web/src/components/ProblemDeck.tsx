@@ -26,11 +26,18 @@ const CARDS = (count: number) => [
 /** Phones: a stacked hand that spreads into a swipe row on tap. From md up the CSS lays it out as a 3-column grid. */
 export function ProblemDeck({ count }: { count: number }) {
   const [spread, setSpread] = useState(false);
+  // Snapping waits for the cards to land: switched on mid-move, it picks card 2, nearest the left edge at that moment.
+  const [settled, setSettled] = useState(false);
   const deck = useRef<HTMLDivElement>(null);
-  // The button goes away once spread, so focus moves to the row (scrollable with the arrow keys) instead of falling to the page.
+  // Focus moves to the row so it scrolls with the arrow keys.
   const open = (moveFocus: boolean) => {
     setSpread(true);
     if (moveFocus) deck.current?.focus();
+  };
+  const stack = () => {
+    deck.current?.scrollTo({ left: 0 }); // a scrolled row would leave the stacked hand off-centre
+    setSettled(false);
+    setSpread(false);
   };
   return (
     <section aria-labelledby="problem-h">
@@ -42,6 +49,8 @@ export function ProblemDeck({ count }: { count: number }) {
         className="deck mt-4 md:mt-6"
         data-spread={spread || undefined}
         onClick={() => open(false)}
+        onTransitionEnd={(e) => spread && e.propertyName === "left" && setSettled(true)}
+        style={settled ? undefined : { scrollSnapType: "none" }}
         tabIndex={spread ? 0 : -1}
         role="region"
         aria-label="Problem cards"
@@ -60,11 +69,9 @@ export function ProblemDeck({ count }: { count: number }) {
       </div>
       <div className="mt-2 flex min-h-11 items-center justify-between gap-3 px-4 md:hidden">
         <p className="text-[13px] text-ink-muted">{spread ? "Swipe for more" : "Tap the cards to spread them out"}</p>
-        {!spread && (
-          <button type="button" onClick={() => open(true)} className="min-h-11 rounded-full border border-line px-[18px] text-sm font-semibold">
-            Spread out
-          </button>
-        )}
+        <button type="button" onClick={() => (spread ? stack() : open(true))} className="min-h-11 rounded-full border border-line px-[18px] text-sm font-semibold">
+          {spread ? "Stack again" : "Spread out"}
+        </button>
       </div>
     </section>
   );

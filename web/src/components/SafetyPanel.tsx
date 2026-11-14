@@ -4,7 +4,7 @@ import { useState } from "react";
 import { BaseError, ContractFunctionRevertedError, maxUint256, parseUnits } from "viem";
 import { smusdAbi } from "@/lib/chain/abis";
 import { MAINNET, SAMPLES, TESTNET } from "@/lib/chain/addresses";
-import { guard, MAINNET_CAP_MUSD } from "@/lib/sendSafely";
+import { guard, MAINNET_CAP_MUSD, netFromSearch } from "@/lib/sendSafely";
 import { humanError, testnetPublic } from "@/lib/wallet";
 
 type Result = { ok: boolean; text: string };
@@ -23,7 +23,8 @@ const TRIES = [
     id: "contract",
     label: "Send to a contract that is not the vault",
     run: async (): Promise<Result> => {
-      guard({ address: "0x000000000000000000000000000000000000dEaD", functionName: "transfer", args: [SAMPLES.devWallet, 1n] });
+      // Judged on the network chosen above (the vault keeps it in ?net=), so the refusal names that network's contracts.
+      guard({ address: "0x000000000000000000000000000000000000dEaD", functionName: "transfer", args: [SAMPLES.devWallet, 1n], network: netFromSearch(window.location.search) });
       return { ok: false, text: "Not refused. This is a bug." };
     },
   },
@@ -38,9 +39,9 @@ const TRIES = [
   },
   {
     id: "balance",
-    label: "Deposit 1,000,000 MUSD from the sample wallet",
+    label: "Deposit 1,000,000 MUSD from the sample wallet without approving it first",
     run: async (): Promise<Result> => {
-      // The same simulation every real deposit goes through, against the live testnet vault.
+      // The same simulation every real deposit goes through, against the live testnet vault. The vault checks the approval before the balance, so the approval is what it refuses.
       await testnetPublic.simulateContract({ account: SAMPLES.devWallet, address: TESTNET.smusd, abi: smusdAbi, functionName: "deposit", args: [parseUnits("1000000", 18)] });
       return { ok: false, text: "The simulation passed. This is a bug." };
     },

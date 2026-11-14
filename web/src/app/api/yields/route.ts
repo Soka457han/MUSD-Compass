@@ -1,5 +1,5 @@
 import { after } from "next/server";
-import { allow } from "@/lib/rateLimit";
+import { allow, tooMany } from "@/lib/rateLimit";
 import { loadSources } from "@/lib/sources";
 import { countCall } from "@/lib/stats";
 import { buildYields, parseQuery } from "@/lib/yields";
@@ -12,10 +12,15 @@ export const maxDuration = 300;
 const CORS = { "Access-Control-Allow-Origin": "*", "Cache-Control": "public, max-age=60" };
 
 export async function GET(req: Request) {
-  if (!allow(req)) return Response.json({ error: "Too many requests — try again in a minute." }, { status: 429, headers: CORS });
+  if (!allow(req)) return tooMany(CORS);
   after(() => countCall("yields", req));
   const parsed = parseQuery(new URL(req.url).searchParams);
   if (!parsed.ok) return Response.json({ error: parsed.error }, { status: 400, headers: CORS });
   const sources = await loadSources();
   return Response.json(buildYields(sources, parsed.query), { headers: CORS });
+}
+
+// Next's automatic OPTIONS answers 204 without CORS headers, so a browser preflight would fail.
+export function OPTIONS() {
+  return new Response(null, { status: 204, headers: { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Methods": "GET, OPTIONS", "Access-Control-Allow-Headers": "Content-Type" } });
 }

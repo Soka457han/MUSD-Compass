@@ -1,4 +1,4 @@
-import { formatUnits, isAddress, type Address, type PublicClient } from "viem";
+import { formatUnits, getAddress, isAddress, type Address, type PublicClient } from "viem";
 import { erc20Abi, smusdAbi } from "@/lib/chain/abis";
 import { NETWORKS, type NetworkId } from "@/lib/chain/addresses";
 
@@ -17,6 +17,8 @@ export type VaultState = {
 };
 
 export const isWallet = (a: string): a is Address => isAddress(a, { strict: false });
+/** The address in checksum form, or null. Any letter case is accepted: viem rejects a mis-cased address later, and a route would report that as an outage. */
+export const toWallet = (a: string): Address | null => (isWallet(a) ? getAddress(a.toLowerCase()) : null);
 
 /** Per-request reads for one address on one Mezo network (the client must be on that network). Pending yield = simulated claimYield (claimableYield() returns 0). */
 export async function readVault(client: PublicClient, address: Address, lastDistribution: number | null, network: NetworkId = "testnet"): Promise<VaultState> {

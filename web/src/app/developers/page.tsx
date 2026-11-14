@@ -36,12 +36,14 @@ const PARAMS: [string, string][] = [
 ];
 
 const FIELDS: [string, string][] = [
-  ["carry.cash", "% per year you can spend: liquid APR minus costs spread over the holding period. Venues are sorted by this."],
+  ["carry.cash", "% per year you can spend: liquid APR minus costs spread over the holding period. Venues are sorted by this, except that pools which also need BTC or MEZO (pairToken) come after every MUSD-only venue."],
   ["carry.total", "cash plus 🔒 locked veMEZO (12-week lock, valued at MEZO spot). Never counted as cash."],
   ["carry.costs", "% per year of entry/exit costs (Ethereum bridge + gas round trip, borrow fee and interest)."],
   ["breakEven", "Ethereum venues only: the amounts where the venue beats the Savings Vault, for cash and total."],
   ["status", "ok or unavailable — a source that is down says so instead of guessing."],
   ["assumptions", "the holding period, borrow parameters and costs used, with plain-language labels. assumptions.peg is MUSD's price on Mezo's MUSD/mUSDC pool (mUSDC counted as $1) and the redemption floor (1 minus the redemption fee), or null when unread. It also carries depthMusd and depthUsdc (MUSD the pool can absorb before MUSD falls below depthFloorUsd, $0.99, and the mUSDC it pays out; null when the tick read failed)."],
+  ["mezoSellDepthMusd", "MEZO-paid venues only: the MUSD the Mezo MEZO/MUSD pool holds to pay people who sell MEZO, so you can see how much reward can be turned into MUSD."],
+  ["incentiveUsdPerDay", "Merkl venues only: what the reward campaign pays out per day, in USD."],
   ["notice", "a sentence to show the user as-is, e.g. when an amount is below the new-trove minimum."],
 ];
 
@@ -111,6 +113,16 @@ export default function DevelopersPage() {
           <Code label="Example: trove request">{`curl "${BASE}/api/trove/sample"`}</Code>
         </section>
 
+        <section aria-labelledby="positions-h" className={SECTION}>
+          <H id="positions-h">GET /api/positions/&#123;address&#125;</H>
+          <p className="mt-1 text-sm">
+            Where an address&apos;s MUSD sits on Mezo mainnet, read only: <code className="font-mono text-xs">wallet</code> (idle MUSD), <code className="font-mono text-xs">vault</code> (Savings Vault), <code className="font-mono text-xs">staked</code> (sMUSD in the vault&apos;s gauge) and{" "}
+            <code className="font-mono text-xs">stakedApr</code> (what staking pays in MEZO, % per year), <code className="font-mono text-xs">stability</code> (Stability Pool deposit), <code className="font-mono text-xs">trove</code> (debt and rate, null without an open trove) and{" "}
+            <code className="font-mono text-xs">veMezo</code> (unclaimed veMEZO and its USD value). A field is null when its source could not be read. Never cached.
+          </p>
+          <Code label="Example: positions request">{`curl "${BASE}/api/positions/${SAMPLES.devWallet}"`}</Code>
+        </section>
+
         <section aria-labelledby="health-h" className={SECTION}>
           <H id="health-h">GET /api/health</H>
           <p className="mt-1 text-sm">Can the server reach each upstream right now (Mezo mainnet + fallback, Mezo testnet, Ethereum, Merkl)? 503 if any fails.</p>
@@ -156,7 +168,7 @@ export default function DevelopersPage() {
             Anyone who needs this answer for many amounts or many addresses from one server, or an agent that cannot sign up for an API key and just pays per call.
           </p>
           <ul className="mt-2 max-w-prose list-disc space-y-1 pl-5 text-sm">
-            <li>A wallet or app that shows where to put MUSD reads the <code className="font-mono text-xs">carry</code> list and shows one answer, without running a venue adapter for each of the eleven places.</li>
+            <li>A wallet or app that shows where to put MUSD reads the <code className="font-mono text-xs">carry</code> list and shows one answer, without running a venue adapter for each place.</li>
             <li>An agent that rebalances compares holding with borrowing at 30, 90 and 365 days in one response, and reads <code className="font-mono text-xs">trove</code> to keep a position above 200% before it acts.</li>
             <li>An alert or notification bot passes a user&apos;s address and gets <code className="font-mono text-xs">rewards</code> (unclaimed veMEZO) and <code className="font-mono text-xs">trove</code> (the ratio) next to the carry numbers.</li>
           </ul>
@@ -166,7 +178,8 @@ export default function DevelopersPage() {
           </p>
           <p className="mt-2 max-w-prose text-sm">
             The payers we expect: bot and agent developers who need every mode and holding period, plus an address&apos;s trove and rewards, in one call, and treasury dashboards that track a trove and its rewards.
-            Both payments on record are ours, one of them from a second wallet. There are no outside payers yet; the live count is on{" "}
+            Every payment on record is ours, from our own wallets (each one is listed on{" "}
+            <a href="/proof" className="font-semibold underline">/proof</a>). There are no outside payers yet; the live count is on{" "}
             <a href="/stats" className="font-semibold underline">/stats</a>.
           </p>
 

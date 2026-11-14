@@ -11,8 +11,8 @@ import { buildRepayStep, buildTopUpStep } from "@/lib/troveActions";
 import { previewTrove, readTrove, type TroveView } from "@/lib/trove";
 import { buildClaimMezoStep, buildStakeSteps, buildUnstakeStep } from "@/lib/gaugeActions";
 import { NETWORKS, SAMPLES, type NetworkId } from "@/lib/chain/addresses";
-import { MAINNET_CAP_MUSD, mainnetWritesEnabled, sendSafely } from "@/lib/sendSafely";
-import type { VaultState } from "@/lib/vault";
+import { MAINNET_CAP_MUSD, mainnetWritesEnabled, netFromSearch, sendSafely } from "@/lib/sendSafely";
+import { isWallet, type VaultState } from "@/lib/vault";
 import { connect, explorerTx, humanError, injected, publicFor, remember, restoreWallet } from "@/lib/wallet";
 import { walletConnectEnabled, walletConnectProjectId, walletConnectProvider } from "@/lib/walletconnect";
 import { bitcoinAccount } from "@/lib/bitcoinWallet";
@@ -56,7 +56,7 @@ function toWei(amount: string): bigint | null {
 }
 
 export function VaultPanel() {
-  const [hasWallet, setHasWallet] = useState(true);
+  const [hasWallet, setHasWallet] = useState<boolean | null>(null); // null until the browser is checked
   const [provider, setProvider] = useState<EIP1193Provider | null>(null);
   const [account, setAccount] = useState<Address | null>(null);
   const [lookup, setLookup] = useState("");
@@ -89,7 +89,14 @@ export function VaultPanel() {
     // Only the newest request may fill the page: an answer for the other network must never show under this one's label.
     if (!addr) return setLoadError("Paste a 0x address first, or press Try a sample.");
     const mine = ++asked.current;
+    if (!isWallet(addr)) {
+      // The server's own rule and message, so a typo costs no request.
+      setState(null);
+      setLoading(false);
+      return setLoadError("That is not an EVM address (0x… with 40 hex characters). ENS names like name.eth are not supported.");
+    }
     setLoadError(null);
+    setState((s) => (s && s.address.toLowerCase() === addr.toLowerCase() ? s : null)); // never show another address's numbers under this one
     setLoading(true);
     try {
       const r = await fetch(`/api/vault/${encodeURIComponent(addr)}${network === "mainnet" ? "?network=mainnet" : ""}`);
@@ -112,6 +119,9 @@ export function VaultPanel() {
   const chooseNet = (n: NetworkId) => {
     if (n === net || (n === "mainnet" && !mainnetWritesEnabled())) return;
     setNet(n);
+    const sp = new URLSearchParams(window.location.search);
+    sp.set("net", n); // a reload keeps the network, so it never falls back to the other one silently
+    window.history.replaceState(null, "", `?${sp}`);
     setState(null);
     setSetup(null);
     setTrove(null);
@@ -130,7 +140,7 @@ export function VaultPanel() {
     setHasWallet(Boolean(injected()));
     if (sp.get("action") === "deposit" && amt && toWei(amt)) setDepositAmt(amt);
     // Links from the trove page and the alerts open /vault?net=mainnet. It only counts where a deploy switched mainnet on.
-    if (sp.get("net") === "mainnet" && mainnetWritesEnabled()) setNet("mainnet");
+    if (netFromSearch(window.location.search) === "mainnet") setNet("mainnet");
   }, []);
 
   // The picker stays open while the wallet asks; it closes on success and shows the reason on failure.
@@ -186,7 +196,7 @@ export function VaultPanel() {
     return restoreWallet((p, a) => {
       if (done) return;
       done = true;
-      const n: NetworkId = new URLSearchParams(window.location.search).get("net") === "mainnet" && mainnetWritesEnabled() ? "mainnet" : "testnet";
+      const n = netFromSearch(window.location.search);
       setProvider(p);
       setAccount(a);
       setLookup(a);
@@ -497,8 +507,9 @@ export function VaultPanel() {
                 Showing the Mezo account of your Bitcoin wallet ({btcView.slice(0, 6)}…{btcView.slice(-4)}), view only. To deposit or withdraw with a Bitcoin wallet, use the Mezo app at mezo.org.
               </p>
             )}
-            {!hasWallet && !btcView && (
-              <p className="mt-3 max-w-prose text-sm">
+            {/* Hidden, not absent, until the browser is checked: it holds its height so the cards below do not jump. */}
+            {hasWallet !== true && !btcView && (
+              <p className={`mt-3 max-w-prose text-sm ${hasWallet === null ? "invisible" : ""}`}>
                 No browser wallet found. Press Connect wallet to use {walletConnectEnabled() ? "WalletConnect or a Bitcoin wallet (view only)" : "a Bitcoin wallet (view only)"}, or open this page inside MetaMask, Rabby or another wallet&apos;s browser to deposit. You can still look up any address below.
               </p>
             )}
@@ -534,7 +545,7 @@ export function VaultPanel() {
           className="mt-2 flex flex-wrap items-end gap-2"
           onSubmit={(e) => {
             e.preventDefault();
-            load(lookup.trim(), net);
+            if (!loading) load(lookup.trim(), net);
           }}
         >
           <div className="min-w-0 basis-full sm:flex-1 sm:basis-auto">
@@ -543,7 +554,7 @@ export function VaultPanel() {
             </label>
             <input id="lookup" value={lookup} onChange={(e) => setLookup(e.target.value)} placeholder="0x…" autoComplete="off" spellCheck={false} className="block h-11 w-full rounded-full border border-field bg-card px-4 text-sm" />
           </div>
-          <button type="submit" className="min-h-11 rounded-full border border-line px-4 text-sm font-bold">
+          <button type="submit" disabled={loading} className="min-h-11 rounded-full border border-line px-4 text-sm font-bold disabled:opacity-50">
             Look up
           </button>
           <button
@@ -552,7 +563,8 @@ export function VaultPanel() {
               setLookup(sample);
               load(sample, net);
             }}
-            className="min-h-11 px-2 text-sm font-semibold underline"
+            disabled={loading}
+            className="min-h-11 px-2 text-sm font-semibold underline disabled:opacity-50"
           >
             Try a sample
           </button>
@@ -562,8 +574,13 @@ export function VaultPanel() {
             {loadError}
           </p>
         )}
+        {loading && (
+          <p role="status" className="mt-2 text-sm">
+            Reading Mezo {net}…
+          </p>
+        )}
         {loading && !state && (
-          <div role="status" aria-label="Reading the vault" className="mt-4 grid grid-cols-2 gap-x-4 gap-y-3 sm:grid-cols-4">
+          <div aria-hidden="true" className="mt-4 grid grid-cols-2 gap-x-4 gap-y-3 sm:grid-cols-4">
             {[0, 1, 2, 3].map((i) => (
               <div key={i} className="flex flex-col gap-2">
                 <span className="h-3 w-20 animate-pulse rounded-full bg-surface" />

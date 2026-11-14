@@ -9,6 +9,6 @@
   f.src = url.href;
   f.title = "MUSD Compass: where Mezo MUSD earns the most after costs";
   f.loading = "lazy";
-  f.style.cssText = "display:block;width:100%;max-width:420px;height:280px;border:1px solid #c3c9d0;border-radius:6px;background:#fff";
+  f.style.cssText = "display:block;width:100%;max-width:420px;height:260px;border:1px solid #c3c9d0;border-radius:6px;background:#fff";
   s.parentNode.insertBefore(f, s.nextSibling);
 })();
