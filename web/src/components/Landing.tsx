@@ -10,7 +10,7 @@ const H2 = "text-2xl leading-tight font-extrabold tracking-tight md:text-[32px]"
 const STEPS = [
   { title: "Say what you have", body: "Type an amount, pick hold or borrow, and choose 30, 90 or 365 days." },
   { title: "Compass takes off the costs", body: "Gas, bridge fees and trove interest come off each venue, spread over the days you chose." },
-  { title: "Pick one and go", body: "The list is sorted by the cash you keep. Each row links to its venue, and the vault deposit runs here on testnet." },
+  { title: "Pick one and go", body: `The list is sorted by the cash you keep. Each row links to its venue, and the vault deposit runs here${mainnetWritesEnabled() ? ", on testnet or on mainnet from your own wallet" : " on testnet"}.` },
 ];
 
 export function HowItWorks() {
@@ -61,9 +61,9 @@ export function Trust() {
           Where the <span className="hl">numbers</span> come from
         </h2>
         <p className="text-ink-muted md:text-lg">Every figure has a source link and the assumption behind it.</p>
-        <a href={`${REPO}#testnet-proof-mezo-testnet-chain-31611`} className="mt-2 hidden h-12 items-center self-start rounded-full border border-line px-[22px] font-semibold no-underline md:inline-flex">
-          See the testnet transactions
-        </a>
+        <Link href="/proof" className="mt-2 hidden h-12 items-center self-start rounded-full border border-line px-[22px] font-semibold no-underline md:inline-flex">
+          See every transaction
+        </Link>
       </div>
       <ul className="mt-4 overflow-hidden rounded-[18px] border border-line md:mt-0 md:rounded-[20px]">
         {TRUST.map((t, i) => (
@@ -76,9 +76,9 @@ export function Trust() {
           </li>
         ))}
       </ul>
-      <a href={`${REPO}#testnet-proof-mezo-testnet-chain-31611`} className="mt-3 flex h-12 items-center justify-center rounded-full border border-line font-semibold no-underline md:hidden">
-        See the testnet transactions
-      </a>
+      <Link href="/proof" className="mt-3 flex h-12 items-center justify-center rounded-full border border-line font-semibold no-underline md:hidden">
+        See every transaction
+      </Link>
     </section>
   );
 }

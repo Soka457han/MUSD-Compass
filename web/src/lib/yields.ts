@@ -1,5 +1,6 @@
 import { breakEven, type Range } from "./carry/breakEven";
 import { entryCheck, minNewTroveAmount, venueCarry, type BorrowParams, type Carry, type CarryInput, type Days, type EntryCheck } from "./carry/carry";
+import { mainnetWritesEnabled } from "./sendSafely";
 import type { Peg } from "./sources/peg";
 import type { Venue } from "./venue";
 
@@ -56,7 +57,7 @@ export function buildYields(s: Sources, q: Query) {
   const down = s.venues.filter((v) => v.status !== "ok").map((v) => v.name);
   const notice =
     q.mode === "borrower" && q.trove === "new" && q.amount < minAmount
-      ? `New troves need at least ${s.borrow.minNetDebt.toLocaleString("en-US")} MUSD of debt — try ${Math.ceil(minAmount).toLocaleString("en-US")} or use holder mode.`
+      ? `New troves need at least ${s.borrow.minNetDebt.toLocaleString("en-US")} MUSD of debt, so borrow at least ${Math.ceil(minAmount).toLocaleString("en-US")} (the ${s.borrow.feePct}% fee is added to the debt) or use holder mode.`
       : down.length
         ? `Not answering right now: ${down.join(", ")}. Shown as unavailable; Compass tries again within 5 minutes.`
         : null;
@@ -94,7 +95,9 @@ export function buildYields(s: Sources, q: Query) {
       borrowParams: s.borrow,
       borrowParamsLive: s.paramsLive,
       holding: `Assumes ${q.days}-day hold`,
-      data: "Mainnet data (Mezo + Ethereum). Vault actions in Compass run on Mezo testnet.",
+      data: mainnetWritesEnabled()
+        ? "Mainnet data (Mezo + Ethereum). Vault actions in Compass run on Mezo testnet, and on Mezo mainnet from your own wallet."
+        : "Mainnet data (Mezo + Ethereum). Vault actions in Compass run on Mezo testnet.",
       locked: "🔒 = veMEZO: claimed on Mezo, locked 12 weeks, valued at MEZO spot. Cash carry ranks; total carry adds 🔒.",
       ethRoundTrip: s.ethRoundTrip,
       mezoPriceUsd: s.mezoPriceUsd,

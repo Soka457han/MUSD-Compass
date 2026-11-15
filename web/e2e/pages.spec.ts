@@ -117,6 +117,12 @@ test("Have BTC? turns on borrowing and says in one line whether minting MUSD to 
   await expect(page.getByRole("button", { name: /Have BTC/ })).toHaveCount(0);
 });
 
+test("borrowing below the new-trove minimum says it cannot open one instead of quoting a yield", async ({ page }) => {
+  await page.goto("/?mode=borrower&amount=1000");
+  await page.locator("form[data-hydrated]").waitFor();
+  await expect(page.getByTestId("mint-line")).toHaveText("A new trove needs at least 1,799 MUSD borrowed, so 1,000 MUSD cannot open one. Raise the amount or switch to Hold.");
+});
+
 test("every ranked venue says what this amount keeps before you go in", async ({ page }) => {
   await page.goto("/");
   await page.locator("form[data-hydrated]").waitFor();

@@ -5,6 +5,7 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { flushSync } from "react-dom";
 import { musd, pct, shortDate, timeUtc, usd } from "@/lib/format";
 import { minNewTroveAmount } from "@/lib/carry/carry";
+import { mainnetWritesEnabled } from "@/lib/sendSafely";
 import { buildYields, cleanAmount, parseQuery, parseQueryLenient, type Query, type Sources, type VenueOut } from "@/lib/yields";
 import { LockIcon } from "./Icons";
 import { SiteFooter } from "./Landing";
@@ -108,7 +109,7 @@ function PegLine({ peg }: { peg: NonNullable<Sources["peg"]> }) {
 }
 
 /** The answer, up top: the best cash carry for the current inputs. The full card for it leads the ranked list below. */
-function BestCash({ v, holding, mint, className = "" }: { v: VenueOut; holding: string; mint: { amount: number; rate: number } | null; className?: string }) {
+function BestCash({ v, holding, mint, className = "" }: { v: VenueOut; holding: string; mint: { amount: number; rate: number; min: number | null } | null; className?: string }) {
   const external = v.action.url.startsWith("http");
   const locked = v.carry.locked ?? 0;
   const cash = v.carry.cash ?? 0;
@@ -129,7 +130,9 @@ function BestCash({ v, holding, mint, className = "" }: { v: VenueOut; holding: 
       </p>
       {mint && (
         <p data-testid="mint-line" className="rounded-2xl bg-accent-soft px-4 py-3 text-sm font-semibold md:text-base">
-          {cash > 0
+          {mint.min !== null && mint.amount < mint.min
+            ? `A new trove needs at least ${musd(Math.ceil(mint.min))} borrowed, so ${musd(mint.amount)} cannot open one. Raise the amount or switch to Hold.`
+            : cash > 0
             ? `Borrow ${musd(mint.amount)} against your BTC at ${mint.rate}%: ${v.name} pays ${pct(v.carry.liquid)}. After the fee and interest you keep ${pct(cash)} a year, about ${musd(Math.round((mint.amount * cash) / 100))}.`
             : `Borrow ${musd(mint.amount)} against your BTC at ${mint.rate}%: after the fee and interest the best place pays ${pct(cash)}. Borrowing to earn does not pay today.`}
         </p>
@@ -300,7 +303,7 @@ export function Compass({ sources, between, after }: { sources: Sources; between
             </div>
           </div>
           {result && lead ? (
-            <BestCash v={lead} holding={result.assumptions.holding} mint={query?.mode === "borrower" ? { amount: query.amount, rate: result.assumptions.ratePct } : null} className={`${dim} lg:transition-[margin] lg:duration-300 ${query?.mode === "borrower" ? "lg:mt-8" : "lg:mt-36"}`} />
+            <BestCash v={lead} holding={result.assumptions.holding} mint={query?.mode === "borrower" ? { amount: query.amount, rate: result.assumptions.ratePct, min: query.trove === "new" ? minNewTroveAmount(sources.borrow) : null } : null} className={`${dim} lg:transition-[margin] lg:duration-300 ${query?.mode === "borrower" ? "lg:mt-8" : "lg:mt-36"}`} />
           ) : (
             <p className="text-sm">No venue can be ranked right now.</p>
           )}
@@ -376,7 +379,8 @@ export function Compass({ sources, between, after }: { sources: Sources; between
           <>
             <p>
               <span className="font-semibold text-ink">Mainnet data</span> (Mezo + Ethereum), kept for 5 min then refreshed in the background · data as of {result?.updatedAt ? `${shortDate(result.updatedAt)}, ${timeUtc(result.updatedAt)}` : "unknown"}. Vault actions run on{" "}
-              <span className="font-semibold text-ink">Mezo testnet</span>.
+              <span className="font-semibold text-ink">Mezo testnet</span>
+              {mainnetWritesEnabled() ? ", and on Mezo mainnet from your own wallet" : ""}.
             </p>
             <p>
               Cash carry ranks. Locked rewards are veMEZO: claimed on Mezo, locked 12 weeks, valued at MEZO spot{sources.mezoPriceUsd ? ` ($${sources.mezoPriceUsd.toFixed(5)}${sources.mezoPriceSource ? `, from ${sources.mezoPriceSource === "Merkl" ? "Merkl" : "the Mezo MEZO/MUSD pool"}` : ""})` : ""}, shown on the pink tag and never in the cash figure.{" "}
