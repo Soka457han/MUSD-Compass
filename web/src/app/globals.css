@@ -20,7 +20,7 @@
   --on-accent: #ffffff;
   --accent-text: #6d28d9;
   --accent-soft: rgb(124 58 237 / 0.12);
-  --glow-spot: rgb(124 58 237 / 0.28);
+  --glow-spot: rgb(124 58 237 / 0.5);
   --locked: #f6d8ff;
   --on-locked: #16171d;
   --danger-text: #b3141c;
@@ -53,7 +53,7 @@
   --on-accent: #0f1015;
   --accent-text: #c4a6fd;
   --accent-soft: rgb(163 112 252 / 0.2);
-  --glow-spot: rgb(163 112 252 / 0.28);
+  --glow-spot: rgb(163 112 252 / 0.5);
   --danger-text: #ff8a8f;
   --focus: #c4a6fd;
   /* Dimmer pastels so the tiles do not glow on the near-black page; dark text still reads at 5:1 or more. */
