@@ -1,3 +1,4 @@
+import { getCache, waitUntil, type RuntimeCache } from "@vercel/functions";
 import { cacheLife } from "next/cache";
 import { PHASE_PRODUCTION_BUILD } from "next/constants";
 import { MAINNET } from "@/lib/chain/addresses";
@@ -36,7 +37,31 @@ export const settle = <T,>(p: Promise<T>, name: string, ms = buildLimit()) => {
 export async function loadSources(): Promise<Sources> {
   "use cache";
   cacheLife({ revalidate: 300, expire: 86_400 });
-  return readSources();
+  // While building, read fresh as before: there is no request to finish a background refresh after.
+  if (process.env.NEXT_PHASE === PHASE_PRODUCTION_BUILD) return readSources();
+  return sharedRead(SHARED_KEY, readSources, getCache({ namespace: "compass" }), Date.now());
+}
+
+/** Bump when the Sources shape changes: entries in Vercel's runtime cache outlive deploys. */
+export const SHARED_KEY = "sources-v1";
+export const SHARED_FRESH_MS = 300_000;
+type Stored<T> = { at: number; value: T };
+
+/** "use cache" alone lives in one instance's memory, so after a deploy or on a new instance the first visitor waited
+ *  for a cold read (up to ~40 s; /my sat on "Loading live rates…", 15 Nov). Vercel's runtime cache under our own key is
+ *  shared by every instance and survives deploys ("use cache: remote" does not: Next.js 16 keys it by build).
+ *  Fresh entry: used as is. Older: used at once while a new read runs after the response. None: read now.
+ *  Off Vercel, getCache falls back to an in-memory cache, so local dev and tests behave as before. */
+export async function sharedRead<T>(key: string, read: () => Promise<T>, cache: RuntimeCache, now: number): Promise<T> {
+  const hit = (await cache.get(key).catch(() => null)) as Stored<T> | null;
+  const refresh = async () => {
+    const value = await read();
+    await cache.set(key, { at: Date.now(), value } satisfies Stored<T>, { ttl: 86_400 }).catch((e: unknown) => console.error("[sources] runtime cache write failed:", e));
+    return value;
+  };
+  if (!hit) return refresh();
+  if (now - hit.at > SHARED_FRESH_MS) waitUntil(refresh().catch((e: unknown) => console.error("[sources] background refresh failed:", e)));
+  return hit.value;
 }
 
 /** The one MEZO price shown everywhere: the Mezo pool's own, else Merkl's, else none. */
