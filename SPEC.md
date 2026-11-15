@@ -112,7 +112,7 @@ export function borrowCostPct(i: CarryInput): number {
 Naming: `camelCase` functions, `PascalCase` components and types, files `camelCase.ts`. Python: PEP 8, type hints, `ruff format`. Comments only for the *why*.
 
 ## Testing Strategy
-- **Unit (Vitest), `web/tests/unit`**: every `lib/carry` function, with the design's worked numbers as fixed cases: 2.72% borrower carry, debt 2,202, 1.10% interest, fee 0.41 / 1.22 / 0.10 %/yr, dilution 47.26%, Uniswap cap ≈383k, minimum 1,798.21, identity guard rejecting mUSD / smUSD / Pharos look-alikes. Adapters are tested against recorded fixtures (Merkl JSON, sMUSD logs → 4.01% over 14 days, 4.23% over 7).
+- **Unit (Vitest), `web/tests/unit`**: every `lib/carry` function, with the design's worked numbers as fixed cases: 2.72% borrower carry, debt 2,202, 1.10% interest, fee 0.41 / 1.22 / 0.10 %/yr, dilution 47.26%, Uniswap cap ≈383k, new-trove minimum 1,800 (Mezo's floor, without counting the fee toward it), identity guard rejecting mUSD / smUSD / Pharos look-alikes. Adapters are tested against recorded fixtures (Merkl JSON, sMUSD logs → 4.01% over 14 days, 4.23% over 7).
 - **Route contract tests**: `/api/yields` with mocked adapters: shape, sorting (cash desc, "—" rows last), query validation (bad amount → 400), unavailable source → venue still listed.
 - **E2E (Playwright, 360×740)**: home renders a sorted table with no wallet; calculator changes numbers; `/vault` shows the testnet banner; `/embed` renders; axe reports **0 serious/critical** on `/`, `/vault`, `/embed`, `/get-test-musd`.
 - **Bot (pytest)**: command parsing and message formatting with a mocked API; error text when the API is down.

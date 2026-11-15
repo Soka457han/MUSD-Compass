@@ -61,7 +61,7 @@ On a phone, Mezo's own app asks for a larger window. No screen answered "after c
 
 ## Who it is for, and why they come back
 
-- MUSD holders want to know where MUSD earns most after costs, and whether what they already hold could earn more. *My MUSD* shows, for example, that sMUSD staked in the vault gauge earns about 1.34% in MEZO while the unstaked vault pays 4.01%.
+- MUSD holders want to know where MUSD earns most after costs, and whether what they already hold could earn more. *My MUSD* shows, for example, MUSD sitting in the plain Savings Vault while staking it in the gauge pays more, or the reverse; the rates change week to week.
 - BTC holders want to know whether borrowing MUSD is worth it at all. A yes means more MUSD gets minted.
 - Builders and agents get the same numbers through a free API, a widget and a premium call paid in MUSD.
 
