@@ -190,3 +190,17 @@ test("stats: heading, not-switched-on state under fixtures, second-wallet tx lin
   await page.getByRole("contentinfo").getByRole("link", { name: "Usage stats" }).click();
   await expect(page).toHaveURL(/\/stats$/);
 });
+
+test.describe("card glow (desktop mouse)", () => {
+  test.use({ viewport: { width: 1280, height: 800 }, isMobile: false, hasTouch: false });
+  test("a card lights up under the mouse and the spot follows it", async ({ page }) => {
+    await page.goto("/");
+    const card = page.locator("article.glow").first();
+    await card.scrollIntoViewIfNeeded();
+    const box = (await card.boundingBox())!;
+    await page.mouse.move(box.x + 40, box.y + 30);
+    await expect.poll(() => card.evaluate((el) => el.style.getPropertyValue("--gx"))).toBe("40px");
+    // The spot sits at the pointer in the theme accent at 28% (reduced motion in e2e, so no fade to wait for).
+    await expect.poll(() => card.evaluate((el) => getComputedStyle(el).backgroundImage)).toBe("radial-gradient(260px at 40px 30px, rgba(124, 58, 237, 0.28), rgba(0, 0, 0, 0) 70%)");
+  });
+});

@@ -59,7 +59,7 @@ export function PriceLabel({ v, days, amount, lead }: { v: VenueOut; days: numbe
   const overDepth = mezoOverDepth(v, amount, days);
 
   return (
-    <article aria-labelledby={titleId} className={`relative flex h-full flex-col rounded-[18px] border border-line md:rounded-[20px] ${lead ? "bg-card" : "bg-surface"}`}>
+    <article aria-labelledby={titleId} className={`glow relative flex h-full flex-col rounded-[18px] border border-line md:rounded-[20px] ${lead ? "bg-card" : "bg-surface"}`}>
       <div className="flex items-start justify-between gap-3 px-5 pt-5">
         <h3 id={titleId} className="text-base leading-snug font-bold">
           {v.name}

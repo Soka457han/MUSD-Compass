@@ -319,7 +319,7 @@ export function Compass({ sources, between, after }: { sources: Sources; between
                 <ul className="mt-4 grid grid-cols-2 gap-2.5 md:mt-5 md:grid-cols-6 md:gap-3">
                   {tiles.map((t) => (
                     <li key={t.label}>
-                      <a href={t.href} className={`flex h-[72px] items-center justify-between gap-2 rounded-[14px] px-4 font-bold text-tile-ink no-underline md:h-28 md:flex-col md:items-start md:justify-between md:rounded-2xl md:p-[18px] ${t.bg}`}>
+                      <a href={t.href} className={`glow flex h-[72px] items-center justify-between gap-2 rounded-[14px] px-4 font-bold text-tile-ink no-underline md:h-28 md:flex-col md:items-start md:justify-between md:rounded-2xl md:p-[18px] ${t.bg}`}>
                         <span className="text-sm md:text-[15px]">{t.label}</span>
                         <span className="text-[15px] font-extrabold md:text-[22px]">{t.value}</span>
                       </a>

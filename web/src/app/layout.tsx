@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
+import { CardGlow } from "@/components/CardGlow";
 
 // Fontsource's Plus Jakarta Sans latin file (wght axis), loaded through next/font so it is preloaded.
 const jakarta = localFont({
@@ -27,7 +28,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <head>
         <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
       </head>
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        {children}
+        <CardGlow />
+      </body>
     </html>
   );
 }

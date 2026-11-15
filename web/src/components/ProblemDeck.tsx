@@ -57,7 +57,7 @@ export function ProblemDeck({ count }: { count: number }) {
       >
         <div className="deck-track">
           {CARDS(count).map((c) => (
-            <article key={c.title} className={`deck-card flex flex-col gap-2 rounded-[18px] p-[22px] text-tile-ink md:rounded-[20px] md:p-7 ${c.bg}`}>
+            <article key={c.title} className={`deck-card glow flex flex-col gap-2 rounded-[18px] p-[22px] text-tile-ink md:rounded-[20px] md:p-7 ${c.bg}`}>
               <span className="deck-big price text-[38px] md:text-5xl">{c.big}</span>
               <div className="deck-more flex flex-col gap-2">
                 <h3 className="mt-1.5 text-[17px] font-bold md:text-xl">{c.title}</h3>

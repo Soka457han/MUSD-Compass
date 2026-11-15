@@ -20,6 +20,7 @@
   --on-accent: #ffffff;
   --accent-text: #6d28d9;
   --accent-soft: rgb(124 58 237 / 0.12);
+  --glow-spot: rgb(124 58 237 / 0.28);
   --locked: #f6d8ff;
   --on-locked: #16171d;
   --danger-text: #b3141c;
@@ -52,6 +53,7 @@
   --on-accent: #0f1015;
   --accent-text: #c4a6fd;
   --accent-soft: rgb(163 112 252 / 0.2);
+  --glow-spot: rgb(163 112 252 / 0.28);
   --danger-text: #ff8a8f;
   --focus: #c4a6fd;
   /* Dimmer pastels so the tiles do not glow on the near-black page; dark text still reads at 5:1 or more. */
@@ -136,6 +138,22 @@ a {
   animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
 }
 
+/* Cards light up under the mouse (CardGlow moves the spot). Painted as the card's own background, so it sits under the text and needs no positioning. */
+@property --gc {
+  syntax: "<color>";
+  inherits: false;
+  initial-value: transparent;
+}
+@media (hover: hover) and (pointer: fine) {
+  .glow {
+    background-image: radial-gradient(260px at var(--gx, 50%) var(--gy, 50%), var(--gc), transparent 70%);
+    transition: --gc 0.3s;
+  }
+  .glow:hover {
+    --gc: var(--glow-spot);
+  }
+}
+
 /* Problem cards: a stacked hand on phones that spreads into a swipe row on tap; a plain 3-column grid from md up. */
 .deck {
   --w: 264px;
@@ -169,7 +187,7 @@ a {
   scroll-snap-align: start;
   scroll-margin-left: 16px;
   box-shadow: 0 12px 32px rgb(0 0 0 / 0.28);
-  transition: left 560ms var(--ease), top 560ms var(--ease), transform 560ms var(--ease), box-shadow 560ms ease;
+  transition: left 560ms var(--ease), top 560ms var(--ease), transform 560ms var(--ease), box-shadow 560ms ease, --gc 0.3s;
 }
 .deck-card:nth-child(1) { left: calc(50% - var(--w) / 2); top: 120px; z-index: 3; }
 .deck-card:nth-child(2) { left: calc(50% - 173px); top: 20px; z-index: 2; transform: rotate(-5deg); }
@@ -251,13 +269,13 @@ body::before {
 
 /* Every 20px-radius card inside <main> is a glass card. Matched by its radius class so no component needs a new class. */
 main [class*="rounded-[20px]"].bg-card {
-  background: var(--glass);
+  background-color: var(--glass); /* not the shorthand: it would wipe the .glow spot */
   border-color: var(--glass-line);
   -webkit-backdrop-filter: blur(22px) saturate(1.4);
   backdrop-filter: blur(22px) saturate(1.4);
 }
 main :is(a, article)[class*="rounded-[20px]"] {
-  transition: transform 250ms cubic-bezier(0.16, 1, 0.3, 1);
+  transition: transform 250ms cubic-bezier(0.16, 1, 0.3, 1), --gc 0.3s;
 }
 main :is(a, article)[class*="rounded-[20px]"]:hover {
   transform: translateY(-4px);

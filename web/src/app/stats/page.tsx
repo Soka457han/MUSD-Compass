@@ -9,7 +9,7 @@ export const metadata: Metadata = { title: "Usage stats · MUSD Compass" };
 
 const TX = "https://explorer.test.mezo.org/tx/0x3a63cdf86569c3787867fcc9ddb3ebf8c91eb8dec1a2a206c716457f8c30bc5a";
 const CARD = "rounded-[20px] border border-line bg-card px-5 py-5";
-const TILE = "rounded-[20px] bg-tile-lilac px-4 py-4 text-tile-ink";
+const TILE = "glow rounded-[20px] bg-tile-lilac px-4 py-4 text-tile-ink";
 const LABEL: Record<Route, string> = { yields: "Yields API", premium: "Paid (x402) API", trove: "Trove API", embed: "Widget" };
 const fmt = (n: number) => n.toLocaleString("en-US");
 

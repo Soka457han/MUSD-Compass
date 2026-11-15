@@ -21,7 +21,7 @@ export function HowItWorks() {
       </h2>
       <ol className="mt-4 grid gap-2.5 md:mt-6 md:grid-cols-3 md:gap-4">
         {STEPS.map((s, i) => (
-          <li key={s.title} className="grid grid-cols-[40px_1fr] gap-3.5 rounded-[18px] border border-line bg-card px-5 py-[18px] md:flex md:flex-col md:gap-3 md:rounded-[20px] md:p-7">
+          <li key={s.title} className="glow grid grid-cols-[40px_1fr] gap-3.5 rounded-[18px] border border-line bg-card px-5 py-[18px] md:flex md:flex-col md:gap-3 md:rounded-[20px] md:p-7">
             <span className="flex size-10 items-center justify-center rounded-full bg-accent font-extrabold text-on-accent md:size-11 md:text-lg" aria-hidden="true">
               {i + 1}
             </span>
@@ -100,7 +100,7 @@ export function Channels() {
       <ul className="mt-4 grid grid-cols-2 gap-2.5 md:mt-6 md:grid-cols-4 md:gap-4">
         {CHANNELS.map((c) => (
           <li key={c.title} className="min-w-0">
-            <a href={c.href} className={`flex h-full min-w-0 flex-col gap-1.5 rounded-[18px] p-4 text-tile-ink no-underline md:min-h-[200px] md:gap-2.5 md:rounded-[20px] md:p-6 ${c.bg}`}>
+            <a href={c.href} className={`glow flex h-full min-w-0 flex-col gap-1.5 rounded-[18px] p-4 text-tile-ink no-underline md:min-h-[200px] md:gap-2.5 md:rounded-[20px] md:p-6 ${c.bg}`}>
               <h3 className="text-[15px] font-bold md:text-lg">{c.title}</h3>
               <p className="flex-1 text-[13px] text-tile-ink-muted md:text-base">{c.body}</p>
               <code className="max-w-full self-start truncate rounded-lg bg-[rgb(22_23_29/0.08)] px-2 py-0.5 font-mono text-xs md:text-[13px]">{c.code}</code>
