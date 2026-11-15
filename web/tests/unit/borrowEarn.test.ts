@@ -73,9 +73,9 @@ describe("buildBorrowEarnSteps", () => {
     const { steps } = await buildBorrowEarnSteps(client({ allowance: 2000n * e18 }) as never, "testnet", account, 2000);
     expect(steps.map((s) => s.functionName)).toEqual(["openTrove", "deposit"]);
   });
-  it("refuses a debt below Mezo's minimum, counting the fee: 1,798.21 passes, 1,798 does not", async () => {
-    await expect(buildBorrowEarnSteps(client() as never, "mainnet", account, 1798)).rejects.toThrow(/at least 1,798\.21 MUSD/);
-    await expect(buildBorrowEarnSteps(client() as never, "mainnet", account, 1798.21)).resolves.toBeDefined();
+  it("refuses a trove below Mezo's 1,800 minimum without counting the fee: 1,800 passes, 1,799.99 does not", async () => {
+    await expect(buildBorrowEarnSteps(client() as never, "mainnet", account, 1799.99)).rejects.toThrow(/at least 1,800 MUSD \(Mezo's minimum\)/);
+    await expect(buildBorrowEarnSteps(client() as never, "mainnet", account, 1800)).resolves.toBeDefined();
   });
   it("refuses when the account already has a trove (openTrove would revert)", async () => {
     await expect(buildBorrowEarnSteps(client({ trove: 1 }) as never, "mainnet", account, 2000)).rejects.toThrow(/already has a trove/);

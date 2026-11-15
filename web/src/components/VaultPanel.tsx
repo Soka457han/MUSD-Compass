@@ -299,7 +299,7 @@ export function VaultPanel() {
     );
   };
   const borrowWei = toWei(borrowAmt);
-  const minBorrow = setup ? Math.ceil(setup.minNetDebt / (1 + setup.feePct / 100)) : 0;
+  const minBorrow = setup ? setup.minNetDebt : 0;
   const coll = setup && borrowWei ? collateralFor(Number(borrowAmt), setup) : null;
   const shortBtc = Boolean(setup && coll !== null && Number(formatEther(coll)) + 0.0001 > setup.btcBalance); // keep a little BTC for gas
   const sendBorrow = (built: Awaited<ReturnType<typeof buildBorrowEarnSteps>>) =>

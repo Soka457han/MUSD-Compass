@@ -38,7 +38,7 @@ test.describe("home (360 px, fixture data)", () => {
     await expect(vault).toContainText("2.73%");
     await expect(page).toHaveURL(/mode=borrower/);
     await page.getByLabel("Amount (MUSD)").fill("1000");
-    await expect(page.getByRole("status")).toContainText("at least 1,800 MUSD");
+    await expect(page.getByRole("status")).toContainText("Mezo's smallest new trove is 1,800 MUSD.");
   });
 
   test("deep link from the bot is honoured", async ({ page }) => {

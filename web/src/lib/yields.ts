@@ -52,12 +52,15 @@ export type Sources = {
 export type VenueOut = Venue & { carry: Carry; check: EntryCheck; breakEven: { cash: Range; total: Range } | null };
 
 export function buildYields(s: Sources, q: Query) {
-  const input: CarryInput = { ...q, ratePct: q.ratePct ?? s.borrow.ratePct, params: s.borrow };
   const minAmount = minNewTroveAmount(s.borrow);
+  // A new trove below Mezo's minimum cannot exist, so price it as the smallest one that can.
+  const belowMin = q.mode === "borrower" && q.trove === "new" && q.amount < minAmount;
+  const amount = belowMin ? minAmount : q.amount;
+  const input: CarryInput = { ...q, amount, ratePct: q.ratePct ?? s.borrow.ratePct, params: s.borrow };
   const down = s.venues.filter((v) => v.status !== "ok").map((v) => v.name);
   const notice =
-    q.mode === "borrower" && q.trove === "new" && q.amount < minAmount
-      ? `New troves need at least ${s.borrow.minNetDebt.toLocaleString("en-US")} MUSD of debt, so borrow at least ${Math.ceil(minAmount).toLocaleString("en-US")} (the ${s.borrow.feePct}% fee is added to the debt) or use holder mode.`
+    belowMin
+      ? `Mezo's smallest new trove is ${amount.toLocaleString("en-US")} MUSD. Figures are priced at ${amount.toLocaleString("en-US")}; switch to Hold to use your amount.`
       : down.length
         ? `Not answering right now: ${down.join(", ")}. Shown as unavailable; Compass tries again within 5 minutes.`
         : null;
@@ -87,7 +90,8 @@ export function buildYields(s: Sources, q: Query) {
     // When the data was read (newest source), not when this was computed: no clock read, so the page can be prerendered.
     updatedAt: s.venues.reduce((m, v) => (v.updatedAt > m ? v.updatedAt : m), ""),
     assumptions: {
-      amount: q.amount,
+      amount, // what the figures are priced at: the trove minimum when the typed amount is below it
+      pricedAtMinimum: belowMin,
       mode: q.mode,
       trove: q.trove,
       days: q.days,

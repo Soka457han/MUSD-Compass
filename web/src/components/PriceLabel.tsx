@@ -43,7 +43,7 @@ export function mezoOverDepth(v: Pick<VenueOut, "carry" | "mezoSellDepthMusd">, 
 
 function rangeText(r: Range): string {
   if (r.kind === "never") return "never at today's rates";
-  // Round inward so every amount shown is inside the range (1,798.21 → 1,799, the real trove minimum).
+  // Round inward so every amount shown is inside the range (e.g. 1,800.4 → 1,801).
   if (r.kind === "from") return `from ${musd(Math.ceil(r.min))}`;
   return `${musd(Math.ceil(r.min))} – ${musd(Math.floor(r.max))}`;
 }

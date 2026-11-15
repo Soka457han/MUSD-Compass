@@ -67,9 +67,8 @@ describe("dilutedApr", () => {
 });
 
 describe("minNewTroveAmount", () => {
-  it("amount + fee ≥ 1,800 → 1,798.21 (rounded up to cents)", () => {
-    expect(minNewTroveAmount(params)).toBe(1798.21);
-    expect(1798.21 * 1.001).toBeGreaterThanOrEqual(1800);
+  it("is Mezo's 1,800 floor itself, not 1,798.21: the fee is skipped in Recovery Mode", () => {
+    expect(minNewTroveAmount(params)).toBe(1800);
   });
 });
 
@@ -102,7 +101,7 @@ describe("breakEven", () => {
   it("new-trove scans start at the minimum borrow", () => {
     const venue = { liquidApr: 8, lockedApr: 0, fixedCostUsd: 0, tvl: null };
     const r = breakEven(venue, smusd, base);
-    expect(r.cash).toEqual({ kind: "from", min: 1798.21 });
+    expect(r.cash).toEqual({ kind: "from", min: 1800 });
   });
 });
 

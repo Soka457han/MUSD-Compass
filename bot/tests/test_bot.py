@@ -81,9 +81,10 @@ def test_yield_amount_parsing(api):
 def test_carry_borrow_shows_api_notice_as_is(api):
     text = say("/carry 1000 borrow")
     assert api.calls[0]["params"] == {"amount": "1000", "mode": "borrower"}
-    assert "⚠️ New troves need at least 1,800 MUSD of debt" in text
+    assert "⚠️ Mezo&#x27;s smallest new trove is 1,800 MUSD. Figures are priced at 1,800" in text  # html-escaped for Telegram
+    assert "Carry on 1,800 borrowed MUSD" in text  # the API prices a below-minimum trove at the minimum
     assert "new trove, 1% rate, 0.1% fee" in text
-    assert "with 🔒 1,799–57,591 MUSD" in text  # 1,798.21 rounds up: 1,798 could not open a trove
+    assert "with 🔒 1,800–57,591 MUSD" in text  # scans start at Mezo's 1,800 floor
     assert "Usage: /carry" in say("/carry")
     assert "Usage: /carry" in say("/carry 1000 lend")
 

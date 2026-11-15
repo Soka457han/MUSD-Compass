@@ -112,7 +112,7 @@ def _n(x: float) -> str:
 def _range(r: dict) -> str:
     if r["kind"] == "never":
         return "never"
-    # Round inward so every amount shown is inside the range (e.g. 1,798.21 → 1,799, the real trove minimum).
+    # Round inward so every amount shown is inside the range (e.g. 1,800.4 → 1,801).
     lo = _n(math.ceil(r["min"]))
     if r["kind"] == "from":
         return f"from {lo} MUSD"
@@ -203,7 +203,7 @@ def cmd_carry(args: list[str]) -> str:
     d = api_get("/api/yields", params)
     if borrow:
         a = d["assumptions"]
-        title = (f"<b>Carry on {_n(amount)} borrowed MUSD</b> (new trove, {a['ratePct']:g}% rate, "
+        title = (f"<b>Carry on {_n(a['amount'])} borrowed MUSD</b> (new trove, {a['ratePct']:g}% rate, "
                  f"{a['borrowParams']['feePct']:g}% fee — change these on the web)")
     else:
         title = f"<b>Carry on {_n(amount)} MUSD</b> (holding)"

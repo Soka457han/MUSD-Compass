@@ -7,7 +7,7 @@ export type Days = 30 | 90 | 365;
 export type BorrowParams = {
   feePct: number; // issuance fee, % of the borrowed amount (0.1)
   gasCompensation: number; // MUSD added to a new trove's debt, returned on close (200)
-  minNetDebt: number; // amount + fee must reach this for a new trove (1,800)
+  minNetDebt: number; // Mezo's floor for a new trove (1,800); Compass asks for this much borrowed
 };
 
 export type CarryInput = {
@@ -53,9 +53,10 @@ export function dilutedApr(apr: number, tvl: number | null, amount: number): num
   return tvl && tvl > 0 ? (apr * tvl) / (tvl + amount) : apr;
 }
 
-/** Smallest amount for a new trove: amount × (1 + fee) ≥ minNetDebt, rounded up to cents. */
+/** Smallest amount for a new trove: Mezo's minNetDebt itself (1,800). The contract counts the 0.1% fee toward it, but the fee is skipped in
+ * Recovery Mode and for fee-exempt accounts, and Mezo's docs state a 1,800 MUSD floor, so Compass never offers less. */
 export function minNewTroveAmount(p: BorrowParams): number {
-  return Math.ceil((p.minNetDebt / (1 + p.feePct / 100)) * 100) / 100;
+  return p.minNetDebt;
 }
 
 export function venueCarry(v: VenueRates, i: CarryInput): Carry {

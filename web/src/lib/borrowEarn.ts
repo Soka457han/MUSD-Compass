@@ -43,8 +43,8 @@ export async function buildBorrowEarnSteps(
   if (network === "mainnet" && debtMusd > MAINNET_CAP_MUSD) throw new Error(`Compass opens troves of at most ${usd(MAINNET_CAP_MUSD)} MUSD on mainnet for now. Borrow less, or use the Mezo app.`);
   const setup = await readBorrowSetup(client, account, network);
   if (setup.hasTrove) throw new Error(`This account already has a trove on Mezo ${network}. Compass opens one per account; top it up or repay it instead.`);
-  const minDebt = Math.ceil((setup.minNetDebt / (1 + setup.feePct / 100)) * 100) / 100; // the minimum counts the fee
-  if (debtMusd < minDebt) throw new Error(`A new trove needs at least ${usd(minDebt)} MUSD of debt (Mezo's ${usd(setup.minNetDebt)} minimum includes the ${setup.feePct}% fee).`);
+  // Mezo's floor, without counting the fee toward it: the fee is skipped in Recovery Mode, where only the full amount passes.
+  if (debtMusd < setup.minNetDebt) throw new Error(`A new trove needs at least ${setup.minNetDebt.toLocaleString("en-US")} MUSD (Mezo's minimum).`);
   const collateral = collateralFor(debtMusd, setup);
   if (Number(formatEther(collateral)) + 0.0001 > setup.btcBalance)
     throw new Error(`This trove needs about ${formatEther(collateral)} BTC to lock, plus a little for gas, and the wallet has ${setup.btcBalance} BTC.`);

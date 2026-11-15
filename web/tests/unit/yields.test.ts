@@ -81,9 +81,13 @@ describe("buildYields", () => {
     expect(r.venues.find((v) => v.id === "eth-morpho")!.breakEven).toBeNull();
   });
 
-  it("a new-trove amount under the minimum returns a notice, not an error", () => {
+  it("a new-trove amount under the minimum is priced at Mezo's minimum, with a notice saying so", () => {
     const r = buildYields(sources, q("mode=borrower&amount=1000"));
-    expect(r.notice).toMatch(/at least 1,800 MUSD/);
+    expect(r.notice).toBe("Mezo's smallest new trove is 1,800 MUSD. Figures are priced at 1,800; switch to Hold to use your amount.");
+    expect(r.assumptions.amount).toBe(1800);
+    expect(r.assumptions.pricedAtMinimum).toBe(true);
+    expect(r.venues).toEqual(buildYields(sources, q("mode=borrower&amount=1800")).venues);
+    expect(buildYields(sources, q("mode=borrower&amount=1000&trove=existing")).assumptions).toMatchObject({ amount: 1000, pricedAtMinimum: false }); // an existing trove has no minimum
   });
 
   it("an unavailable source still appears, last, with no carry", () => {

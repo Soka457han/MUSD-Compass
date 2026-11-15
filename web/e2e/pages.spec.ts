@@ -117,10 +117,14 @@ test("Have BTC? turns on borrowing and says in one line whether minting MUSD to 
   await expect(page.getByRole("button", { name: /Have BTC/ })).toHaveCount(0);
 });
 
-test("borrowing below the new-trove minimum says it cannot open one instead of quoting a yield", async ({ page }) => {
+test("borrowing below the new-trove minimum is priced at Mezo's minimum, and every figure says so", async ({ page }) => {
   await page.goto("/?mode=borrower&amount=1000");
   await page.locator("form[data-hydrated]").waitFor();
-  await expect(page.getByTestId("mint-line")).toHaveText("A new trove needs at least 1,799 MUSD borrowed, so 1,000 MUSD cannot open one. Raise the amount or switch to Hold.");
+  await expect(page.getByTestId("mint-line")).toHaveText(/^Mezo's smallest new trove is 1,800 MUSD, so this is priced at that minimum\. Borrow 1,800 MUSD against your BTC at 1%: .+ pays \d+\.\d\d%\. After the fee and interest you keep \d+\.\d\d% a year, about [\d,]+ MUSD\.$/);
+  await expect(page.locator("#best-h").locator("xpath=ancestor::section").locator("p.price")).toHaveText(/\d+\.\d\d%/);
+  await expect(page.getByText(/priced at Mezo's 1,800 MUSD minimum/)).toBeVisible();
+  const cards = page.getByRole("list", { name: "Venues ranked by cash carry" }).getByRole("article");
+  await expect(cards.first()).toContainText("Before you go in: 1,800 MUSD for 90 days");
 });
 
 test("every ranked venue says what this amount keeps before you go in", async ({ page }) => {

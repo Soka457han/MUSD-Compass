@@ -109,7 +109,7 @@ function PegLine({ peg }: { peg: NonNullable<Sources["peg"]> }) {
 }
 
 /** The answer, up top: the best cash carry for the current inputs. The full card for it leads the ranked list below. */
-function BestCash({ v, holding, mint, className = "" }: { v: VenueOut; holding: string; mint: { amount: number; rate: number; min: number | null } | null; className?: string }) {
+function BestCash({ v, holding, mint, className = "" }: { v: VenueOut; holding: string; mint: { amount: number; rate: number; minDebt: number | null } | null; className?: string }) {
   const external = v.action.url.startsWith("http");
   const locked = v.carry.locked ?? 0;
   const cash = v.carry.cash ?? 0;
@@ -126,13 +126,12 @@ function BestCash({ v, holding, mint, className = "" }: { v: VenueOut; holding: 
         <span className="sr-only"> cash carry per year</span>
       </p>
       <p className="text-ink-muted">
-        cash a year after costs · {holding.toLowerCase()} · {v.chain} · {usd(v.tvlUsd)} size
+        cash a year after costs{mint?.minDebt ? ` · priced at Mezo's ${musd(mint.amount)} minimum` : ""} · {holding.toLowerCase()} · {v.chain} · {usd(v.tvlUsd)} size
       </p>
       {mint && (
         <p data-testid="mint-line" className="rounded-2xl bg-accent-soft px-4 py-3 text-sm font-semibold md:text-base">
-          {mint.min !== null && mint.amount < mint.min
-            ? `A new trove needs at least ${musd(Math.ceil(mint.min))} borrowed, so ${musd(mint.amount)} cannot open one. Raise the amount or switch to Hold.`
-            : cash > 0
+          {mint.minDebt ? `Mezo's smallest new trove is ${musd(mint.minDebt)}, so this is priced at that minimum. ` : ""}
+          {cash > 0
             ? `Borrow ${musd(mint.amount)} against your BTC at ${mint.rate}%: ${v.name} pays ${pct(v.carry.liquid)}. After the fee and interest you keep ${pct(cash)} a year, about ${musd(Math.round((mint.amount * cash) / 100))}.`
             : `Borrow ${musd(mint.amount)} against your BTC at ${mint.rate}%: after the fee and interest the best place pays ${pct(cash)}. Borrowing to earn does not pay today.`}
         </p>
@@ -303,7 +302,7 @@ export function Compass({ sources, between, after }: { sources: Sources; between
             </div>
           </div>
           {result && lead ? (
-            <BestCash v={lead} holding={result.assumptions.holding} mint={query?.mode === "borrower" ? { amount: query.amount, rate: result.assumptions.ratePct, min: query.trove === "new" ? minNewTroveAmount(sources.borrow) : null } : null} className={`${dim} lg:transition-[margin] lg:duration-300 ${query?.mode === "borrower" ? "lg:mt-8" : "lg:mt-36"}`} />
+            <BestCash v={lead} holding={result.assumptions.holding} mint={query?.mode === "borrower" ? { amount: result.assumptions.amount, rate: result.assumptions.ratePct, minDebt: result.assumptions.pricedAtMinimum ? sources.borrow.minNetDebt : null } : null} className={`${dim} lg:transition-[margin] lg:duration-300 ${query?.mode === "borrower" ? "lg:mt-8" : "lg:mt-36"}`} />
           ) : (
             <p className="text-sm">No venue can be ranked right now.</p>
           )}
@@ -338,11 +337,11 @@ export function Compass({ sources, between, after }: { sources: Sources; between
                 </div>
                 <ol aria-label="Venues ranked by cash carry" className="mt-4 grid gap-3 md:mt-5 md:grid-cols-2 md:gap-4">
                   <li className="md:col-span-2" style={{ viewTransitionName: vt(lead.id) }}>
-                    <PriceLabel v={lead} days={days} amount={query?.amount ?? 0} lead />
+                    <PriceLabel v={lead} days={days} amount={result.assumptions.amount} lead />
                   </li>
                   {rest.map((v) => (
                     <li key={v.id} style={{ viewTransitionName: vt(v.id) }}>
-                      <PriceLabel v={v} days={days} amount={query?.amount ?? 0} />
+                      <PriceLabel v={v} days={days} amount={result.assumptions.amount} />
                     </li>
                   ))}
                 </ol>
@@ -357,7 +356,7 @@ export function Compass({ sources, between, after }: { sources: Sources; between
                     <ul aria-label="Pools that also need BTC or MEZO" className="mt-3 grid gap-3 md:grid-cols-2 md:gap-4">
                       {paired.map((v) => (
                         <li key={v.id}>
-                          <PriceLabel v={v} days={days} amount={query?.amount ?? 0} />
+                          <PriceLabel v={v} days={days} amount={result.assumptions.amount} />
                         </li>
                       ))}
                     </ul>
