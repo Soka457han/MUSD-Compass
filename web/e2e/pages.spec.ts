@@ -200,7 +200,7 @@ test.describe("card glow (desktop mouse)", () => {
     const box = (await card.boundingBox())!;
     await page.mouse.move(box.x + 40, box.y + 30);
     await expect.poll(() => card.evaluate((el) => el.style.getPropertyValue("--gx"))).toBe("40px");
-    // The spot sits at the pointer in the theme accent at 50% (reduced motion in e2e, so no fade to wait for).
-    await expect.poll(() => card.evaluate((el) => getComputedStyle(el).backgroundImage)).toBe("radial-gradient(260px at 40px 30px, rgba(124, 58, 237, 0.5), rgba(0, 0, 0, 0) 70%)");
+    // The spot sits at the pointer in the theme accent at 20% (reduced motion in e2e, so no fade to wait for).
+    await expect.poll(() => card.evaluate((el) => getComputedStyle(el).backgroundImage)).toBe("radial-gradient(260px at 40px 30px, rgba(124, 58, 237, 0.2), rgba(0, 0, 0, 0) 70%)");
   });
 });
