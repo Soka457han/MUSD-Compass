@@ -27,7 +27,7 @@ Every on-chain action Compass has taken, in one place. All writes are on Mezo te
 
 - an unlimited MUSD approval: refused by Compass's guard before any wallet is asked;
 - a transaction to a contract that is not on the allowlist: refused the same way;
-- depositing 1,000,000 MUSD from the sample wallet: Mezo testnet refuses it in simulation, the same simulation every real deposit goes through.
+- depositing 1,000,000 MUSD from the sample wallet: the chosen Mezo network (testnet or mainnet) refuses it in simulation, the same simulation every real deposit goes through.
 
 Guard code: [`web/src/lib/sendSafely.ts`](../web/src/lib/sendSafely.ts). The allowlist is MUSD, sMUSD and BorrowerOperations on each network, and per contract only the functions Compass uses: MUSD `approve`; vault `deposit`, `withdraw`, `claimYield`; BorrowerOperations `openTrove`, `addColl`, `repayMUSD`. Approvals go only to the vault and never for an unlimited amount.
 

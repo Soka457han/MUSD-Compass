@@ -3,13 +3,14 @@
 import { useState } from "react";
 import { BaseError, ContractFunctionRevertedError, maxUint256, parseUnits } from "viem";
 import { smusdAbi } from "@/lib/chain/abis";
-import { MAINNET, SAMPLES, TESTNET } from "@/lib/chain/addresses";
+import { MAINNET, NETWORKS, SAMPLES, TESTNET } from "@/lib/chain/addresses";
 import { guard, MAINNET_CAP_MUSD, netFromSearch } from "@/lib/sendSafely";
-import { humanError, testnetPublic } from "@/lib/wallet";
+import { humanError, publicFor } from "@/lib/wallet";
 
 type Result = { ok: boolean; text: string };
 
-/** Four things a bad page would try. Each runs for real, with no wallet: the first three hit Compass's own guard, the last Mezo testnet. */
+/** Four things a bad page would try. Each runs for real, with no wallet: the first three hit Compass's own guard, the last the chosen Mezo network. */
+const netName = () => (netFromSearch(window.location.search) === "mainnet" ? "Mezo mainnet" : "Mezo testnet");
 const TRIES = [
   {
     id: "unlimited",
@@ -41,8 +42,9 @@ const TRIES = [
     id: "balance",
     label: "Deposit 1,000,000 MUSD from the sample wallet without approving it first",
     run: async (): Promise<Result> => {
-      // The same simulation every real deposit goes through, against the live testnet vault. The vault checks the approval before the balance, so the approval is what it refuses.
-      await testnetPublic.simulateContract({ account: SAMPLES.devWallet, address: TESTNET.smusd, abi: smusdAbi, functionName: "deposit", args: [parseUnits("1000000", 18)] });
+      // The same simulation every real deposit goes through, against the live vault on the network chosen above. The vault checks the approval before the balance, so the approval is what it refuses (both networks, checked 15 Nov 2026).
+      const net = netFromSearch(window.location.search);
+      await publicFor(net).simulateContract({ account: SAMPLES.devWallet, address: NETWORKS[net].smusd, abi: smusdAbi, functionName: "deposit", args: [parseUnits("1000000", 18)] });
       return { ok: false, text: "The simulation passed. This is a bug." };
     },
   },
@@ -67,8 +69,8 @@ export function SafetyPanel() {
         t.id !== "balance"
           ? { ok: true, text: `Refused before any wallet is asked: ${short(e)}` }
           : reverted
-            ? { ok: true, text: `Mezo testnet refused it in simulation: ${humanError(e)}` }
-            : { ok: false, text: `Could not reach Mezo testnet, try again: ${short(e)}` };
+            ? { ok: true, text: `${netName()} refused it in simulation: ${humanError(e)}` }
+            : { ok: false, text: `Could not reach ${netName()}, try again: ${short(e)}` };
     }
     setResults((r) => ({ ...r, [t.id]: res }));
   };
@@ -80,7 +82,7 @@ export function SafetyPanel() {
           Try to break it
         </h2>
         <p className="mt-1 max-w-prose text-sm text-ink-muted">
-          Each button runs for real, no wallet needed. The first three go through the same check every Compass transaction passes; the last asks Mezo testnet to simulate it, as every deposit is simulated before you sign.
+          Each button runs for real, no wallet needed. The first three go through the same check every Compass transaction passes; the last asks Mezo (the network chosen above) to simulate it, as every deposit is simulated before you sign.
         </p>
         <ul className="mt-3 space-y-3">
           {TRIES.map((t) => {
