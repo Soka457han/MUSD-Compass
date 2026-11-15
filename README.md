@@ -1,27 +1,27 @@
 # MUSD Compass
 
-Where does your MUSD earn the most after costs? Compass ranks every place Mezo MUSD can earn, on Mezo and Ethereum, by the cash you keep, with locked veMEZO 🔒 shown beside that figure and left out of it. It runs as a phone web app, a Telegram bot, a one-tag widget, a free JSON API and a pay-per-call x402 API.
+Where does your MUSD earn the most after costs? Compass ranks every place Mezo MUSD can earn, on Mezo and Ethereum, by the cash you keep, with locked veMEZO - shown beside that figure and left out of it. It runs as a phone web app, a Telegram bot, a one-tag widget, a free JSON API and a pay-per-call x402 API
 
 **Mezo Buildathon, Wave 2** · Track 1 (DeFi) and Track 2 (Access & Distribution) · no contract of its own, no custody, no keys.
 
-Built on Mezo: MUSD, the Savings Vault (sMUSD) and its gauge, troves (BorrowerOperations, TroveManager, HintHelpers), veMEZO rewards, the Mezo pools, and MUSD payments over x402. New since Wave 1: real mainnet transactions, trove alerts, top-up and repay, gauge staking, WalletConnect ([what changed](#new-in-wave-2)).
+Built on Mezo: MUSD, the Savings Vault (sMUSD) and its gauge, troves (BorrowerOperations, TroveManager, HintHelpers), veMEZO rewards, the Mezo pools, and MUSD payments over x402. New since Wave 1: real mainnet transactions, trove alerts, top-up and repay, gauge staking, WalletConnect ( [what changed](#new-in-wave-2) )
 
 | | |
 |---|---|
-| **Live app** | [musd-compass.vercel.app](https://musd-compass.vercel.app) (works on a phone, no wallet needed) |
-| **Demo video (2 min)** | [Watch on YouTube](https://www.youtube.com/watch?v=MzgrWvwby00) |
+| **Live app** | [musd-compass.vercel.app](https://musd-compass.vercel.app) ( Works also on a phone ) |
+| **Demo video ( Wave 2 )** | [Watch on YouTube](https://youtu.be/q0Q6xQ5lhQo) |
 | **Deck** | [musd-compass-deck.pdf](https://musd-compass.vercel.app/musd-compass-deck.pdf) (also [in the repo](docs/submission/musd-compass-deck.pdf)) |
 | **Telegram bot** | [@musd_compass_bot](https://t.me/musd_compass_bot) |
 | **API and widget** | [/developers](https://musd-compass.vercel.app/developers) |
-| **New in Wave 2** | [Summary below](#new-in-wave-2) · [FEEDBACK-RESPONSE.md](FEEDBACK-RESPONSE.md): the Wave 1 review answered point by point |
-| **Usage stats** | [/stats](https://musd-compass.vercel.app/stats): bot users, outside payers, widget sites and API requests, with the date counting began |
+| **New in Wave 2** | [Summary below](#new-in-wave-2) · [FEEDBACK-RESPONSE.md](FEEDBACK-RESPONSE.md) : the Wave 1 review answered point by point |
+| **Usage stats** | [/stats](https://musd-compass.vercel.app/stats) : bot users, outside payers, widget sites and API requests, with the date counting began |
 | **Proof** | [Mainnet table](#mainnet-proof) · [testnet table](#testnet-proof) · [live /proof page](https://musd-compass.vercel.app/proof) · [all evidence](docs/evidence.md) |
 
 ## Try it in 60 seconds
 
-No wallet, no keys, no sign-up.
+No wallet, no keys, no sign up.
 
-1. Open the [app](https://musd-compass.vercel.app). The top card is where 2,000 MUSD earns the most cash a year after costs. Change the amount, or switch to *Borrow*, and the list re-ranks.
+1. Open the [app](https://musd-compass.vercel.app) The top card is where 2,000 MUSD earns the most cash a year after costs. Change the amount, or switch to *Borrow*, and the list re-ranks.
 2. [/my](https://musd-compass.vercel.app/my) → *Try a sample*: a real address's MUSD, each holding next to the best cash place for it.
 3. [/vault](https://musd-compass.vercel.app/vault) → *Try to break it*: four attacks, each refused for real, with no wallet.
 4. [/proof](https://musd-compass.vercel.app/proof): every transaction Compass has sent, on Mezo mainnet and testnet, each linked to the explorer.
@@ -53,7 +53,7 @@ The longer walk-through is [For judges](#for-judges-60-seconds-no-wallet-no-keys
 
 ## The problem
 
-MUSD can earn in the Savings Vault, the Stability Pool, six Mezo pools and Mezo-paid pools on Ethereum. Each shows a different number, and the biggest numbers mislead.
+MUSD can earn in the Savings Vault, the Stability Pool, six Mezo pools and Mezo paid pools on Ethereum. Each shows a different number, and the biggest numbers mislead.
 
 veMEZO rewards stay locked for 12 weeks, so a large APR can be mostly lock and very little cash. Costs eat small deposits: an Ethereum pool needs a bridge round trip and gas both ways, and borrowed MUSD carries trove interest, a 0.1% fee and a 1,800 MUSD minimum. The best place also moves. In one night the Uniswap V4 veMEZO APR went from 49.8% to 79.9% while MEZO rose 60%.
 
@@ -106,7 +106,7 @@ The Wave 1 review asked for six things. Each row says what shipped, where to che
 | **WalletConnect or Mezo Passport** | WalletConnect and browser wallets act on `/vault`. Unisat, OKX and Xverse show the wallet's Mezo account, view only. | `/vault` → *Connect wallet*. | Passport was tried and left out (reasons in FEEDBACK-RESPONSE). |
 | **Video and deck links** | The README links are real links now. | The table at the top. | The Wave 2 video and deck. |
 
-Also added since Wave 1:
+Also added since Wave 1 :
 
 - Gauge staking on `/vault` (mainnet): stake sMUSD, unstake, claim MEZO.
 - Mezo pools in the ranking, with their MEZO emission APR read from the gauges on chain.
@@ -219,7 +219,7 @@ Mezo testnet (chain 31611), made through [/vault](https://musd-compass.vercel.ap
 
 The dev wallet now holds 1,890 sMUSD and 67.41 MUSD with a vault allowance of 0, and [`/api/vault/0xfe21…676C`](https://musd-compass.vercel.app/api/vault/0xfe21B2782B35BE770DD4a7b05f81cE43790D676C) shows the same. Every transaction and live check is listed in [docs/evidence.md](docs/evidence.md).
 
-## For judges: 60 seconds, no wallet, no keys
+## For judges : 60 seconds, no wallet, no keys
 
 1. Open the [app](https://musd-compass.vercel.app). The top card is where 2,000 MUSD earns the most cash a year after costs. Each venue card says what your amount keeps before you go in; *Why this number* shows the source.
 2. Change the amount, or switch to *Borrow* or *365 days*. The list re-ranks and every number says what it assumes. Ethereum pools show the amount where they start to beat the Savings Vault.
@@ -251,7 +251,7 @@ Compass holds nothing, so the risks are a wrong transaction from your own wallet
 | API abuse | Every input validated at the route, addresses URL-encoded on the client, rate limits | unit and e2e |
 | Bot abuse | Timing-safe key check, Telegram secret check, 1 MB cap, malformed updates ignored | `bot/tests/` |
 
-Accepted for now: a zod 3 advisory inside `@x402` (GHSA-mrhx-c7xc-m3w5; the server refuses payment headers over 16 KB before parsing) and, since Wave 2, the same advisory inside the WalletConnect library, which runs only in the visitor's own browser tab; hints and prices come from public RPCs, so a hostile RPC could skew a displayed ratio, but Mezo's contracts still enforce their own limits when the transaction runs; rate limits are per serverless instance; the CSP allows inline scripts because Next's App Router needs them, which also means the hosts it allows for WalletConnect are reachable from any injected script. `pip-audit` on the bot finds nothing.
+Accepted for now : a zod 3 advisory inside `@x402` (GHSA-mrhx-c7xc-m3w5; the server refuses payment headers over 16 KB before parsing) and, since Wave 2, the same advisory inside the WalletConnect library, which runs only in the visitor's own browser tab; hints and prices come from public RPCs, so a hostile RPC could skew a displayed ratio, but Mezo's contracts still enforce their own limits when the transaction runs; rate limits are per serverless instance; the CSP allows inline scripts because Next's App Router needs them, which also means the hosts it allows for WalletConnect are reachable from any injected script. `pip-audit` on the bot finds nothing.
 
 ## Business model
 
